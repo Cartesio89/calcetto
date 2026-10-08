@@ -276,7 +276,7 @@ const S = {
   token: store.get('calc_token'),
   boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
   matches: null, stats: null, myVotes: null, fanta: null, partners: null,
-  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0,
+  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, matchType: 'all', matchPlayer: null,
         pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
         fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
 };
@@ -540,19 +540,36 @@ function matchStatusPills(m) {
   return p.join(' ');
 }
 async function viewPartite(v) {
+  const u = S.ui;
+  const plOpts = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   v.innerHTML = `<div class="section-title"><h2>Partite</h2><div class="spacer"></div>
     ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}</div>
+    <div class="row" style="margin-bottom:12px">${segHtml('mFilType', typeOpts, u.matchType)}
+      <select id="mFilPl" aria-label="Filtra per giocatore" style="max-width:240px"><option value="">Tutti i giocatori</option>${plOpts.map(p => `<option value="${p.id}" ${p.id === u.matchPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <span class="small muted" id="mCount"></span></div>
     <div id="mlist"><div class="loader">Caricamento…</div></div>`;
   if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); $('#importMatch').onclick = openImport; }
-  let list; try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
-  if (S.tab !== 'partite' || !$('#mlist')) return;
-  if (!list.length) { $('#mlist').innerHTML = `<div class="card empty">Nessuna partita in questa stagione${canEditSeason() ? '. Crea la prima con “Nuova partita”.' : '.'}</div>`; return; }
-  $('#mlist').innerHTML = list.map(m => {
-    const nw = m.players.filter(p => p.team === 'W').length, nd = m.players.filter(p => p.team === 'D').length;
-    const played = m.status === 'giocata';
-    return `<div class="card match" data-id="${m.id}">
+  let list = null;
+  const draw = () => {
+    const box = $('#mlist'); if (!list || !box) return;
+    if (!list.length) { box.innerHTML = `<div class="card empty">Nessuna partita in questa stagione${canEditSeason() ? '. Crea la prima con “Nuova partita”.' : '.'}</div>`; $('#mCount').textContent = ''; return; }
+    const pid = u.matchPlayer;
+    const rows = list.filter(m => (u.matchType === 'all' || String(m.type) === String(u.matchType)) && (!pid || m.players.some(p => p.id === pid)));
+    let summary = `${rows.length} partit${rows.length === 1 ? 'a' : 'e'}`;
+    if (pid) {
+      const pl = rows.filter(m => m.status === 'giocata').map(m => { const me = m.players.find(p => p.id === pid); const o = m.score_w === m.score_d ? 'N' : ((me.team === 'W') === (m.score_w > m.score_d) ? 'V' : 'P'); return { o, g: me.goals }; });
+      const c = k => pl.filter(x => x.o === k).length;
+      if (pl.length) summary += ` · ${c('V')} V · ${c('N')} N · ${c('P')} P · ${pl.reduce((a, x) => a + x.g, 0)} gol`;
+    }
+    $('#mCount').textContent = summary;
+    box.innerHTML = rows.length ? rows.map(m => {
+      const nw = m.players.filter(p => p.team === 'W').length, nd = m.players.filter(p => p.team === 'D').length;
+      const played = m.status === 'giocata';
+      const me = pid && m.players.find(p => p.id === pid);
+      return `<div class="card match" data-id="${m.id}">
       <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
       ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
+      ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} con i ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? 'pareggio' : (me.team === 'W') === (m.score_w > m.score_d) ? 'vittoria' : 'sconfitta'}</b>` : ''}${me.goals ? ` · ${me.goals} gol` : ''}</div>` : ''}
       <div class="score">
         <div class="side"><span class="team"><span class="dot W"></span>${esc(TW)}</span><span class="tiny muted">${nw} giocatori</span></div>
         <div class="num">${played ? `${m.score_w} – ${m.score_d}` : '<span class="muted" style="font-size:24px">vs</span>'}</div>
@@ -561,7 +578,13 @@ async function viewPartite(v) {
       ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
       ${isPres() && S.season === S.boot.active_season && m.fanta_state === 'aperto' ? `<div class="stopbar"><span class="small">Schieramenti FantaNunnaree <b>aperti</b></span><button class="btn stop" data-stop="${m.id}">■ STOP schieramenti</button></div>` : ''}
     </div>`;
-  }).join('');
+    }).join('') : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
+  };
+  bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
+  $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
+  try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'partite' || !$('#mlist')) return;
+  draw();
   $('#mlist').onclick = e => { const sb = e.target.closest('[data-stop]'); if (sb) { e.stopPropagation(); stopFanta(Number(sb.dataset.stop)); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
 }
 function openMatch(id) {
