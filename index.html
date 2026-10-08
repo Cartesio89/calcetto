@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f3d2e">
+<title>Calcetto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230f3d2e'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23d8f36a' stroke-width='5'/%3E%3C/svg%3E">
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#f3f5f1; --surface:#ffffff; --surface-2:#eef1ea; --line:#dde3d7; --text:#14201a; --muted:#5f6f66;
+  --brand:#0f3d2e; --brand-2:#1d6b4f; --accent:#d8f36a; --accent-ink:#1b2a07;
+  --danger:#b3261e; --warn:#a15c00; --ok:#1d7a45;
+  --white-team:#ffffff; --white-ink:#14201a; --dark-team:#1f2a33; --dark-ink:#ffffff;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0c1210; --surface:#141c18; --surface-2:#1b2520; --line:#26332c; --text:#e8efe9; --muted:#93a59a;
+    --brand:#d8f36a; --brand-2:#9fd36b; --accent:#d8f36a; --accent-ink:#13200a;
+    --danger:#ff7b72; --warn:#f0b35a; --ok:#6fd49a;
+    --white-team:#eef2ee; --white-ink:#111; --dark-team:#000000; --dark-ink:#fff;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:'Barlow Condensed',Inter,sans-serif;letter-spacing:.3px;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+.hidden{display:none!important}
+.muted{color:var(--muted)} .small{font-size:13px} .tiny{font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:#0f3d2e;color:#fff;padding-top:env(safe-area-inset-top)}
+.topbar .wrap{display:flex;align-items:center;gap:10px;height:56px}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo .ball{width:30px;height:30px;border-radius:50%;background:#d8f36a;display:grid;place-items:center;flex:none}
+.logo .ball::after{content:"";width:12px;height:12px;border-radius:50%;border:3px solid #0f3d2e}
+.logo h1{font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.topbar select{max-width:170px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:6px 8px}
+.topbar select option{color:#111}
+.iconbtn{background:none;border:0;color:inherit;padding:8px;border-radius:10px;cursor:pointer;display:grid;place-items:center}
+.iconbtn:hover{background:rgba(255,255,255,.1)}
+/* tabs */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:#0f3d2e;padding:0 12px 10px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;background:transparent;border:0;color:rgba(255,255,255,.75);padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;position:relative}
+.tab.on{background:#d8f36a;color:#13200a}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff5a4f;color:#fff;font-size:11px;font-weight:700;margin-left:6px}
+@media (max-width:720px){
+  .tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;gap:0;border-top:1px solid rgba(255,255,255,.08)}
+  .tab{padding:6px 8px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px;min-width:56px}
+  .tab .ti{display:block;font-size:18px;line-height:1}
+  .tab .badge{position:absolute;top:0;right:4px;margin:0}
+  main{padding-bottom:90px}
+}
+@media (min-width:721px){ .tab .ti{display:none} }
+main{padding:18px 0 40px}
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h2{font-size:22px;margin-bottom:10px}
+.section-title{display:flex;align-items:center;gap:10px;margin:4px 0 12px;flex-wrap:wrap}
+.section-title h2{font-size:26px}
+/* controls */
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+@media (prefers-color-scheme: dark){ .btn.primary{color:#13200a} }
+.btn.accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line))}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--brand-2);outline-offset:1px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 5px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.t{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}
+.t th,.t td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+.t th{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:var(--surface-2);position:sticky;top:0;cursor:pointer;user-select:none}
+.t th.sorted{color:var(--text)}
+.t th.sorted::after{content:attr(data-dir);margin-left:3px;font-size:10px}
+.t td:first-child,.t th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+.t th:first-child{background:var(--surface-2);z-index:2}
+.t tr:last-child td{border-bottom:0}
+.t tr.me td{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.t td.strong{font-weight:700}
+.t .rank{color:var(--muted);font-size:12px;width:26px;display:inline-block}
+/* team chips */
+.team{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1.5px solid var(--text);flex:none}
+.dot.W{background:var(--white-team)} .dot.D{background:var(--dark-team);border-color:var(--dark-team)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--muted)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.pill.live{background:var(--accent);color:var(--accent-ink)}
+/* match card */
+.match{cursor:pointer}
+.match .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin:10px 0 4px}
+.match .score .side{display:flex;flex-direction:column;gap:2px}
+.match .score .side.r{align-items:flex-end;text-align:right}
+.match .score .num{font-family:'Barlow Condensed',Inter,sans-serif;font-size:38px;font-weight:800;line-height:1;letter-spacing:1px}
+.scorers{font-size:13px;color:var(--muted)}
+.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:600px){ .teams-grid{grid-template-columns:1fr} }
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);gap:8px}
+.plist li:last-child{border:0}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:721px){ .modal-bg{align-items:center;padding:20px} }
+.modal{background:var(--bg);width:100%;max-width:720px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:721px){ .modal{border-radius:18px} }
+.modal header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.modal header h2{font-size:22px;flex:1}
+.modal .body{padding:14px 16px;overflow:auto;flex:1}
+.modal footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--surface);flex-wrap:wrap}
+/* picker rows */
+.pick{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.pick .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbtn{border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 10px;cursor:pointer;font-weight:700;font-size:13px;min-width:44px}
+.tbtn.W.on{background:var(--white-team);color:var(--white-ink);border-color:var(--text)}
+.tbtn.D.on{background:var(--dark-team);color:var(--dark-ink);border-color:var(--dark-team)}
+.tbtn.sel.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.stepper button{border:0;background:transparent;width:32px;height:32px;cursor:pointer;font-size:17px;font-weight:700}
+.stepper button:active{background:var(--surface-2)}
+.stepper span{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-row{padding:10px 0;border-bottom:1px solid var(--line)}
+.stat-row .top{display:flex;align-items:center;gap:8px}
+.stat-row .extra{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:8px}
+.stat-row .extra > div{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted)}
+.bigscore{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 10px}
+.bigscore input{width:78px;text-align:center;font-family:'Barlow Condensed',Inter,sans-serif;font-size:34px;font-weight:800;padding:4px}
+.vote-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.vote-row .nm{flex:1;min-width:0}
+.vote-row select{width:96px;text-align:center;font-weight:700}
+.vote-row.done select{border-color:var(--ok)}
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(1200px 600px at 50% -10%,#1d6b4f,#0f3d2e 55%,#0a2a20)}
+.login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login h1{font-size:30px;line-height:1.05;margin:12px 0 4px}
+.login .ball{width:44px;height:44px;border-radius:50%;background:#d8f36a;display:grid;place-items:center}
+.login .ball::after{content:"";width:18px;height:18px;border-radius:50%;border:4px solid #0f3d2e}
+.err{color:var(--danger);font-size:14px;margin-top:10px;min-height:20px}
+/* toast */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;background:#14201a;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1} #toast.bad{background:var(--danger);color:#fff}
+@media (max-width:720px){ #toast{bottom:92px}
+  .t th,.t td{padding:8px 6px}
+  .t .btn.sm{padding:5px 8px;font-size:12px}
+  .kpi{padding:10px} .kpi .v{font-size:24px} .kpi .l{font-size:10.5px}
+  .card{padding:13px}
+  .logo h1{font-size:18px}
+}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .v{font-family:'Barlow Condensed',Inter,sans-serif;font-size:30px;font-weight:800;line-height:1}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+.up{color:var(--ok);font-weight:700} .down{color:var(--danger);font-weight:700}
+.loader{padding:30px;text-align:center;color:var(--muted)}
+details.box{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px}
+details.box summary{padding:12px 14px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
+details.box summary::-webkit-details-marker{display:none}
+details.box > div{padding:0 14px 12px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+const CFG = window.APP_CONFIG || {};
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtVote = v => v == null ? '–' : Number(v).toFixed(2).replace(/0$/, '').replace('.', ',');
+const fmtNum = v => v == null ? '–' : String(Math.round(v * 100) / 100).replace('.', ',');
+const fmtDate = d => d ? new Date(d + (String(d).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const fmtDateTime = d => d ? new Date(d).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+const TYPES = [5, 7, 8, 11];
+const TW = CFG.TEAM_W || 'Chiari', TD = CFG.TEAM_D || 'Scuri';
+const typeLabel = t => 'Calcio a ' + t;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+};
+
+// ------------------------------------------------------------- API
+async function rpc(fn, args = {}) {
+  const url = CFG.SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/rpc/' + fn;
+  const headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
+  if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
+  let res;
+  try { res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(args) }); }
+  catch (e) { throw new Error('Connessione non riuscita. Controlla la rete.'); }
+  const txt = await res.text();
+  let data = null; try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+  if (!res.ok) {
+    const msg = (data && data.message) || ('Errore ' + res.status);
+    if (/Sessione scaduta/.test(msg) && S.token) { logoutLocal(); }
+    throw new Error(msg);
+  }
+  return data;
+}
+const T = () => S.token;
+
+// ------------------------------------------------------------- STATE
+const S = {
+  token: store.get('calc_token'),
+  boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
+  matches: null, stats: null, myVotes: null, fanta: null, partners: null,
+  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true,
+        pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
+        fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
+};
+const me = () => S.boot?.me;
+const isPres = () => !!S.boot?.me?.is_president;
+const pname = id => S.boot?.players.find(p => p.id === id)?.name || ('#' + id);
+const activePlayers = () => S.boot.players.filter(p => p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+const settings = k => Number(S.boot?.settings?.[k]);
+
+function toast(msg, bad = false) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'on' + (bad ? ' bad' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', bad ? 4200 : 2200);
+}
+async function act(fn, okMsg) {
+  try { const r = await fn(); if (okMsg) toast(okMsg); return r ?? true; }
+  catch (e) { toast(e.message, true); return false; }
+}
+
+// ------------------------------------------------------------- LOGIN
+async function renderLogin(msg = '') {
+  const app = $('#app');
+  app.innerHTML = `<div class="login"><div class="box">
+    <div class="ball"></div>
+    <h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1>
+    <div class="muted small">Statistiche, voti e FantaNunnaree</div>
+    <label class="f" for="lp">Chi sei?</label>
+    <select id="lp"><option value="">Caricamento…</option></select>
+    <div id="pwbox">
+      <label class="f" for="lpw" id="lpwl">Password</label>
+      <input type="password" id="lpw" autocomplete="current-password">
+      <div id="pw2box" class="hidden"><label class="f" for="lpw2">Ripeti password</label><input type="password" id="lpw2" autocomplete="new-password"></div>
+    </div>
+    <div class="err" id="lerr">${esc(msg)}</div>
+    <button class="btn primary" id="lgo" style="width:100%;justify-content:center;margin-top:6px">Entra</button>
+    <div class="tiny muted" style="margin-top:12px" id="lhint">Al primo accesso scegli il tuo nome e crea la tua password. Se la dimentichi, chiedi al presidente di resettarla.</div>
+  </div></div>`;
+  if (!CFG.SUPABASE_URL || /INCOLLA/.test(CFG.SUPABASE_URL)) {
+    $('#lerr').textContent = 'App non configurata: inserisci URL e chiave Supabase in config.js.'; return;
+  }
+  let list = [];
+  try { list = await rpc('list_players_public'); } catch (e) { $('#lerr').textContent = e.message; return; }
+  const sel = $('#lp');
+  const last = store.get('calc_last_player');
+  sel.innerHTML = '<option value="">— seleziona il tuo nome —</option>' + list.map(p => `<option value="${p.id}" ${String(p.id) === last ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const sync = () => {
+    const p = list.find(x => String(x.id) === sel.value);
+    const first = p && !p.has_pw;
+    $('#pw2box').classList.toggle('hidden', !first);
+    $('#lpwl').textContent = first ? 'Primo accesso: scegli una password (min 4 caratteri)' : 'Password';
+    $('#lgo').textContent = first ? 'Crea password ed entra' : 'Entra';
+  };
+  sel.onchange = sync; sync();
+  const go = async () => {
+    const p = list.find(x => String(x.id) === sel.value);
+    const pw = $('#lpw').value; $('#lerr').textContent = '';
+    if (!p) { $('#lerr').textContent = 'Seleziona il tuo nome.'; return; }
+    if (!pw) { $('#lerr').textContent = 'Inserisci la password.'; return; }
+    $('#lgo').disabled = true;
+    try {
+      let r;
+      if (!p.has_pw) {
+        if (pw !== $('#lpw2').value) throw new Error('Le due password non coincidono.');
+        r = await rpc('set_first_password', { p_player: p.id, p_password: pw });
+      } else r = await rpc('login', { p_player: p.id, p_password: pw });
+      S.token = r.token; store.set('calc_token', r.token); store.set('calc_last_player', String(p.id));
+      await start();
+    } catch (e) { $('#lerr').textContent = e.message; $('#lgo').disabled = false; }
+  };
+  $('#lgo').onclick = go;
+  $('#lpw').onkeydown = $('#lpw2').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function logoutLocal() { S.token = null; store.set('calc_token', null); S.boot = null; renderLogin('Sessione scaduta: rientra.'); }
+async function logout() { try { await rpc('logout', { p_token: T() }); } catch {} S.token = null; store.set('calc_token', null); S.boot = null; renderLogin(); }
+
+// ------------------------------------------------------------- SHELL
+const TABS = [
+  { id: 'classifica', label: 'Classifica', ic: '🏆' },
+  { id: 'partite', label: 'Partite', ic: '⚽' },
+  { id: 'voti', label: 'Voti', ic: '★' },
+  { id: 'coppie', label: 'Coppie', ic: '⇄' },
+  { id: 'fanta', label: 'FantaNunnaree', short: 'Fanta', ic: '🎲' },
+  { id: 'admin', label: 'Presidente', short: 'Admin', ic: '⚙', pres: true },
+];
+async function start() {
+  try { S.boot = await rpc('get_bootstrap', { p_token: T() }); }
+  catch (e) { if (!S.token) return; S.token = null; store.set('calc_token', null); return renderLogin(e.message); }
+  S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
+  if (!S.ui.pairPlayer) S.ui.pairPlayer = me().id;
+  if (S.tab === 'admin' && !isPres()) S.tab = 'classifica';
+  renderShell();
+  loadVotesBadge();
+}
+function renderShell() {
+  document.title = CFG.APP_NAME || 'Calcetto';
+  $('#app').innerHTML = `
+  <div class="topbar">
+    <div class="wrap">
+      <div class="logo"><div class="ball"></div><h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1></div>
+      <div class="spacer"></div>
+      <select id="seasonSel" aria-label="Stagione">${S.boot.seasons.map(s => `<option value="${s.id}" ${s.id === S.season ? 'selected' : ''}>${esc(s.name)}${s.ended ? ' (finita)' : ''}</option>`).join('')}</select>
+      <button class="iconbtn" id="userBtn" title="Account" aria-label="Account">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+      </button>
+    </div>
+    <nav class="tabs" id="tabs">${TABS.filter(t => !t.pres || isPres()).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
+  </div>
+  <main><div class="wrap" id="view"></div></main>`;
+  $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
+  $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; S.tab = b.dataset.tab; store.set('calc_tab', S.tab); $$('.tab').forEach(x => x.classList.toggle('on', x === b)); renderTab(); scrollTo(0, 0); };
+  $('#userBtn').onclick = openAccount;
+  renderTab();
+}
+function renderTab() {
+  const v = $('#view'); if (!v) return;
+  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, admin: viewAdmin }[S.tab] || viewClassifica)(v);
+}
+async function loadVotesBadge() {
+  try {
+    S.myVotes = await rpc('get_my_votes', { p_token: T() });
+    const missing = S.myVotes.reduce((a, m) => a + m.targets.filter(t => t.value == null).length, 0);
+    const b = $('#voteBadge'); if (b) { b.textContent = S.myVotes.length; b.classList.toggle('hidden', !S.myVotes.length || !missing); }
+  } catch {}
+}
+function openAccount() {
+  modal({
+    title: me().name,
+    body: `<div class="muted small">${isPres() ? 'Presidente · accesso completo' : 'Giocatore'}</div>
+      <h3 style="margin:16px 0 4px;font-size:19px">Cambia password</h3>
+      <label class="f">Password attuale</label><input type="password" id="op">
+      <label class="f">Nuova password</label><input type="password" id="np">`,
+    actions: [
+      { label: 'Esci', cls: 'danger', fn: async () => { await logout(); return true; } },
+      { label: 'Salva password', cls: 'primary', fn: async () => act(() => rpc('change_password', { p_token: T(), p_old: $('#op').value, p_new: $('#np').value }), 'Password aggiornata') },
+    ]
+  });
+}
+
+// ------------------------------------------------------------- MODAL
+function modal({ title, body, actions = [], onOpen, wide }) {
+  const bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true" ${wide ? 'style="max-width:900px"' : ''}>
+    <header><h2>${esc(title)}</h2><button class="iconbtn" data-x aria-label="Chiudi" style="color:var(--text)">✕</button></header>
+    <div class="body">${body}</div>
+    ${actions.length ? `<footer>${actions.map((a, i) => `<button class="btn ${a.cls || ''}" data-a="${i}">${esc(a.label)}</button>`).join('')}</footer>` : ''}
+  </div>`;
+  const close = () => { bg.remove(); document.body.style.overflow = ''; };
+  bg.addEventListener('click', async e => {
+    if (e.target === bg || e.target.closest('[data-x]')) return close();
+    const a = e.target.closest('[data-a]');
+    if (a) { a.disabled = true; const r = await actions[a.dataset.a].fn(bg); a.disabled = false; if (r) close(); }
+  });
+  document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  if (onOpen) onOpen(bg, close);
+  return { el: bg, close };
+}
+function confirmBox(text, label = 'Conferma', danger = false) {
+  return new Promise(res => {
+    const m = modal({ title: 'Confermi?', body: `<p>${text}</p>`, actions: [
+      { label: 'Annulla', fn: async () => { res(false); return true; } },
+      { label, cls: danger ? 'danger' : 'primary', fn: async () => { res(true); return true; } }
+    ] });
+    m.el.addEventListener('click', e => { if (e.target === m.el || e.target.closest('[data-x]')) res(false); });
+  });
+}
+
+// ------------------------------------------------------------- SORTABLE TABLE
+function sortRows(rows, sort, cols) {
+  const c = cols.find(c => c.k === sort.k) || cols[0];
+  const get = c.sv || (r => r[c.k]);
+  return [...rows].sort((a, b) => {
+    let x = get(a), y = get(b);
+    if (typeof x === 'string' || typeof y === 'string') return String(x ?? '').localeCompare(String(y ?? ''), 'it') * sort.d;
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (x - y) * sort.d || String(a.name).localeCompare(String(b.name), 'it');
+  });
+}
+function tableHtml(cols, rows, sort, opts = {}) {
+  return `<div class="tbl-wrap"><table class="t"><thead><tr>${cols.map(c => `<th data-k="${c.k}" title="${esc(c.title || c.label)}" class="${sort.k === c.k ? 'sorted' : ''}" data-dir="${sort.d > 0 ? '▲' : '▼'}">${esc(c.label)}</th>`).join('')}</tr></thead>
+  <tbody>${rows.length ? rows.map((r, i) => `<tr class="${opts.rowCls ? opts.rowCls(r) : ''}">${cols.map(c => `<td class="${c.cls || ''}">${c.fmt ? c.fmt(r, i) : esc(r[c.k] ?? '')}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="empty">${opts.empty || 'Nessun dato'}</td></tr>`}</tbody></table></div>`;
+}
+function bindSort(container, sort, rerender) {
+  container.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sort.k === k) sort.d = -sort.d; else { sort.k = k; sort.d = k === 'name' ? 1 : -1; }
+    rerender();
+  });
+}
+function segHtml(id, opts, val) { return `<div class="seg" id="${id}">${opts.map(o => `<button data-v="${o.v}" class="${String(o.v) === String(val) ? 'on' : ''}">${esc(o.l)}</button>`).join('')}</div>`; }
+function bindSeg(el, fn) { el.onclick = e => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); }; }
+const typeOpts = [{ v: 'all', l: 'Tutte' }, ...TYPES.map(t => ({ v: t, l: 'a ' + t }))];
+
+// ------------------------------------------------------------- CLASSIFICA
+async function viewClassifica(v) {
+  const u = S.ui;
+  v.innerHTML = `<div class="section-title"><h2>Classifica</h2><div class="spacer"></div>${segHtml('stType', typeOpts, u.statType)}</div>
+    <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="Cerca giocatore…" value="${esc(u.statSearch)}" style="max-width:260px">
+      <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> solo chi ha giocato</label></div>
+    <div id="stTable"><div class="loader">Caricamento…</div></div>
+    <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
+  bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
+  $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
+  $('#stHide').onchange = e => { u.hideZero = e.target.checked; draw(); };
+  const key = S.season + '|' + u.statType;
+  if (!S.stats || S.stats.key !== key) {
+    try { S.stats = { key, rows: await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: u.statType === 'all' ? null : Number(u.statType) }) }; }
+    catch (e) { if ($('#stTable')) $('#stTable').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  }
+  if (S.tab !== 'classifica' || !$('#stTable')) return;
+  const cols = [
+    { k: 'name', label: 'Giocatore', fmt: (r, i) => `<span class="rank">${i + 1}</span>${esc(r.name)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
+    { k: 'pg', label: 'PG', title: 'Partite giocate', cls: 'strong' }, { k: 'v', label: 'V', title: 'Vittorie' }, { k: 'n', label: 'N', title: 'Pareggi' }, { k: 's', label: 'P', title: 'Sconfitte' },
+    { k: 'pct', label: '%V', title: 'Percentuale vittorie', sv: r => r.pg ? r.v / r.pg : null, fmt: r => r.pg ? Math.round(r.v / r.pg * 100) + '%' : '–' },
+    { k: 'gf', label: 'GF', title: 'Gol fatti', cls: 'strong' }, { k: 'rig', label: 'Rig', title: 'Gol su rigore' }, { k: 'ag', label: 'AG', title: 'Autogol' },
+    { k: 'gs', label: 'GS', title: 'Gol subiti' }, { k: 'rp', label: 'RP', title: 'Rigori parati' }, { k: 'rs', label: 'RS', title: 'Rigori sbagliati' },
+    { k: 'mv', label: 'Voto', title: 'Media voto pulita', cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
+    { k: 'vplus', label: 'V+', title: 'Media fantavoto (voto + bonus/malus)', cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
+  ];
+  const data = S.stats, box = $('#stTable');
+  function draw() {
+    if (!document.body.contains(box)) return;
+    let rows = data.rows;
+    if (u.hideZero) rows = rows.filter(r => r.pg > 0);
+    if (u.statSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.statSearch.toLowerCase()));
+    rows = sortRows(rows, u.statSort, cols);
+    box.innerHTML = tableHtml(cols, rows, u.statSort, { rowCls: r => r.id === me().id ? 'me' : '', empty: 'Nessuna partita in questa selezione.' });
+    bindSort(box, u.statSort, draw);
+  }
+  draw();
+}
+
+// ------------------------------------------------------------- PARTITE
+async function loadMatches(force) {
+  if (force || !S.matches || S.matches.season !== S.season) S.matches = { season: S.season, list: await rpc('get_matches', { p_token: T(), p_season: S.season }) };
+  return S.matches.list;
+}
+const seasonInfo = () => S.boot.seasons.find(s => s.id === S.season);
+const canEditSeason = () => isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended;
+function scorersText(m, team) {
+  const out = [];
+  m.players.filter(p => p.team === team && p.goals > 0).forEach(p => out.push(`${esc(pname(p.id))}${p.goals > 1 ? ' ×' + p.goals : ''}${p.pen_goals ? ` <span class="tiny">(${p.pen_goals} rig)</span>` : ''}`));
+  m.players.filter(p => p.team !== team && p.own_goals > 0).forEach(p => out.push(`${esc(pname(p.id))} <span class="tiny">(aut${p.own_goals > 1 ? ' ×' + p.own_goals : ''})</span>`));
+  return out.join(', ');
+}
+function matchStatusPills(m) {
+  const p = [];
+  if (m.status === 'programmata') p.push('<span class="pill warn">Da giocare</span>');
+  if (m.votes_open) p.push(`<span class="pill live">Voti aperti fino a ${fmtDateTime(m.votes_close_at)}</span>`);
+  if (m.fanta_state === 'aperto') p.push('<span class="pill live">Fanta: schieramenti aperti</span>');
+  if (m.fanta_state === 'bloccato') p.push('<span class="pill">FantaNunnaree</span>');
+  return p.join(' ');
+}
+async function viewPartite(v) {
+  v.innerHTML = `<div class="section-title"><h2>Partite</h2><div class="spacer"></div>
+    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button>` : ''}</div>
+    <div id="mlist"><div class="loader">Caricamento…</div></div>`;
+  if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); }
+  let list; try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'partite' || !$('#mlist')) return;
+  if (!list.length) { $('#mlist').innerHTML = `<div class="card empty">Nessuna partita in questa stagione${canEditSeason() ? '. Crea la prima con “Nuova partita”.' : '.'}</div>`; return; }
+  $('#mlist').innerHTML = list.map(m => {
+    const nw = m.players.filter(p => p.team === 'W').length, nd = m.players.filter(p => p.team === 'D').length;
+    const played = m.status === 'giocata';
+    return `<div class="card match" data-id="${m.id}">
+      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
+      ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
+      <div class="score">
+        <div class="side"><span class="team"><span class="dot W"></span>${esc(TW)}</span><span class="tiny muted">${nw} giocatori</span></div>
+        <div class="num">${played ? `${m.score_w} – ${m.score_d}` : '<span class="muted" style="font-size:24px">vs</span>'}</div>
+        <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
+      </div>
+      ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
+    </div>`;
+  }).join('');
+  $('#mlist').onclick = e => { const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+}
+function openMatch(id) {
+  const m = S.matches.list.find(x => x.id === id); if (!m) return;
+  const played = m.status === 'giocata';
+  const side = team => {
+    const ps = m.players.filter(p => p.team === team).sort((a, b) => pname(a.id).localeCompare(pname(b.id), 'it'));
+    return `<div><div class="team" style="margin-bottom:6px"><span class="dot ${team}"></span>${esc(team === 'W' ? TW : TD)} ${played ? `<span class="muted">· ${team === 'W' ? m.score_w : m.score_d}</span>` : ''}</div>
+      <ul class="plist">${ps.map(p => {
+        const tags = [];
+        if (p.goals) tags.push(`⚽ ${p.goals}${p.pen_goals ? ` (${p.pen_goals} rig)` : ''}`);
+        if (p.own_goals) tags.push(`AG ${p.own_goals}`);
+        if (p.conceded) tags.push(`GS ${p.conceded}`);
+        if (p.pen_saved) tags.push(`RP ${p.pen_saved}`);
+        if (p.pen_missed) tags.push(`RS ${p.pen_missed}`);
+        return `<li><span>${esc(pname(p.id))}<br><span class="tiny muted">${tags.join(' · ')}</span></span><span>${p.avg != null ? `<b>${fmtVote(p.avg)}</b><span class="tiny muted"> (${p.n_votes})</span>` : ''}</span></li>`;
+      }).join('') || '<li class="muted">Nessun giocatore</li>'}</ul></div>`;
+  };
+  const pres = isPres() && S.season === S.boot.active_season;
+  const actions = [];
+  if (pres) {
+    actions.push({ label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox('Eliminare definitivamente la partita con statistiche, voti e formazioni fanta?', 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_match', { p_token: T(), p_match: m.id }), 'Partita eliminata'); if (ok) await refreshAll(); return ok; } });
+    actions.push({ label: 'Dati partita', fn: async () => { editMatchMeta(m, false); return true; } });
+    actions.push({ label: 'Squadre', fn: async () => { editTeams(m); return true; } });
+    actions.push({ label: played ? 'Modifica risultato' : 'Inserisci risultato', cls: 'primary', fn: async () => { editResult(m, true); return true; } });
+  }
+  const fantaCtl = pres && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
+      <div class="small muted" style="margin-bottom:8px">Stato: <b>${{ chiuso: 'non attivo', aperto: 'schieramenti aperti', bloccato: 'schieramenti chiusi (giornata valida)' }[m.fanta_state]}</b></div>
+      <div class="row">${m.fanta_state !== 'aperto' && !played ? '<button class="btn accent sm" data-fanta="aperto">Sblocca schieramenti</button>' : ''}
+      ${m.fanta_state === 'aperto' ? '<button class="btn sm" data-fanta="bloccato">Chiudi schieramenti</button>' : ''}
+      ${m.fanta_state !== 'chiuso' ? '<button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button>' : ''}</div>
+      <div class="tiny muted" style="margin-top:6px">Inserendo il risultato gli schieramenti si chiudono da soli.</div></div>` : '';
+  const voteCtl = pres && played ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
+      <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
+      <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
+      <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
+  const mo = modal({
+    title: `${typeLabel(m.type)} · ${fmtDate(m.date)}`, wide: true,
+    body: `<div class="row" style="margin-bottom:10px">${matchStatusPills(m)}</div>${m.note ? `<p class="muted">${esc(m.note)}</p>` : ''}
+      <div class="teams-grid">${side('W')}${side('D')}</div>
+      ${played && !m.votes_open ? '' : played ? '<p class="tiny muted">Le medie voto compaiono alla chiusura delle votazioni.</p>' : ''}
+      ${fantaCtl}${voteCtl}`,
+    actions
+  });
+  mo.el.addEventListener('click', async e => {
+    const f = e.target.closest('[data-fanta]');
+    if (f) { if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
+    const vv = e.target.closest('[data-votes]');
+    if (vv) { if (await act(() => rpc('admin_set_votes_close', { p_token: T(), p_match: m.id, p_hours: Number(vv.dataset.votes) }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
+    if (e.target.closest('[data-seevotes]')) showVotes(m);
+  });
+}
+async function showVotes(m) {
+  let vs; try { vs = await rpc('admin_get_votes', { p_token: T(), p_match: m.id }); } catch (e) { return toast(e.message, true); }
+  const ps = m.players.map(p => p.id).sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
+  const byVoter = {}; vs.forEach(x => (byVoter[x.voter] ||= {})[x.target] = x.value);
+  const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
+  modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
+}
+async function refreshAll() {
+  S.stats = S.fanta = S.partners = null;
+  await loadMatches(true).catch(() => {});
+  loadVotesBadge();
+  renderTab();
+}
+function editMatchMeta(m, retro) {
+  const today = new Date().toISOString().slice(0, 10);
+  modal({
+    title: m ? 'Dati partita' : retro ? 'Partita già giocata' : 'Nuova partita',
+    body: `${retro ? '<p class="small muted">Per caricare partite passate: dopo i dati scegli le squadre e poi inserisci risultato e marcatori.</p>' : ''}
+      <label class="f">Tipo</label>${segHtml('mType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), m?.type || 8)}
+      <label class="f">Data</label><input type="date" id="mDate" value="${m?.date || today}">
+      <label class="f">Nota (facoltativa)</label><input type="text" id="mNote" value="${esc(m?.note || '')}" placeholder="Es. campo, recupero…">`,
+    onOpen: el => bindSeg($('#mType', el), val => $$('#mType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === val))),
+    actions: [{ label: m ? 'Salva' : 'Avanti: squadre', cls: 'primary', fn: async el => {
+      const type = Number($('#mType .on', el).dataset.v), date = $('#mDate', el).value, note = $('#mNote', el).value;
+      if (!date) { toast('Inserisci la data', true); return false; }
+      if (m) { const ok = await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: type, p_date: date, p_note: note }), 'Salvato'); if (ok) await refreshAll(); return ok; }
+      const r = await act(() => rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: note }));
+      if (!r) return false;
+      await loadMatches(true);
+      editTeams(S.matches.list.find(x => x.id === r.id), retro);
+      renderTab();
+      return true;
+    } }]
+  });
+}
+function editTeams(m, thenResult) {
+  const sel = {}; m.players.forEach(p => sel[p.id] = p.team);
+  const list = activePlayers();
+  m.players.forEach(p => { if (!list.some(x => x.id === p.id)) list.push(S.boot.players.find(x => x.id === p.id)); });
+  let q = '';
+  const counts = () => { const w = Object.values(sel).filter(x => x === 'W').length, d = Object.values(sel).filter(x => x === 'D').length; return `<span class="team"><span class="dot W"></span>${esc(TW)} ${w}</span> &nbsp; <span class="team"><span class="dot D"></span>${esc(TD)} ${d}</span> <span class="muted small">· obiettivo ${m.type} per squadra</span>`; };
+  const rows = () => list.filter(p => !q || p.name.toLowerCase().includes(q)).map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>
+      <button class="tbtn W ${sel[p.id] === 'W' ? 'on' : ''}" data-p="${p.id}" data-t="W">${esc(TW[0])}</button><button class="tbtn D ${sel[p.id] === 'D' ? 'on' : ''}" data-p="${p.id}" data-t="D">${esc(TD[0])}</button></div>`).join('');
+  modal({
+    title: `Squadre · ${typeLabel(m.type)}`,
+    body: `<div id="tcount" style="margin-bottom:10px">${counts()}</div>
+      <input type="text" id="tq" placeholder="Cerca…" style="margin-bottom:6px">
+      <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. Tocca di nuovo per togliere.</div>
+      <div id="tlist">${rows()}</div>`,
+    onOpen: el => {
+      $('#tq', el).oninput = e => { q = e.target.value.toLowerCase(); $('#tlist', el).innerHTML = rows(); };
+      $('#tlist', el).onclick = e => { const b = e.target.closest('.tbtn'); if (!b) return; const id = Number(b.dataset.p); sel[id] = sel[id] === b.dataset.t ? undefined : b.dataset.t; if (!sel[id]) delete sel[id];
+        b.parentElement.querySelectorAll('.tbtn').forEach(x => x.classList.toggle('on', sel[id] === x.dataset.t)); $('#tcount', el).innerHTML = counts(); };
+    },
+    actions: [{ label: thenResult ? 'Avanti: risultato' : 'Salva squadre', cls: 'primary', fn: async () => {
+      const w = Object.keys(sel).filter(k => sel[k] === 'W').map(Number), d = Object.keys(sel).filter(k => sel[k] === 'D').map(Number);
+      const ok = await act(() => rpc('admin_set_teams', { p_token: T(), p_match: m.id, p_white: w, p_dark: d }), thenResult ? null : 'Squadre salvate');
+      if (!ok) return false;
+      await loadMatches(true); renderTab();
+      if (thenResult) editResult(S.matches.list.find(x => x.id === m.id), false);
+      return true;
+    } }]
+  });
+}
+function editResult(m, openVotesDefault) {
+  if (!m.players.length) { toast('Prima inserisci le squadre', true); return editTeams(m, true); }
+  const st = {}; m.players.forEach(p => st[p.id] = { team: p.team, goals: p.goals, pen_goals: p.pen_goals, own_goals: p.own_goals, conceded: p.conceded, pen_saved: p.pen_saved, pen_missed: p.pen_missed || 0 });
+  const played = m.status === 'giocata';
+  const openDefault = played ? false : openVotesDefault;
+  const F = [['goals', 'Gol'], ['pen_goals', 'di cui rigore'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti (portiere)'], ['pen_saved', 'Rigori parati'], ['pen_missed', 'Rigori sbagliati']];
+  const stepper = (id, k) => `<span class="stepper" data-p="${id}" data-k="${k}"><button data-d="-1" aria-label="meno">−</button><span>${st[id][k]}</span><button data-d="1" aria-label="più">+</button></span>`;
+  const rowsFor = team => m.players.filter(p => p.team === team).sort((a, b) => pname(a.id).localeCompare(pname(b.id), 'it')).map(p => {
+    const s = st[p.id], hasExtra = s.pen_goals || s.own_goals || s.conceded || s.pen_saved || s.pen_missed;
+    return `<div class="stat-row"><div class="top"><span style="flex:1;font-weight:600">${esc(pname(p.id))}${S.boot.players.find(x => x.id === p.id)?.is_gk ? ' <span class="pill">GK</span>' : ''}</span><span class="tiny muted">Gol</span>${stepper(p.id, 'goals')}
+      <button class="btn sm" data-more="${p.id}" title="Altre statistiche">${hasExtra ? '▾' : '…'}</button></div>
+      <div class="extra ${hasExtra ? '' : 'hidden'}" id="ex${p.id}">${F.slice(1).map(([k, l]) => `<div>${l}${stepper(p.id, k)}</div>`).join('')}</div></div>`;
+  }).join('');
+  const calc = () => {
+    let w = 0, d = 0;
+    Object.values(st).forEach(s => { if (s.team === 'W') { w += s.goals; d += s.own_goals; } else { d += s.goals; w += s.own_goals; } });
+    return [w, d];
+  };
+  modal({
+    title: `Risultato · ${typeLabel(m.type)} ${fmtDate(m.date)}`, wide: true,
+    body: `<div class="bigscore"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
+        <input type="number" min="0" id="sw" value="${m.score_w ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="sd" value="${m.score_d ?? ''}" inputmode="numeric">
+        <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
+      <div class="small muted" style="text-align:center" id="calcHint"></div>
+      <div class="teams-grid" style="margin-top:10px">
+        <div><div class="team" style="margin:6px 0"><span class="dot W"></span>${esc(TW)}</div>${rowsFor('W')}</div>
+        <div><div class="team" style="margin:6px 0"><span class="dot D"></span>${esc(TD)}</div>${rowsFor('D')}</div>
+      </div>
+      <label class="row small" style="margin-top:14px;gap:8px;cursor:pointer"><input type="checkbox" id="openVotes" ${openDefault ? 'checked' : ''} ${played && m.votes_close_at ? 'disabled' : ''}>
+        ${played && m.votes_close_at ? 'Votazioni già aperte in precedenza (gestiscile dalla scheda partita)' : `Apri le votazioni per ${settings('vote_hours')} ore`}</label>`,
+    onOpen: el => {
+      const hint = () => { const [w, d] = calc(); $('#calcHint', el).innerHTML = `Dai marcatori risulta <b>${w} – ${d}</b> <button class="btn sm" id="useCalc">usa</button>`; $('#useCalc', el).onclick = () => { $('#sw', el).value = w; $('#sd', el).value = d; }; };
+      hint();
+      el.querySelector('.body').addEventListener('click', e => {
+        const b = e.target.closest('.stepper button');
+        if (b) { const sp = b.parentElement, id = Number(sp.dataset.p), k = sp.dataset.k; st[id][k] = Math.max(0, st[id][k] + Number(b.dataset.d)); sp.querySelector('span').textContent = st[id][k]; hint(); return; }
+        const mo = e.target.closest('[data-more]'); if (mo) $('#ex' + mo.dataset.more, el).classList.toggle('hidden');
+      });
+    },
+    actions: [{ label: 'Salva risultato', cls: 'primary', fn: async el => {
+      const sw = $('#sw', el).value, sd = $('#sd', el).value;
+      if (sw === '' || sd === '') { toast('Inserisci il risultato finale', true); return false; }
+      const [cw, cd] = calc();
+      if ((Number(sw) !== cw || Number(sd) !== cd) && !await confirmBox(`Il risultato ${sw}–${sd} non coincide con i marcatori inseriti (${cw}–${cd}). Salvo lo stesso?`, 'Salva lo stesso')) return false;
+      const stats = Object.entries(st).map(([id, s]) => ({ player_id: Number(id), ...s }));
+      const ok = await act(() => rpc('admin_save_result', { p_token: T(), p_match: m.id, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: $('#openVotes', el).checked && !$('#openVotes', el).disabled }), 'Risultato salvato');
+      if (ok) await refreshAll();
+      return ok;
+    } }]
+  });
+}
+
+// ------------------------------------------------------------- VOTI
+const VOTE_OPTS = Array.from({ length: 41 }, (_, i) => i / 4);
+async function viewVoti(v) {
+  v.innerHTML = `<div class="section-title"><h2>I miei voti</h2></div><div id="vlist"><div class="loader">Caricamento…</div></div>`;
+  try { S.myVotes = await rpc('get_my_votes', { p_token: T() }); } catch (e) { if ($('#vlist')) $('#vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'voti' || !$('#vlist')) return;
+  loadVotesBadge();
+  if (!S.myVotes.length) { $('#vlist').innerHTML = `<div class="card empty">Nessuna votazione aperta per te.<br><span class="small">Puoi votare entro ${settings('vote_hours')} ore dall'inserimento del risultato delle partite che hai giocato. Il voto a te stesso non è previsto.</span></div>`; return; }
+  $('#vlist').innerHTML = S.myVotes.map(m => {
+    const done = m.targets.filter(t => t.value != null).length;
+    const side = team => m.targets.filter(t => t.team === team).map(t => `<div class="vote-row ${t.value != null ? 'done' : ''}"><span class="nm"><span class="dot ${t.team}"></span> ${esc(pname(t.id))}</span>
+        <select data-t="${t.id}" aria-label="Voto a ${esc(pname(t.id))}"><option value="">–</option>${VOTE_OPTS.map(o => `<option value="${o}" ${t.value != null && Number(t.value) === o ? 'selected' : ''}>${fmtVote(o)}</option>`).join('')}</select></div>`).join('');
+    return `<div class="card" data-m="${m.match_id}">
+      <div class="row"><h2 style="margin:0">${esc(typeLabel(m.type))}</h2><span class="muted small">${esc(fmtDate(m.date))} · ${esc(TW)} ${m.score_w} – ${m.score_d} ${esc(TD)}</span></div>
+      <div class="small" style="margin:6px 0 10px"><span class="pill live">Chiude ${fmtDateTime(m.votes_close_at)}</span> <span class="pill" data-count>${done}/${m.targets.length} votati</span></div>
+      <div class="teams-grid"><div>${side('W')}</div><div>${side('D')}</div></div>
+      <div class="row" style="margin-top:12px"><span class="tiny muted">Voti da 0 a 10 a passi di 0,25. Puoi modificarli fino alla chiusura.</span><div class="spacer"></div><button class="btn primary" data-save>Salva voti</button></div>
+    </div>`;
+  }).join('');
+  $('#vlist').onchange = e => { const s = e.target.closest('select'); if (!s) return; s.closest('.vote-row').classList.toggle('done', s.value !== ''); const c = s.closest('.card'); c.querySelector('[data-count]').textContent = `${$$('select', c).filter(x => x.value !== '').length}/${$$('select', c).length} votati`; };
+  $('#vlist').onclick = async e => {
+    const b = e.target.closest('[data-save]'); if (!b) return;
+    const c = b.closest('.card');
+    const votes = $$('select', c).map(s => ({ target: Number(s.dataset.t), value: s.value === '' ? null : Number(s.value) }));
+    b.disabled = true;
+    await act(() => rpc('submit_votes', { p_token: T(), p_match: Number(c.dataset.m), p_votes: votes }), 'Voti salvati');
+    b.disabled = false; loadVotesBadge();
+  };
+}
+
+// ------------------------------------------------------------- COPPIE
+async function viewCoppie(v) {
+  const u = S.ui;
+  const opts = activePlayers();
+  v.innerHTML = `<div class="section-title"><h2>Statistiche di coppia</h2></div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="f">Giocatore</label><select id="pA">${opts.map(p => `<option value="${p.id}" ${p.id === u.pairPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+        <div><label class="f">Confronta con</label><select id="pB"><option value="">— tutti —</option>${opts.map(p => `<option value="${p.id}" ${p.id === u.pairB ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+      </div>
+      <div class="row" style="margin-top:12px">${segHtml('pType', typeOpts, u.pairType)}${segHtml('pScope', [{ v: 'season', l: 'Stagione' }, { v: 'all', l: 'Tutte le stagioni' }], u.pairScope)}</div>
+    </div>
+    <div id="pHead"></div><div id="pTable"><div class="loader">Caricamento…</div></div>
+    <div class="legend">Insieme = stessa squadra (V/N/P della coppia). Contro = squadre opposte (V/N/P dal punto di vista del giocatore selezionato).</div>`;
+  $('#pA').onchange = e => { u.pairPlayer = Number(e.target.value); if (u.pairB === u.pairPlayer) u.pairB = null; S.partners = null; viewCoppie(v); };
+  $('#pB').onchange = e => { u.pairB = e.target.value ? Number(e.target.value) : null; draw(); };
+  bindSeg($('#pType'), val => { u.pairType = val; S.partners = null; viewCoppie(v); });
+  bindSeg($('#pScope'), val => { u.pairScope = val; S.partners = null; viewCoppie(v); });
+  const key = [u.pairPlayer, u.pairType, u.pairScope, S.season].join('|');
+  if (!S.partners || S.partners.key !== key) {
+    try { S.partners = { key, rows: await rpc('get_partners', { p_token: T(), p_season: u.pairScope === 'all' ? null : S.season, p_type: u.pairType === 'all' ? null : Number(u.pairType), p_player: u.pairPlayer }) }; }
+    catch (e) { if ($('#pTable')) $('#pTable').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  }
+  if (S.tab !== 'coppie' || !$('#pTable')) return;
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+  const cols = [
+    { k: 'name', label: 'Giocatore' },
+    { k: 'with_pg', label: 'Insieme', title: 'Partite nella stessa squadra', cls: 'strong' }, { k: 'with_v', label: 'V' }, { k: 'with_n', label: 'N' }, { k: 'with_s', label: 'P' },
+    { k: 'with_pct', label: '%V', sv: r => r.with_pg ? r.with_v / r.with_pg : null, fmt: r => pct(r.with_v, r.with_pg) },
+    { k: 'vs_pg', label: 'Contro', title: 'Partite da avversari', cls: 'strong' }, { k: 'vs_v', label: 'V' , title: 'Vinte dal giocatore selezionato'}, { k: 'vs_n', label: 'N' }, { k: 'vs_s', label: 'P' },
+  ];
+  const data = S.partners, box = $('#pTable');
+  function draw() {
+    if (!document.body.contains(box)) return;
+    const rows = data.rows;
+    const b = u.pairB && rows.find(r => r.id === u.pairB);
+    $('#pHead').innerHTML = u.pairB ? (b ? `<div class="kpis">
+        <div class="kpi"><div class="v">${b.with_pg}</div><div class="l">Partite insieme</div></div>
+        <div class="kpi"><div class="v">${b.with_v}-${b.with_n}-${b.with_s}</div><div class="l">Insieme V-N-P</div></div>
+        <div class="kpi"><div class="v">${pct(b.with_v, b.with_pg)}</div><div class="l">% vittorie insieme</div></div>
+        <div class="kpi"><div class="v">${b.vs_pg}</div><div class="l">Partite contro</div></div>
+        <div class="kpi"><div class="v">${b.vs_v}-${b.vs_n}-${b.vs_s}</div><div class="l">${esc(pname(u.pairPlayer))} V-N-P</div></div>
+      </div>` : `<div class="card empty">${esc(pname(u.pairPlayer))} e ${esc(pname(u.pairB))} non hanno mai giocato nella stessa partita in questa selezione.</div>`) : '';
+    const sorted = sortRows(rows, u.pairSort, cols);
+    $('#pTable').innerHTML = tableHtml(cols, sorted, u.pairSort, { rowCls: r => r.id === u.pairB ? 'me' : '', empty: 'Nessuna partita in questa selezione.' });
+    bindSort($('#pTable'), u.pairSort, draw);
+  }
+  draw();
+}
+
+// ------------------------------------------------------------- FANTANUNNAREE
+async function loadFanta(force) {
+  if (force || !S.fanta || S.fanta.season_id !== S.season) S.fanta = await rpc('fanta_overview', { p_token: T(), p_season: S.season });
+  return S.fanta;
+}
+// Ruolo P: se nessun portiere ha giocato -> voto d'ufficio; se il mio portiere ha giocato -> il suo punteggio;
+// se il mio portiere non ha giocato -> il punteggio peggiore tra i portieri che hanno giocato.
+function giornataScores(g) {
+  const pts = {}; g.points.forEach(p => pts[p.player_id] = p);
+  const played = g.status === 'giocata';
+  const score = p => (p.voto == null ? 0 : Number(p.voto)) + Number(p.bonus);
+  const gks = g.points.filter(p => p.is_gk);
+  return g.lineups.map(l => {
+    let tot = 0, pending = false;
+    const det = l.players.map(pid => {
+      const p = pts[pid];
+      if (!p) return { pid, played: false, v: played ? 0 : null };
+      if (p.pending) pending = true;
+      const v = score(p); tot += v;
+      return { pid, played: true, voto: p.voto, bonus: Number(p.bonus), pending: p.pending, v };
+    });
+    let gk = null;
+    if (l.gk != null) {
+      const own = pts[l.gk];
+      if (!played) gk = { pid: l.gk, mode: 'wait', v: null };
+      else if (own && own.is_gk) { gk = { pid: l.gk, mode: 'own', voto: own.voto, bonus: Number(own.bonus), pending: own.pending, v: score(own) }; if (own.pending) pending = true; }
+      else if (gks.length) {
+        const worst = gks.reduce((a, b) => score(b) < score(a) ? b : a);
+        gk = { pid: l.gk, mode: 'sub', sub: worst.player_id, voto: worst.voto, bonus: Number(worst.bonus), pending: worst.pending, v: score(worst) };
+        if (worst.pending) pending = true;
+      } else gk = { pid: l.gk, mode: 'ufficio', v: settings('fanta_gk_ufficio') };
+      if (gk.v != null) tot += gk.v;
+    } else if (played) gk = { pid: null, mode: 'none', v: 0 };
+    return { owner: l.owner_id, total: Math.round(tot * 100) / 100, det, gk, pending: pending || !played };
+  }).sort((a, b) => b.total - a.total);
+}
+async function viewFanta(v) {
+  const u = S.ui;
+  v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [{ v: 'squadra', l: 'La mia squadra' }, { v: 'mercato', l: 'Mercato' }, { v: 'giornate', l: 'Giornate' }, { v: 'classifica', l: 'Classifica' }, { v: 'squadre', l: 'Squadre' }, { v: 'regole', l: 'Regole' }], u.fantaTab)}</div><div id="fv"><div class="loader">Caricamento…</div></div>`;
+  bindSeg($('#fTab'), val => { u.fantaTab = val; viewFanta(v); });
+  let F; try { F = await loadFanta(); } catch (e) { if ($('#fv')) $('#fv').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  const fv = $('#fv'); if (S.tab !== 'fanta' || !fv) return;
+  const price = {}; F.prices.forEach(p => price[p.id] = p);
+  const mine = F.owners.find(o => o.owner_id === me().id) || { credits: settings('fanta_budget'), changes_used: 0, roster: [] };
+  const canTrade = S.season === S.boot.active_season && !F.season_ended;
+  const rosterSize = settings('fanta_roster_size'), lineupSize = settings('fanta_lineup_size'), maxCh = settings('fanta_max_changes');
+  const head = `<div class="kpis">
+      <div class="kpi"><div class="v">${fmtNum(mine.credits)}</div><div class="l">Crediti disponibili</div></div>
+      <div class="kpi"><div class="v">${mine.roster.length}/${rosterSize}</div><div class="l">Giocatori in rosa</div></div>
+      <div class="kpi"><div class="v">${F.free_phase ? 'Libero' : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? 'Mercato fino alla 1ª giornata' : 'Cambi rimasti'}</div></div>
+    </div>`;
+
+  if (u.fantaTab === 'squadra') {
+    const open = F.giornate.filter(g => g.state === 'aperto');
+    const rosterRows = mine.roster.map(r => ({ ...r, name: pname(r.player_id), now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now);
+    const gkList = S.boot.players.filter(p => p.is_gk && p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    const movSize = lineupSize - 1;
+    fv.innerHTML = head + open.map(g => {
+      const mineL = g.lineups.find(l => l.owner_id === me().id) || {};
+      const lu = mineL.players || [], myGk = mineL.gk ?? null;
+      return `<div class="card" data-g="${g.match_id}"><div class="row"><h2 style="margin:0">Formazione · ${esc(typeLabel(g.type))}</h2><span class="muted small">${esc(fmtDate(g.date))}</span><div class="spacer"></div><span class="pill live" data-cnt>${(myGk != null ? 1 : 0) + lu.length}/${lineupSize}</span></div>
+        <div class="tiny muted" style="margin:4px 0 8px">1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0. Se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo; se in campo non c'è nessun portiere, ${settings('fanta_gk_ufficio')} d'ufficio.</div>
+        <h3 style="font-size:17px;margin:10px 0 2px">Portiere (P) <span class="tiny muted">· sempre disponibili, non si comprano</span></h3>
+        ${gkList.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span><button class="tbtn sel ${myGk === p.id ? 'on' : ''}" data-gk="${p.id}">${myGk === p.id ? 'In porta' : 'Scegli'}</button></div>`).join('') || '<div class="muted small">Nessun portiere segnato GK.</div>'}
+        <h3 style="font-size:17px;margin:14px 0 2px">Movimento <span class="tiny muted" data-mcnt>${lu.length}/${movSize}</span></h3>
+        ${rosterRows.length ? rosterRows.map(r => `<div class="pick"><span class="nm">${esc(r.name)}</span><button class="tbtn sel ${lu.includes(r.player_id) ? 'on' : ''}" data-lu="${r.player_id}">${lu.includes(r.player_id) ? 'In campo' : 'Schiera'}</button></div>`).join('') : '<div class="muted small">Prima compra i giocatori nel Mercato.</div>'}
+        <div class="row" style="margin-top:10px"><div class="spacer"></div><button class="btn primary" data-savelu>Salva formazione</button></div></div>`;
+    }).join('') + `<div class="card"><div class="row"><h2 style="margin:0">La mia rosa</h2><div class="spacer"></div>${canTrade ? '<button class="btn accent sm" data-gomarket>Vai al mercato</button>' : ''}</div>
+      ${rosterRows.length ? `<div class="tbl-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>Giocatore</th><th>Pagato</th><th>Ora</th><th></th></tr></thead><tbody>
+        ${rosterRows.map(r => `<tr><td>${esc(r.name)}</td><td>${r.buy_price}</td><td><b>${r.now}</b> ${r.now > r.buy_price ? `<span class="up">▲${r.now - r.buy_price}</span>` : r.now < r.buy_price ? `<span class="down">▼${r.buy_price - r.now}</span>` : ''}</td>
+          <td>${canTrade ? `<button class="btn sm danger" data-sell="${r.player_id}">Cedi</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Rosa vuota. Hai ' + settings('fanta_budget') + ' crediti per ' + rosterSize + ' giocatori.</div>'}
+      <div class="tiny muted" style="margin-top:8px">${F.free_phase ? 'Fino alla prima giornata FantaNunnaree puoi cedere e ricomprare liberamente con rimborso pieno.' : `Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`}</div></div>`;
+    fv.onclick = async e => {
+      if (e.target.closest('[data-gomarket]')) { u.fantaTab = 'mercato'; return viewFanta(v); }
+      const lu = e.target.closest('[data-lu]');
+      const upd = c => { const nm = $$('[data-lu].on', c).length, ng = $$('[data-gk].on', c).length; c.querySelector('[data-cnt]').textContent = `${nm + ng}/${lineupSize}`; c.querySelector('[data-mcnt]').textContent = `${nm}/${lineupSize - 1}`; };
+      if (lu) { const c = lu.closest('.card'); const on = !lu.classList.contains('on'); if (on && $$('[data-lu].on', c).length >= lineupSize - 1) return toast(`Massimo ${lineupSize - 1} giocatori di movimento`, true); lu.classList.toggle('on', on); lu.textContent = on ? 'In campo' : 'Schiera'; upd(c); return; }
+      const gb = e.target.closest('[data-gk]');
+      if (gb) { const c = gb.closest('.card'); const on = !gb.classList.contains('on'); $$('[data-gk]', c).forEach(x => { x.classList.remove('on'); x.textContent = 'Scegli'; }); if (on) { gb.classList.add('on'); gb.textContent = 'In porta'; } upd(c); return; }
+      const sv = e.target.closest('[data-savelu]');
+      if (sv) { const c = sv.closest('.card'); const ids = $$('[data-lu].on', c).map(b => Number(b.dataset.lu)); const gkb = $('[data-gk].on', c); const gk = gkb ? Number(gkb.dataset.gk) : null;
+        if (!gk && !await confirmBox('Non hai scelto il portiere (P): il ruolo varrà 0. Salvo lo stesso?', 'Salva')) return;
+        if (ids.length < lineupSize - 1 && !await confirmBox(`Hai schierato ${ids.length} giocatori di movimento su ${lineupSize - 1}. I posti vuoti valgono 0. Salvo?`, 'Salva')) return;
+        if (await act(() => rpc('fanta_set_lineup', { p_token: T(), p_match: Number(c.dataset.g), p_players: ids, p_gk: gk }), 'Formazione salvata')) { await loadFanta(true); } return; }
+      const sl = e.target.closest('[data-sell]');
+      if (sl) { const pid = Number(sl.dataset.sell); const msg = F.free_phase ? `Cedere ${esc(pname(pid))}? Mercato libero: rimborso pieno, nessun cambio usato.` : `Cedere ${esc(pname(pid))} per ${price[pid]?.price} crediti? Userai 1 cambio (te ne restano ${maxCh - mine.changes_used - 1}).`;
+        if (!await confirmBox(msg, 'Cedi', true)) return; if (await act(() => rpc('fanta_sell', { p_token: T(), p_player: pid }), 'Ceduto')) { await loadFanta(true); viewFanta(v); } }
+    };
+  }
+
+  if (u.fantaTab === 'mercato') {
+    const inRoster = new Set(mine.roster.map(r => r.player_id));
+    const cols = [
+      { k: 'name', label: 'Giocatore' },
+      { k: 'price', label: 'Prezzo', cls: 'strong' },
+      { k: 'delta', label: 'Var.', title: 'Variazione rispetto alla quotazione di inizio stagione', fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
+      { k: 'pres', label: 'PG', title: 'Presenze stagione (calcio a 8 e 11)' },
+      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? '<span class="pill ok">In rosa</span>' : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>Compra</button>` : '' },
+    ];
+    const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
+    fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="Cerca giocatore…" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso.</span></div><div id="mt"></div>`;
+    const draw = () => {
+      let rows = rowsAll; if (u.marketSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.marketSearch.toLowerCase()));
+      $('#mt').innerHTML = tableHtml(cols, sortRows(rows, u.marketSort, cols), u.marketSort, { rowCls: r => inRoster.has(r.id) ? 'me' : '' });
+      bindSort($('#mt'), u.marketSort, draw);
+    };
+    draw();
+    $('#mq').oninput = e => { u.marketSearch = e.target.value; draw(); };
+    fv.onclick = async e => { const b = e.target.closest('[data-buy]'); if (!b) return; const pid = Number(b.dataset.buy);
+      if (await act(() => rpc('fanta_buy', { p_token: T(), p_player: pid }), `${pname(pid)} acquistato`)) { await loadFanta(true); viewFanta(v); } };
+  }
+
+  if (u.fantaTab === 'giornate') {
+    if (!F.giornate.length) { fv.innerHTML = '<div class="card empty">Nessuna giornata FantaNunnaree. Il presidente sblocca gli schieramenti dalla scheda di una partita a 8 o a 11.</div>'; return; }
+    fv.innerHTML = F.giornate.map(g => {
+      const sc = giornataScores(g);
+      const state = g.state === 'aperto' ? '<span class="pill live">Schieramenti aperti</span>' : g.status !== 'giocata' ? '<span class="pill warn">In attesa del risultato</span>' : g.final ? '<span class="pill ok">Definitiva</span>' : '<span class="pill warn">Provvisoria: voti in corso</span>';
+      return `<details class="box" ${g === F.giornate[0] ? 'open' : ''}><summary><b>${esc(typeLabel(g.type))}</b><span class="muted small">${esc(fmtDate(g.date))}${g.status === 'giocata' ? ` · ${g.score_w}–${g.score_d}` : ''}</span><div class="spacer"></div>${state}</summary><div>
+        ${sc.length ? '<div class="tiny muted" style="margin-bottom:8px">Classifica della giornata tra le squadre fanta. Tocca una squadra per vedere i punti dei suoi giocatori schierati.</div>' : ''}${sc.length ? sc.map((s, i) => `<details class="box"><summary><span class="rank">${i + 1}</span><span style="flex:1">Squadra di <b>${esc(pname(s.owner))}</b>${s.owner === me().id ? ' <span class="pill live">tu</span>' : ''}</span><b>${fmtNum(s.total)} pt</b></summary><div><ul class="plist">
+          ${s.gk ? `<li><span><span class="pill">P</span> ${s.gk.pid ? esc(pname(s.gk.pid)) : '<span class="muted">nessun portiere scelto</span>'}${s.gk.mode === 'sub' ? `<br><span class="tiny muted">non ha giocato: preso il peggiore in campo, ${esc(pname(s.gk.sub))}</span>` : s.gk.mode === 'ufficio' ? `<br><span class="tiny muted">nessun portiere in campo: ${settings('fanta_gk_ufficio')} d'ufficio</span>` : ''}</span>
+            <span class="small">${s.gk.mode === 'wait' ? '<span class="muted">–</span>' : s.gk.mode === 'ufficio' || s.gk.mode === 'none' ? `<b>${fmtNum(s.gk.v)}</b>` : `voto ${s.gk.pending ? '<span class="muted">in attesa</span>' : fmtVote(s.gk.voto)} ${s.gk.bonus ? (s.gk.bonus > 0 ? '+' : '') + fmtNum(s.gk.bonus) : ''} = <b>${fmtNum(s.gk.v)}</b>`}</span></li>` : ''}
+          ${s.det.map(d => `<li><span>${esc(pname(d.pid))}</span><span class="small">${!d.played ? (g.status === 'giocata' ? '<span class="muted">non ha giocato · 0</span>' : '<span class="muted">–</span>') : `voto ${d.pending ? '<span class="muted">in attesa</span>' : fmtVote(d.voto)} ${d.bonus ? (d.bonus > 0 ? '+' : '') + fmtNum(d.bonus) : ''} = <b>${fmtNum(d.v)}</b>`}</span></li>`).join('')}
+        </ul></div></details>`).join('') : '<div class="muted small">Nessuna formazione schierata.</div>'}
+        ${!g.final && g.status === 'giocata' ? '<div class="tiny muted">I voti contano alla chiusura delle votazioni: fino ad allora vedi solo bonus e malus.</div>' : ''}
+      </div></details>`;
+    }).join('');
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'classifica') {
+    const tot = {};
+    F.owners.forEach(o => tot[o.owner_id] = { id: o.owner_id, name: pname(o.owner_id), pts: 0, g: 0, best: null, prov: false });
+    F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata').forEach(g => giornataScores(g).forEach(s => {
+      const t = tot[s.owner] ||= { id: s.owner, name: pname(s.owner), pts: 0, g: 0, best: null, prov: false };
+      t.pts += s.total; t.g++; t.best = Math.max(t.best ?? -Infinity, s.total); if (!g.final) t.prov = true;
+    }));
+    const rows = Object.values(tot).sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, 'it'));
+    fv.innerHTML = rows.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Squadra</th><th>Punti</th><th>Giornate</th><th>Migliore</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}${r.prov ? ' <span class="tiny muted">prov.</span>' : ''}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
+      </tbody></table></div><div class="legend">Classifica cumulativa della stagione. “prov.” = una giornata ha ancora le votazioni aperte.</div>` : '<div class="card empty">Ancora nessuna squadra.</div>';
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'squadre') {
+    const owners = [...F.owners].sort((a, b) => pname(a.owner_id).localeCompare(pname(b.owner_id), 'it'));
+    fv.innerHTML = owners.length ? owners.map(o => `<details class="box"><summary><span style="flex:1">${esc(pname(o.owner_id))}</span><span class="small muted">${o.roster.length}/${rosterSize} · ${fmtNum(o.credits)} cr</span></summary><div><ul class="plist">
+      ${o.roster.map(r => ({ ...r, now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now).map(r => `<li><span>${esc(pname(r.player_id))}</span><span class="small">pagato ${r.buy_price} · ora <b>${r.now}</b></span></li>`).join('')}
+      </ul></div></details>`).join('') : '<div class="card empty">Ancora nessuna squadra.</div>';
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'regole') {
+    fv.innerHTML = `<div class="card"><h2>Regole</h2><ul>
+      <li>Budget di <b>${settings('fanta_budget')} crediti</b> per una rosa di <b>${rosterSize} giocatori di movimento</b> del gruppo. Lo stesso giocatore può stare in più squadre.</li>
+      <li>La rosa contiene solo giocatori di movimento. I <b>portieri (GK) non si comprano</b>: sono sempre disponibili per tutti.</li>
+      <li>Vale solo per le partite di <b>calcio a 8 e a 11</b> che il presidente sblocca. A ogni giornata schieri <b>1 portiere (P) + ${lineupSize - 1} di movimento</b> della tua rosa. Puoi partecipare anche se non giochi.</li>
+      <li>Ruolo P: se il tuo portiere gioca prende il suo punteggio; se non gioca prendi il <b>punteggio peggiore tra i portieri che hanno giocato</b>; se in partita non c'è nessun portiere, <b>${settings('fanta_gk_ufficio')} d'ufficio</b>. Se non scegli il portiere il ruolo vale 0.</li>
+      <li>Punteggio di ogni giocatore: <b>media voto</b> della partita + <b>${settings('fanta_goal_bonus')}</b> per gol − <b>${settings('fanta_conceded_malus')}</b> ogni <b>${settings('fanta_conceded_step')}</b> gol subiti (solo a chi ha gol subiti assegnati, calcolo per difetto) + <b>${settings('fanta_pen_saved_bonus')}</b> per rigore parato − <b>${settings('fanta_pen_missed_malus')}</b> per rigore sbagliato + <b>${settings('fanta_win_noscore_bonus')}</b> a chi non ha segnato se la sua squadra vince${settings('fanta_own_goal_malus') ? ` − ${settings('fanta_own_goal_malus')} per autogol` : ''}.</li>
+      <li>Chi non gioca prende <b>0</b>. Chi gioca ma riceve meno di ${settings('min_votes')} voti prende voto d'ufficio <b>${settings('fanta_voto_ufficio')}</b>.</li>
+      <li>I voti contano alla chiusura delle votazioni (${settings('vote_hours')} ore dopo il risultato).</li>
+      <li>Fino alla prima giornata il mercato è libero. Dopo hai <b>${maxCh} cambi</b> a stagione: ogni cessione usa un cambio e restituisce il <b>valore attuale</b> del giocatore.</li>
+      <li>Le quotazioni partono dai dati della stagione precedente e si aggiornano dopo ogni partita a 8 o 11 in base a presenze e media punti fanta (voto + bonus/malus) della stagione in corso. Dopo ${settings('price_blend_matches')} partite stagionali contano solo i dati della stagione. Chi non ha partite costa 1.</li>
+      <li>Classifica cumulativa di stagione: vince chi somma più punti.</li></ul></div>`;
+    fv.onclick = null;
+  }
+}
+
+// ------------------------------------------------------------- ADMIN
+async function viewAdmin(v) {
+  if (!isPres()) return viewClassifica(v);
+  const u = S.ui;
+  v.innerHTML = `<div class="section-title"><h2>Area presidente</h2><div class="spacer"></div>${segHtml('aTab', [{ v: 'giocatori', l: 'Giocatori' }, { v: 'quotazioni', l: 'Quotazioni' }, { v: 'stagione', l: 'Stagione' }, { v: 'impostazioni', l: 'Impostazioni' }], u.adminTab)}</div><div id="av"></div>`;
+  bindSeg($('#aTab'), val => { u.adminTab = val; viewAdmin(v); });
+  const av = $('#av');
+  const reloadBoot = async () => { S.boot = await rpc('get_bootstrap', { p_token: T() }); };
+
+  if (u.adminTab === 'giocatori') {
+    const ps = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    av.innerHTML = `<div class="card"><div class="row"><input type="text" id="newName" placeholder="Nuovo giocatore (es. Rossi M.)" style="flex:1;min-width:180px"><label class="row small" style="gap:6px"><input type="checkbox" id="newGk"> Portiere (GK)</label><button class="btn primary" id="addP">Aggiungi</button></div>
+      <div class="tiny muted" style="margin-top:6px">Il nuovo giocatore al primo accesso sceglie il suo nome dal menu e crea la password.</div></div>
+      <div class="row" style="margin-bottom:8px"><input type="text" id="pq" placeholder="Cerca…" style="max-width:240px"><span class="small muted">${ps.filter(p => p.is_active).length} attivi · ${ps.filter(p => p.has_pw).length} con password</span></div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>Giocatore</th><th>Password</th><th>Stato</th><th></th></tr></thead><tbody id="ptb">
+      ${ps.map(p => `<tr data-n="${esc(p.name.toLowerCase())}"><td>${esc(p.name)}${p.is_gk ? ' <span class="pill">GK</span>' : ''}${p.is_president ? ' <span class="pill live">Presidente</span>' : ''}</td><td>${p.has_pw ? '<span class="pill ok">impostata</span>' : '<span class="pill">primo accesso</span>'}</td>
+        <td>${p.is_active ? 'attivo' : '<span class="muted">disattivato</span>'}</td><td><button class="btn sm" data-edit="${p.id}">Modifica</button></td></tr>`).join('')}</tbody></table></div>`;
+    $('#pq').oninput = e => { const q = e.target.value.toLowerCase(); $$('#ptb tr').forEach(tr => tr.classList.toggle('hidden', !tr.dataset.n.includes(q))); };
+    $('#addP').onclick = async () => { const n = $('#newName').value.trim(); if (!n) return; if (await act(() => rpc('admin_add_player', { p_token: T(), p_name: n, p_is_gk: $('#newGk').checked }), 'Giocatore aggiunto')) { await reloadBoot(); S.fanta = S.stats = null; viewAdmin(v); } };
+    av.onclick = e => { const b = e.target.closest('[data-edit]'); if (!b) return; const p = S.boot.players.find(x => x.id === Number(b.dataset.edit));
+      modal({ title: 'Modifica giocatore', body: `<label class="f">Nome</label><input type="text" id="en" value="${esc(p.name)}">
+          <label class="row small" style="margin-top:12px;gap:8px"><input type="checkbox" id="ea" ${p.is_active ? 'checked' : ''}> Attivo (se disattivato non compare nel login e nelle liste)</label>
+          <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="eg" ${p.is_gk ? 'checked' : ''}> Portiere (GK): non si compra al fanta, schierabile nel ruolo P</label>
+          <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="ep" ${p.is_president ? 'checked' : ''}> Presidente (accesso completo)</label>
+          <p class="small muted" style="margin-top:14px">Password: ${p.has_pw ? 'impostata' : 'non ancora impostata'}. Le password sono cifrate: nessuno può leggerle, si possono solo azzerare.</p>`,
+        actions: [
+          { label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox(`Eliminare ${esc(p.name)}? Possibile solo se non ha mai giocato.`, 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_player', { p_token: T(), p_player: p.id }), 'Eliminato'); if (ok) { await reloadBoot(); viewAdmin(v); } return ok; } },
+          { label: 'Azzera password', fn: async () => { if (!await confirmBox(`Azzerare la password di ${esc(p.name)}? Al prossimo accesso ne sceglierà una nuova.`, 'Azzera')) return false; const ok = await act(() => rpc('admin_reset_password', { p_token: T(), p_player: p.id }), 'Password azzerata'); if (ok) { await reloadBoot(); viewAdmin(v); } return ok; } },
+          { label: 'Salva', cls: 'primary', fn: async el => { const ok = await act(() => rpc('admin_update_player', { p_token: T(), p_player: p.id, p_name: $('#en', el).value, p_active: $('#ea', el).checked, p_president: $('#ep', el).checked, p_is_gk: $('#eg', el).checked }), 'Salvato'); if (ok) { await reloadBoot(); S.stats = S.fanta = null; viewAdmin(v); } return ok; } },
+        ] });
+    };
+  }
+
+  if (u.adminTab === 'quotazioni') {
+    av.innerHTML = '<div class="loader">Caricamento…</div>';
+    const F = await loadFanta(true).catch(e => (av.innerHTML = `<div class="empty">${esc(e.message)}</div>`, null)); if (!F) return;
+    const cols = [
+      { k: 'name', label: 'Giocatore' }, { k: 'price', label: 'Prezzo ora', cls: 'strong' }, { k: 'base', label: 'Base', title: 'Quotazione di inizio stagione (modificabile)' },
+      { k: 'season_price', label: 'Da stagione', title: 'Prezzo calcolato solo sui dati della stagione in corso' }, { k: 'efp', label: 'Punti attesi', title: 'Punti fanta attesi per giornata (stagione in corso)' },
+      { k: 'pres', label: 'PG' }, { k: 'ed', label: '', fmt: r => S.season === S.boot.active_season ? `<button class="btn sm" data-bp="${r.id}">Base</button>` : '' },
+    ];
+    const rows = F.prices.map(p => ({ ...p, name: pname(p.id) }));
+    const w = rows[0]?.w ?? 0;
+    av.innerHTML = `<div class="card small">Prezzo ora = ${Math.round((1 - w) * 100)}% quotazione base + ${Math.round(w * 100)}% prezzo calcolato sulla stagione (il peso della stagione cresce di ${Math.round(100 / settings('price_blend_matches'))}% per ogni partita a 8/11 giocata). Puoi correggere a mano la quotazione base.</div><div id="qt"></div>`;
+    const draw = () => { $('#qt').innerHTML = tableHtml(cols, sortRows(rows, u.pricesSort, cols), u.pricesSort); bindSort($('#qt'), u.pricesSort, draw); };
+    draw();
+    av.onclick = e => { const b = e.target.closest('[data-bp]'); if (!b) return; const r = rows.find(x => x.id === Number(b.dataset.bp));
+      modal({ title: 'Quotazione base · ' + r.name, body: `<label class="f">Prezzo di inizio stagione</label><input type="number" min="1" id="bpv" value="${r.base}">`,
+        actions: [{ label: 'Salva', cls: 'primary', fn: async el => { const ok = await act(() => rpc('admin_set_base_price', { p_token: T(), p_player: r.id, p_price: Number($('#bpv', el).value) }), 'Quotazione aggiornata'); if (ok) { S.fanta = null; viewAdmin(v); } return ok; } }] }); };
+  }
+
+  if (u.adminTab === 'stagione') {
+    const act_s = S.boot.seasons.find(s => s.is_active);
+    av.innerHTML = `<div class="card"><h2>Stagione attiva: ${esc(act_s?.name || 'nessuna')}</h2>
+      <p class="small muted">${act_s?.ended ? 'La stagione è terminata: non si possono creare partite né fare mercato. Puoi riprenderla o avviarne una nuova.' : 'In corso.'}</p>
+      <div class="row">${act_s && !act_s.ended ? '<button class="btn danger" id="endS">Termina stagione</button>' : ''}${act_s?.ended ? '<button class="btn" id="resS">Riprendi stagione</button>' : ''}</div></div>
+      <div class="card"><h2>Avvia nuova stagione</h2><p class="small muted">Classifiche, voti e FantaNunnaree ripartono da zero. Le quotazioni iniziali saranno quelle di fine stagione attuale. Lo storico resta consultabile dal menu stagione in alto.</p>
+      <div class="row"><input type="text" id="sName" placeholder="Es. 2027-28" style="max-width:200px"><button class="btn primary" id="newS">Avvia nuova stagione</button></div></div>`;
+    $('#endS') && ($('#endS').onclick = async () => { if (!await confirmBox('Terminare la stagione? Blocca nuove partite e mercato fanta.', 'Termina', true)) return; if (await act(() => rpc('admin_end_season', { p_token: T() }), 'Stagione terminata')) { await reloadBoot(); renderShell(); } });
+    $('#resS') && ($('#resS').onclick = async () => { if (await act(() => rpc('admin_resume_season', { p_token: T() }), 'Stagione ripresa')) { await reloadBoot(); renderShell(); } });
+    $('#newS').onclick = async () => { const n = $('#sName').value.trim(); if (!n) return toast('Dai un nome alla stagione', true); if (!await confirmBox(`Avviare la stagione ${esc(n)}? La stagione attuale verrà chiusa.`, 'Avvia')) return;
+      if (await act(() => rpc('admin_start_season', { p_token: T(), p_name: n }), 'Nuova stagione avviata')) { S.season = null; S.matches = S.stats = S.fanta = S.partners = null; await start(); } };
+  }
+
+  if (u.adminTab === 'impostazioni') {
+    const keys = Object.keys(S.boot.settings);
+    av.innerHTML = `<div class="card"><p class="small muted">Valori usati da voti, statistiche e FantaNunnaree. Le modifiche valgono anche per i calcoli passati.</p>
+      ${keys.map(k => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px" class="small">${esc(S.boot.settings_labels[k] || k)}</span><input type="number" step="0.25" value="${S.boot.settings[k]}" data-k="${k}" style="width:100px"></div>`).join('')}
+      <div class="row" style="margin-top:12px"><div class="spacer"></div><button class="btn primary" id="saveSet">Salva impostazioni</button></div></div>`;
+    $('#saveSet').onclick = async () => {
+      for (const i of $$('[data-k]', av)) if (Number(i.value) !== Number(S.boot.settings[i.dataset.k])) {
+        if (!await act(() => rpc('admin_update_setting', { p_token: T(), p_key: i.dataset.k, p_value: Number(i.value) }))) return;
+      }
+      await reloadBoot(); S.stats = S.fanta = null; toast('Impostazioni salvate'); viewAdmin(v);
+    };
+  }
+}
+
+// ------------------------------------------------------------- BOOT
+if (S.token) start(); else renderLogin();
+</script>
+</body>
+</html>
