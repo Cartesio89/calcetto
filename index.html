@@ -66,6 +66,9 @@ main{padding:18px 0 40px}
 /* cards */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
 .card h2{font-size:22px;margin-bottom:10px}
+.rules h3{font-size:19px;margin:16px 0 4px}
+.rules ul{margin:4px 0;padding-left:20px}
+.rules li{margin:4px 0}
 .section-title{display:flex;align-items:center;gap:10px;margin:4px 0 12px;flex-wrap:wrap}
 .section-title h2{font-size:26px}
 /* controls */
@@ -162,7 +165,6 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeri
   .t .btn.sm{padding:5px 8px;font-size:12px}
   .kpi{padding:10px} .kpi .v{font-size:24px} .kpi .l{font-size:10.5px}
   .card{padding:13px}
-  .logo h1{font-size:18px}
 }
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-bottom:14px}
 .kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -176,6 +178,57 @@ details.box{border:1px solid var(--line);border-radius:12px;background:var(--sur
 details.box summary{padding:12px 14px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
 details.box summary::-webkit-details-marker{display:none}
 details.box > div{padding:0 14px 12px}
+/* STOP schieramenti */
+.btn.stop{background:#d0021b;border-color:#d0021b;color:#fff;font-weight:800;letter-spacing:.3px}
+.btn.stop:hover{background:#a80016}
+.stopbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#d0021b 10%,var(--surface));border:1px solid color-mix(in srgb,#d0021b 45%,var(--line))}
+.card.stopbar{margin:0 0 14px}
+/* import tabellino */
+textarea{resize:vertical;font-size:14px}
+.imp-row{border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--surface)}
+.imp-row.flag{border-color:var(--warn);box-shadow:inset 3px 0 0 var(--warn)}
+.imp-top{display:flex;gap:6px;align-items:center}
+.imp-top select{flex:1;min-width:0}
+.imp-nums{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:6px}
+.imp-nums label{display:flex;flex-direction:column;gap:2px;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.1}
+.imp-nums input[type=number]{padding:6px 2px;text-align:center;font-weight:700}
+@media (max-width:420px){ .imp-nums{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.imp-warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--surface))}
+.imp-warn ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+/* FantaNunnaree: tema rosa e nero */
+html.fanta{
+  --bg:#09090b; --surface:#141417; --surface-2:#1e1e23; --line:#2e2e35; --text:#f7f2f5; --muted:#ada4ab;
+  --brand:#ff3d9a; --brand-2:#ff79b8; --accent:#ff3d9a; --accent-ink:#ffffff;
+  --ok:#5fd39a; --warn:#ffb454; --danger:#ff6b81; --shadow:none;
+  --white-team:#f3f3f3; --white-ink:#111; --dark-team:#000; --dark-ink:#fff;
+  color-scheme:dark;
+}
+html.fanta .topbar,html.fanta .tabs{background:#000}
+html.fanta .topbar{border-bottom:2px solid #ff3d9a}
+html.fanta .tab.on{background:#ff3d9a;color:#fff}
+html.fanta .logo .ball{background:#ff3d9a}
+html.fanta .logo .ball::after{border-color:#000}
+html.fanta .btn.primary{color:#fff}
+html.fanta .section-title h2{color:#ff3d9a}
+html.fanta .card h2,html.fanta .kpi .v{color:#ff8cc4}
+html.fanta .t tr.me td{background:color-mix(in srgb,#ff3d9a 24%,var(--surface))}
+html.fanta .seg button.on{background:#ff3d9a;color:#fff;box-shadow:none}
+html.fanta .tbtn.sel.on{color:#fff}
+html.fanta .dot{border-color:#f7f2f5}
+html.fanta .dot.D{border-color:#f7f2f5}
+html.fanta #toast{background:#ff3d9a;color:#fff}
+/* titolo leggibile su smartphone */
+@media (max-width:720px){
+  .topbar .wrap{gap:8px}
+  .logo{flex:1;gap:8px}
+  .logo .ball{width:26px;height:26px}
+  .logo .ball::after{width:10px;height:10px;border-width:2.5px}
+  .logo h1{font-size:19px;line-height:1.02;white-space:normal;overflow:visible;text-overflow:clip;text-wrap:balance;letter-spacing:.2px}
+  .topbar .spacer{display:none}
+  .topbar select{max-width:92px;padding:5px 6px;font-size:13px}
+  .iconbtn{padding:6px}
+}
+@media (max-width:350px){ .logo h1{font-size:17px} .logo .ball{width:22px;height:22px} .topbar select{max-width:84px;font-size:12px;padding:4px 3px} }
 </style>
 </head>
 <body>
@@ -223,7 +276,7 @@ const S = {
   token: store.get('calc_token'),
   boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
   matches: null, stats: null, myVotes: null, fanta: null, partners: null,
-  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true,
+  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0,
         pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
         fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
 };
@@ -244,7 +297,7 @@ async function act(fn, okMsg) {
 
 // ------------------------------------------------------------- LOGIN
 async function renderLogin(msg = '') {
-  const app = $('#app');
+  const app = $('#app'); document.documentElement.classList.remove('fanta');
   app.innerHTML = `<div class="login"><div class="box">
     <div class="ball"></div>
     <h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1>
@@ -323,7 +376,7 @@ function renderShell() {
     <div class="wrap">
       <div class="logo"><div class="ball"></div><h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1></div>
       <div class="spacer"></div>
-      <select id="seasonSel" aria-label="Stagione">${S.boot.seasons.map(s => `<option value="${s.id}" ${s.id === S.season ? 'selected' : ''}>${esc(s.name)}${s.ended ? ' (finita)' : ''}</option>`).join('')}</select>
+      <select id="seasonSel" aria-label="Stagione">${S.boot.seasons.map(s => `<option value="${s.id}" ${s.id === S.season ? 'selected' : ''}>${esc(s.name)}${s.ended && innerWidth > 720 ? ' (finita)' : ''}</option>`).join('')}</select>
       <button class="iconbtn" id="userBtn" title="Account" aria-label="Account">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
       </button>
@@ -336,8 +389,13 @@ function renderShell() {
   $('#userBtn').onclick = openAccount;
   renderTab();
 }
+function setTheme() {
+  const f = S.tab === 'fanta' && !!S.boot && !!$('#view');
+  document.documentElement.classList.toggle('fanta', f);
+  $('meta[name=theme-color]')?.setAttribute('content', f ? '#000000' : '#0f3d2e');
+}
 function renderTab() {
-  const v = $('#view'); if (!v) return;
+  const v = $('#view'); setTheme(); if (!v) return;
   ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, admin: viewAdmin }[S.tab] || viewClassifica)(v);
 }
 async function loadVotesBadge() {
@@ -420,12 +478,15 @@ async function viewClassifica(v) {
   const u = S.ui;
   v.innerHTML = `<div class="section-title"><h2>Classifica</h2><div class="spacer"></div>${segHtml('stType', typeOpts, u.statType)}</div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="Cerca giocatore…" value="${esc(u.statSearch)}" style="max-width:260px">
-      <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> solo chi ha giocato</label></div>
+      <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> solo chi ha giocato</label>
+      <label class="small row" style="gap:6px" for="stMin">PG almeno <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"></label></div>
     <div id="stTable"><div class="loader">Caricamento…</div></div>
     <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
+  let data = null, box = null;
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
   $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
   $('#stHide').onchange = e => { u.hideZero = e.target.checked; draw(); };
+  $('#stMin').oninput = e => { const n = Math.max(0, Math.floor(Number(e.target.value) || 0)); u.minPg = Math.min(n, Number(e.target.max) || n); draw(); };
   const key = S.season + '|' + u.statType;
   if (!S.stats || S.stats.key !== key) {
     try { S.stats = { key, rows: await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: u.statType === 'all' ? null : Number(u.statType) }) }; }
@@ -441,14 +502,17 @@ async function viewClassifica(v) {
     { k: 'mv', label: 'Voto', title: 'Media voto pulita', cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
     { k: 'vplus', label: 'V+', title: 'Media fantavoto (voto + bonus/malus)', cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
   ];
-  const data = S.stats, box = $('#stTable');
+  data = S.stats; box = $('#stTable');
+  const maxPg = Math.max(1, ...data.rows.map(r => r.pg || 0));
+  if ($('#stMin')) { $('#stMin').max = maxPg; $('#stMin').title = `Da 0 a ${maxPg} (massimo di partite giocate in questa selezione)`; if (u.minPg > maxPg) { u.minPg = maxPg; $('#stMin').value = maxPg; } }
   function draw() {
-    if (!document.body.contains(box)) return;
+    if (!data || !document.body.contains(box)) return;
     let rows = data.rows;
     if (u.hideZero) rows = rows.filter(r => r.pg > 0);
+    if (u.minPg) rows = rows.filter(r => r.pg >= u.minPg);
     if (u.statSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.statSearch.toLowerCase()));
     rows = sortRows(rows, u.statSort, cols);
-    box.innerHTML = tableHtml(cols, rows, u.statSort, { rowCls: r => r.id === me().id ? 'me' : '', empty: 'Nessuna partita in questa selezione.' });
+    box.innerHTML = tableHtml(cols, rows, u.statSort, { rowCls: r => r.id === me().id ? 'me' : '', empty: u.minPg ? `Nessun giocatore con almeno ${u.minPg} partite in questa selezione.` : 'Nessuna partita in questa selezione.' });
     bindSort(box, u.statSort, draw);
   }
   draw();
@@ -472,14 +536,14 @@ function matchStatusPills(m) {
   if (m.status === 'programmata') p.push('<span class="pill warn">Da giocare</span>');
   if (m.votes_open) p.push(`<span class="pill live">Voti aperti fino a ${fmtDateTime(m.votes_close_at)}</span>`);
   if (m.fanta_state === 'aperto') p.push('<span class="pill live">Fanta: schieramenti aperti</span>');
-  if (m.fanta_state === 'bloccato') p.push('<span class="pill">FantaNunnaree</span>');
+  if (m.fanta_state === 'bloccato') p.push(`<span class="pill">${m.status === 'giocata' ? 'FantaNunnaree' : 'Fanta: schieramenti chiusi'}</span>`);
   return p.join(' ');
 }
 async function viewPartite(v) {
   v.innerHTML = `<div class="section-title"><h2>Partite</h2><div class="spacer"></div>
-    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button>` : ''}</div>
+    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}</div>
     <div id="mlist"><div class="loader">Caricamento…</div></div>`;
-  if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); }
+  if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); $('#importMatch').onclick = openImport; }
   let list; try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   if (S.tab !== 'partite' || !$('#mlist')) return;
   if (!list.length) { $('#mlist').innerHTML = `<div class="card empty">Nessuna partita in questa stagione${canEditSeason() ? '. Crea la prima con “Nuova partita”.' : '.'}</div>`; return; }
@@ -495,9 +559,10 @@ async function viewPartite(v) {
         <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
       </div>
       ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
+      ${isPres() && S.season === S.boot.active_season && m.fanta_state === 'aperto' ? `<div class="stopbar"><span class="small">Schieramenti FantaNunnaree <b>aperti</b></span><button class="btn stop" data-stop="${m.id}">■ STOP schieramenti</button></div>` : ''}
     </div>`;
   }).join('');
-  $('#mlist').onclick = e => { const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+  $('#mlist').onclick = e => { const sb = e.target.closest('[data-stop]'); if (sb) { e.stopPropagation(); stopFanta(Number(sb.dataset.stop)); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
 }
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
@@ -526,9 +591,9 @@ function openMatch(id) {
   const fantaCtl = pres && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
       <div class="small muted" style="margin-bottom:8px">Stato: <b>${{ chiuso: 'non attivo', aperto: 'schieramenti aperti', bloccato: 'schieramenti chiusi (giornata valida)' }[m.fanta_state]}</b></div>
       <div class="row">${m.fanta_state !== 'aperto' && !played ? '<button class="btn accent sm" data-fanta="aperto">Sblocca schieramenti</button>' : ''}
-      ${m.fanta_state === 'aperto' ? '<button class="btn sm" data-fanta="bloccato">Chiudi schieramenti</button>' : ''}
+      ${m.fanta_state === 'aperto' ? `<button class="btn stop" data-stopm="${m.id}">■ STOP schieramenti</button>` : ''}
       ${m.fanta_state !== 'chiuso' ? '<button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button>' : ''}</div>
-      <div class="tiny muted" style="margin-top:6px">Inserendo il risultato gli schieramenti si chiudono da soli.</div></div>` : '';
+      <div class="tiny muted" style="margin-top:6px">Premi STOP prima del calcio d'inizio: da quel momento nessuno può più cambiare formazione. Se non lo premi, gli schieramenti restano modificabili fino a quando inserisci il risultato.</div></div>` : '';
   const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
       <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
@@ -544,6 +609,7 @@ function openMatch(id) {
   mo.el.addEventListener('click', async e => {
     const f = e.target.closest('[data-fanta]');
     if (f) { if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
+    if (e.target.closest('[data-stopm]')) { if (await stopFanta(m.id)) { mo.close(); openMatch(m.id); } }
     const vv = e.target.closest('[data-votes]');
     if (vv) { if (await act(() => rpc('admin_set_votes_close', { p_token: T(), p_match: m.id, p_hours: Number(vv.dataset.votes) }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
     if (e.target.closest('[data-seevotes]')) showVotes(m);
@@ -555,6 +621,12 @@ async function showVotes(m) {
   const byVoter = {}; vs.forEach(x => (byVoter[x.voter] ||= {})[x.target] = x.value);
   const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
   modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
+}
+async function stopFanta(mid) {
+  if (!await confirmBox('<b>STOP schieramenti FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione per questa partita: valgono quelle salvate finora. Se l\'hai premuto per errore puoi riaprirli dalla scheda partita finché non inserisci il risultato.', 'STOP', true)) return false;
+  const ok = await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: mid, p_state: 'bloccato' }), 'Schieramenti bloccati');
+  if (ok) { S.fanta = null; await refreshAll(); }
+  return ok;
 }
 async function refreshAll() {
   S.stats = S.fanta = S.partners = null;
@@ -671,6 +743,429 @@ function editResult(m, openVotesDefault) {
   });
 }
 
+// <PARSER> ---------------------------------------------------- IMPORT TABELLINO: parser puro (testabile)
+const normTxt = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[​-‏⁠﻿ ]/g, ' ').toLowerCase();
+const MONTHS_IT = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const WORDNUM = { un: 1, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6 };
+const NUM_RE = '(\\d+|un|uno|una|due|tre|quattro|cinque|sei)';
+const EV_KEYS = ['goals', 'pen_goals', 'own_goals', 'conceded', 'pen_saved', 'pen_missed'];
+const emptyEv = () => ({ goals: 0, pen_goals: 0, own_goals: 0, conceded: 0, pen_saved: 0, pen_missed: 0 });
+
+// "Pargalia 2 gol (1 su rigore)" -> { name:'pargalia', ev:{goals:2,pen_goals:1,...}, gk:false, hasEv:true }
+function parseEntry(raw) {
+  let s = ' ' + normTxt(raw).replace(/[–—]/g, '-').replace(/×/g, 'x') + ' ';
+  const ev = emptyEv();
+  let gk = false, hasEv = false, goalWord = false;
+  const n = x => x == null || x === '' ? 1 : (WORDNUM[x] ?? Number(x));
+  const take = (re, fn) => { s = s.replace(re, (...m) => { fn(m); hasEv = true; return ' '; }); };
+  s = s.replace(/^\s*\d{1,2}\s*[.)]\s+/, ' ');                                   // "6. Nunnari"
+  s = s.replace(/\((?:gk|p|portiere)\)|\bportiere\b|\bgk\b|\bpor\b/g, () => { gk = true; return ' '; });
+  const N = NUM_RE;
+  take(new RegExp(`(?:${N}\\s*(?:x\\s*)?)?(?:rigor[ei]|rig\\.?)\\s+sbagliat[oi]|sbaglia\\s+(?:${N}\\s+)?rigor[ei]`, 'g'), m => ev.pen_missed += n(m[1] || m[2]));
+  take(new RegExp(`(?:${N}\\s*(?:x\\s*)?)?(?:rigor[ei]|rig\\.?)\\s+parat[oi]|para\\s+(?:${N}\\s+)?rigor[ei]`, 'g'), m => ev.pen_saved += n(m[1] || m[2]));
+  take(new RegExp(`\\(?\\s*(?:${N}\\s*(?:x\\s*)?)?(?:autogol\\w*|autoret\\w*|aut\\b\\.?|ag\\b)\\s*\\)?`, 'g'), m => ev.own_goals += n(m[1]));
+  take(new RegExp(`(?:${N}\\s*(?:gol\\s+|reti\\s+)?subit[ie]|subisce\\s+${N}|\\bgs\\s*:?\\s*${N}|(\\d+)\\s*gs\\b)`, 'g'), m => ev.conceded += n(m[1] || m[2] || m[3] || m[4]));
+  take(/(?:^|\s)-\s*(\d+)\s*$/g, m => ev.conceded += Number(m[1]));               // stile "-4" = gol subiti
+  take(new RegExp(`(?:${N}\\s*)?(?:gol|goal|reti|rete)\\s+(?:su\\s+|di\\s+|da\\s+)?rigor[ei]|rigor[ei]\\s+segnat[oi]`, 'g'), m => { const k = n(m[1]); ev.goals += k; ev.pen_goals += k; });
+  take(/\(\s*r\s*\)/g, () => ev.pen_goals += 1);                                  // "Memolla E. (R)"
+  take(new RegExp(`\\(\\s*(?:di\\s+cui\\s+)?(?:${N}\\s*)?(?:su\\s+|di\\s+|da\\s+)?rig\\w*\\.?\\s*\\)`, 'g'), m => ev.pen_goals += n(m[1]));
+  take(new RegExp(`,?\\s*(?:di\\s+cui\\s+)?${N}\\s+(?:su\\s+|di\\s+|da\\s+)rig\\w*`, 'g'), m => ev.pen_goals += n(m[1]));
+  take(new RegExp(`${N}\\s*(?:gol|goal|goals|reti|rete)\\b|(\\d+)g\\b|\\bx\\s*(\\d+)\\b`, 'g'), m => { ev.goals += n(m[1] || m[2] || m[3]); goalWord = true; });
+  take(/\b(doppietta|tripletta|poker|manita|cinquina)\b/g, m => { ev.goals += { doppietta: 2, tripletta: 3, poker: 4, manita: 5, cinquina: 5 }[m[1]]; goalWord = true; });
+  take(/\b(?:gol|goal|rete|segna)\b/g, () => { ev.goals += 1; goalWord = true; });
+  take(/\brigore\b/g, () => { ev.goals += 1; ev.pen_goals += 1; });              // "Nunnari rigore" = gol su rigore
+  take(/(?:^|\s)\+?(\d+)\s*$/g, m => ev.goals += Number(m[1]));                    // "Pargalia 2"
+  if (ev.pen_goals > ev.goals) ev.goals = ev.pen_goals;                            // "(1 su rigore)" senza gol: almeno quel gol
+  const name = s.replace(/[()\[\]:+*#"]/g, ' ').replace(/\d+/g, ' ').replace(/\s+/g, ' ').replace(/^[\s,.\-]+|[\s,\-]+$/g, '').trim();
+  return { name, ev, gk, hasEv, goalWord };
+}
+
+// ---- nomi
+const nameKey = s => normTxt(s).replace(/['’`]/g, '').replace(/\./g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function splitDbName(name) { // "De Filippo C." -> {sur:['de','filippo'], ini:'c'} ; "Romano Ma." -> ini 'ma'
+  const m = String(name).trim().match(/^(.*?)\s+([A-Za-zÀ-ÿ]{1,3})\.$/);
+  return m ? { sur: nameKey(m[1]).split(' '), ini: nameKey(m[2]) } : { sur: nameKey(name).split(' '), ini: '' };
+}
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// ritorna { id|null, status:'ok'|'ambiguo'|'simile'|'nuovo', candidates:[ids], proposed }
+function matchPlayer(raw, players, hintGk) {
+  const t = nameKey(raw).split(' ').filter(Boolean);
+  if (!t.length) return { id: null, status: 'nuovo', candidates: [], proposed: '' };
+  const scored = [];
+  for (const p of players) {
+    const { sur, ini } = splitDbName(p.name); const k = sur.length;
+    const iniOk = x => !ini || !x || x.startsWith(ini) || ini.startsWith(x);
+    if (t.length >= k && sur.every((w, i) => t[i] === w)) { const r = t[k]; if (iniOk(r)) scored.push({ p, sc: r ? (ini && r.startsWith(ini) ? 3 : 2) : 2 }); continue; }
+    if (t.length > k && sur.every((w, i) => t[t.length - k + i] === w) && iniOk(t[0])) scored.push({ p, sc: 2 });   // "Riccardo Pargalia"
+  }
+  if (scored.length) {
+    const best = Math.max(...scored.map(x => x.sc));
+    let c = scored.filter(x => x.sc === best).map(x => x.p);
+    if (c.length > 1 && c.some(p => p.is_active)) c = c.filter(p => p.is_active);
+    if (c.length > 1 && hintGk && c.some(p => p.is_gk)) c = c.filter(p => p.is_gk);
+    return { id: c[0].id, status: c.length === 1 ? 'ok' : 'ambiguo', candidates: c.map(p => p.id), proposed: '' };
+  }
+  // simili (errori di battitura)
+  const near = [];
+  for (const p of players) {
+    const { sur } = splitDbName(p.name); const a = t.slice(0, sur.length).join(' '), b = sur.join(' ');
+    const d = lev(a, b), max = b.length >= 7 ? 2 : b.length >= 4 ? 1 : 0;
+    if (d <= max) near.push({ p, d });
+  }
+  near.sort((x, y) => x.d - y.d);
+  const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+  const proposed = t.length > 1 && t[t.length - 1].length <= 2 ? t.slice(0, -1).map(cap).join(' ') + ' ' + t[t.length - 1].toUpperCase() + '.' : t.map(cap).join(' ');
+  if (near.length) return { id: near[0].p.id, status: 'simile', candidates: near.map(x => x.p.id), proposed };
+  return { id: null, status: 'nuovo', candidates: [], proposed };
+}
+
+// ---- data / tipo / risultato
+function ymd(d) { const x = new Date(d.getTime() + 12 * 3600e3); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; }
+function findDate(cell) {
+  if (cell instanceof Date && !isNaN(cell)) return ymd(cell);
+  if (typeof cell !== 'string') return null;
+  const s = normTxt(cell);
+  let m = s.match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/);
+  if (m) { const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]); if (m[2] <= 12 && m[1] <= 31) return `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`; }
+  m = s.match(/\b(\d{4})-(\d{2})-(\d{2})\b/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(new RegExp(`\\b(\\d{1,2})\\s+(${MONTHS_IT.join('|')})\\s+(\\d{4})`));
+  if (m) return `${m[3]}-${String(MONTHS_IT.indexOf(m[2]) + 1).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+  return null;
+}
+function findScoreLine(cell) {
+  if (typeof cell !== 'string') return null;
+  const s = normTxt(cell).replace(/[–—]/g, '-');
+  let m = s.match(/(chiari|bianchi)\D{0,4}(\d+)\s*(?:-|:|a)\s*(\d+)\D{0,4}scuri/); if (m) return [Number(m[2]), Number(m[3])];
+  m = s.match(/scuri\D{0,4}(\d+)\s*(?:-|:|a)\s*(\d+)\D{0,4}(chiari|bianchi)/); if (m) return [Number(m[2]), Number(m[1])];
+  m = s.match(/^\s*(?:risultato|finale)?\D{0,4}?(\d+)\s*(?:-|:)\s*(\d+)\s*$/); if (m) return [Number(m[1]), Number(m[2])];
+  m = s.match(/^\s*(?:risultato|finale)\D{0,4}(\d+)\s*a\s*(\d+)\s*$/); if (m) return [Number(m[1]), Number(m[2])];
+  return null;
+}
+const HDR_RE = /^\s*(chiari|bianchi|scuri)\b[\s:.\-]*(\d+)?\s*(?:gol)?\s*$/;
+const STOP_RE = /^\s*(note|lineup|line-up|formazion\w* a cura|campo|centro|stagione)\b/;
+
+function gridFromText(txt, delim) {
+  return String(txt).replace(/\r/g, '').split('\n').map(l => delim ? l.split(delim) : l.includes('\t') ? l.split('\t') : [l]);
+}
+
+// grid: array di righe, celle string|number|Date|null. players: [{id,name,is_gk,is_active}]
+function parseTabellino(grid, players) {
+  const G = grid.map(r => (r || []).map(c => c == null ? '' : c instanceof Date ? c : typeof c === 'number' ? c : String(c).trim()));
+  const warn = [];
+  const hdr = [];
+  G.forEach((row, r) => row.forEach((c, ci) => {
+    if (typeof c !== 'string' || !c) return;
+    const m = normTxt(c).match(HDR_RE);
+    if (m) hdr.push({ team: m[1] === 'scuri' ? 'D' : 'W', r, c: ci, score: m[2] != null ? Number(m[2]) : (typeof row[ci + 1] === 'number' ? Math.abs(row[ci + 1]) : null) });
+  }));
+  const hW = hdr.find(h => h.team === 'W'), hD = hdr.find(h => h.team === 'D');
+  if (!hW || !hD) throw new Error('Non trovo le intestazioni delle squadre: servono le parole CHIARI e SCURI (da sole, su una riga o in una cella).');
+  if (hdr.filter(h => h.team === 'W').length > 1 || hdr.filter(h => h.team === 'D').length > 1) warn.push('Il file sembra contenere più di una partita: leggo solo la prima. Carica una partita per file.');
+  // blocchi
+  const blocks = [];
+  if (hW.r === hD.r) {                        // affiancati (stile foglio master)
+    const [a, b] = hW.c < hD.c ? [hW, hD] : [hD, hW];
+    const w = b.c - a.c;
+    blocks.push({ h: a, r0: a.r + 1, r1: G.length, c0: a.c, c1: b.c });
+    blocks.push({ h: b, r0: b.r + 1, r1: G.length, c0: b.c, c1: b.c + w });
+  } else {                                    // uno sotto l'altro (stile testo / PRIME_5)
+    const [a, b] = hW.r < hD.r ? [hW, hD] : [hD, hW];
+    const right = h => Math.min(h.c + 4, ...hdr.filter(x => x.r === h.r && x.c > h.c).map(x => x.c));
+    blocks.push({ h: a, r0: a.r + 1, r1: b.r, c0: a.c, c1: right(a) });
+    blocks.push({ h: b, r0: b.r + 1, r1: G.length, c0: b.c, c1: right(b) });
+  }
+  const score = { W: hW.score, D: hD.score };
+  const entries = []; let note = '';
+  const inBlock = new Set();
+  for (const bl of blocks) {
+    const team = bl.h.team; let phase = 'roster';
+    for (let r = bl.r0; r < bl.r1; r++) {
+      const row = G[r] || [];
+      // un'altra intestazione nella stessa colonna chiude il blocco
+      const cells = row.slice(bl.c0, bl.c1);
+      if (cells.some(c => typeof c === 'string' && HDR_RE.test(normTxt(c)))) break;
+      for (let c = bl.c0; c < bl.c1; c++) inBlock.add(r + ':' + c);
+      const texts = cells.filter(c => typeof c === 'string' && c), nums = cells.filter(c => typeof c === 'number');
+      if (!texts.length && !nums.length) continue;
+      const joined = cells.map(c => c instanceof Date ? '' : String(c)).filter(Boolean).join(' ');
+      const low = normTxt(joined);
+      if (/^\s*note\b/.test(low)) { const t = joined.replace(/^\s*note\s*:?\s*/i, '').trim(); if (t) note += (note ? ' · ' : '') + t; if (hW.r === hD.r) break; continue; }
+      if (findDate(joined) && entries.some(e => e.team === team)) break;   // inizia un'altra partita
+      if (STOP_RE.test(low.replace(/^["'«\s]+/, '')) || findDate(joined) || findScoreLine(joined)) continue;
+      if (/^\s*(marcatori|gol|reti|eventi)\s*:?\s*$/.test(low)) { phase = 'scorers'; continue; }
+      if (!texts.length && nums.length) {      // riga col solo numero = risultato (foglio master)
+        if (phase === 'roster') { if (score[team] == null) score[team] = Math.abs(nums[0]); phase = 'scorers'; }
+        continue;
+      }
+      let body = joined.replace(/^\s*(marcatori|eventi)\s*:\s*/i, () => { phase = 'scorers'; return ''; });
+      const parts = body.split(/[;,](?![^()]*\))/).map(x => x.trim()).filter(Boolean);
+      for (const part of parts) {
+        const e = parseEntry(part);
+        if (!e.name) {                          // "1 su rigore" dopo una virgola: va all'ultimo nome
+          const last = entries[entries.length - 1];
+          if (last && e.hasEv) { EV_KEYS.forEach(k => last.ev[k] += e.ev[k]); last.raw += ', ' + part; }
+          continue;
+        }
+        if (phase === 'scorers' && !e.hasEv) e.ev.goals = 1;   // elenco marcatori: una riga = un gol
+        entries.push({ raw: part, name: e.name, ev: e.ev, gk: e.gk, team, role: phase, row: r });
+      }
+    }
+  }
+  // dati fuori dai blocchi: data, tipo, risultato, note
+  let date = null, type = null;
+  G.forEach((row, r) => row.forEach((c, ci) => {
+    if (!date) date = findDate(c);
+    if (typeof c === 'string') {
+      const s = normTxt(c);
+      const t = s.match(/calcio\s*a\s*(5|7|8|11)\b|\bc\s*(5|7|8|11)\b|\b(5|7|8|11)\s*(?:vs|contro)\s*(5|7|8|11)\b/);
+      if (!type && t) type = Number(t[1] || t[2] || t[3]);
+      const sl = findScoreLine(c); if (sl && score.W == null && score.D == null) { score.W = sl[0]; score.D = sl[1]; }
+      if (!inBlock.has(r + ':' + ci) && /^\s*note\s*:/.test(s)) { const t2 = c.replace(/^\s*note\s*:\s*/i, '').trim(); if (t2 && !note.includes(t2)) note += (note ? ' · ' : '') + t2; }
+    }
+  }));
+  // risoluzione nomi + aggregazione per giocatore
+  const byKey = new Map(); const rows = [];
+  for (const e of entries) {
+    const m = matchPlayer(e.name, players, e.gk || e.ev.pen_saved > 0 || e.ev.conceded > 0);
+    const key = m.id != null ? 'id' + m.id : 'new:' + nameKey(m.proposed || e.name);
+    let row = byKey.get(key);
+    if (!row) {
+      row = { key, pid: m.id, status: m.status, candidates: m.candidates, newName: m.id == null ? (m.proposed || e.name) : '', team: null, teamFromScorer: null, ev: emptyEv(), gk: false, raws: [] };
+      byKey.set(key, row); rows.push(row);
+    }
+    if (e.role === 'roster') {
+      if (row.team && row.team !== e.team) {
+        const onlyEv = !e.ev.goals && (e.ev.own_goals || e.ev.pen_missed || e.ev.pen_saved || e.ev.conceded);
+        if (!onlyEv) warn.push(`${e.raw}: compare in entrambe le squadre, lasciato in ${row.team === 'W' ? 'Chiari' : 'Scuri'}. Controlla.`);
+      } else row.team = row.team || e.team;
+    } else row.teamFromScorer = row.teamFromScorer || e.team;
+    EV_KEYS.forEach(k => row.ev[k] += e.ev[k]);
+    row.gk = row.gk || e.gk; row.raws.push(e.raw);
+  }
+  for (const row of rows) if (!row.team) {
+    row.team = row.ev.own_goals ? (row.teamFromScorer === 'W' ? 'D' : 'W') : row.teamFromScorer || 'W';
+    warn.push(`${row.raws[0]}: non è nelle formazioni, messo in ${row.team === 'W' ? 'Chiari' : 'Scuri'}. Controlla.`);
+  }
+  for (const row of rows) { const p = players.find(x => x.id === row.pid); if (p && p.is_gk) row.gk = true; }
+  // eventi scritti nelle note: "rigore parato da Nunnari E. a Caruso L."
+  for (const m of normTxt(note).matchAll(/rigor[ei]\s+parat[oi]\s+da\s+([a-z' .]+?)\s+a\s+([a-z' .]+?)(?:[,;]|\.(?:\s|$)|$)/g)) {
+    const find = nmx => { const mm = matchPlayer(nmx, players); return rows.find(r => r.pid != null && r.pid === mm.id); };
+    const gkRow = find(m[1]), shRow = find(m[2]);
+    if (gkRow && !gkRow.ev.pen_saved) { gkRow.ev.pen_saved = 1; gkRow.raws.push('nota: rigore parato'); }
+    if (shRow && !shRow.ev.pen_missed) { shRow.ev.pen_missed = 1; shRow.raws.push('nota: rigore sbagliato'); }
+    if (gkRow || shRow) warn.push('Rigore parato/sbagliato letto dalle note: verifica.');
+  }
+  // tipo dedotto dal numero di giocatori
+  const nW = rows.filter(r => r.team === 'W').length, nD = rows.filter(r => r.team === 'D').length, nMax = Math.max(nW, nD);
+  const typeGuess = nMax >= 10 ? 11 : nMax >= 8 ? 8 : nMax >= 7 ? 7 : 5;
+  if (!type) type = typeGuess; else if (type !== typeGuess && !(type === 8 && nMax === 7)) warn.push(`Il file dice calcio a ${type} ma le squadre hanno ${nW} e ${nD} giocatori.`);
+  // risultato calcolato
+  const calc = { W: 0, D: 0 };
+  rows.forEach(r => { calc[r.team] += r.ev.goals; calc[r.team === 'W' ? 'D' : 'W'] += r.ev.own_goals; });
+  if (score.W == null || score.D == null) { score.W = score.W ?? calc.W; score.D = score.D ?? calc.D; warn.push('Risultato non indicato nel file: calcolato dai marcatori.'); }
+  else if (score.W !== calc.W || score.D !== calc.D) warn.push(`Il risultato del file (${score.W}–${score.D}) non coincide con i marcatori (${calc.W}–${calc.D}).`);
+  // gol subiti al portiere se non indicati
+  for (const t of ['W', 'D']) {
+    const tr = rows.filter(r => r.team === t);
+    if (tr.some(r => r.ev.conceded)) continue;
+    const gks = tr.filter(r => r.gk);
+    const opp = t === 'W' ? score.D : score.W;
+    if (gks.length === 1) { gks[0].ev.conceded = opp; gks[0].autoConceded = true; }
+    else if (opp > 0) warn.push(`${t === 'W' ? 'Chiari' : 'Scuri'}: ${gks.length ? 'più portieri' : 'nessun portiere (GK)'} indicato, gol subiti non assegnati. Inseriscili a mano se serve.`);
+  }
+  rows.forEach(r => { if (r.ev.pen_goals > r.ev.goals) r.ev.goals = r.ev.pen_goals; });
+  return { date, type, score, note, rows, warn };
+}
+// </PARSER>
+
+// ------------------------------------------------------------- IMPORT TABELLINO (interfaccia)
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return loadXlsx._p ||= new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = XLSX_URL; s.onload = ok;
+    s.onerror = () => { loadXlsx._p = null; s.remove(); ko(new Error('Non riesco a caricare il lettore Excel: controlla la connessione, oppure salva il file come .csv o incolla il testo.')); };
+    document.head.appendChild(s);
+  });
+}
+async function fileToGrid(file) {
+  const n = file.name.toLowerCase();
+  if (/\.(xlsx|xlsm|xlsb|xls|ods)$/.test(n)) {
+    await loadXlsx();
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+    const sheets = wb.SheetNames.map(sn => XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null, blankrows: true }));
+    const has = g => g.some(r => (r || []).some(c => typeof c === 'string' && /^\s*(chiari|bianchi|scuri)\b/i.test(c)));
+    return sheets.find(has) || sheets[0] || [];
+  }
+  if (/\.(docx?|pdf|pages|numbers)$/.test(n)) throw new Error('Questo formato non si legge: apri il file, copia il testo e incollalo nel riquadro qui sotto.');
+  const txt = await file.text();
+  if (/\.csv$/.test(n)) { const d = (txt.match(/;/g) || []).length >= (txt.match(/,/g) || []).length ? ';' : ','; return gridFromText(txt, d); }
+  return gridFromText(txt);
+}
+function openImport() {
+  modal({
+    title: 'Importa tabellino', wide: true,
+    body: `<p class="small muted" style="margin-top:0">Una partita per file. Sopra le due formazioni servono le parole <b>CHIARI</b> e <b>SCURI</b>. Accanto ai nomi puoi scrivere gli eventi, per esempio
+      <i>Pargalia 2 gol (1 su rigore)</i>, <i>Parisi autogol</i>, <i>Nunnari rigore sbagliato</i>, <i>Felici rigore parato</i>, <i>Serangeli (GK)</i>. Va bene anche il formato del foglio Excel del gruppo (risultato sotto le formazioni e poi un nome per ogni gol, <i>(R)</i> = rigore).
+      Prima di salvare vedi l'anteprima e puoi correggere tutto.</p>
+      <label class="f" for="impFile">File (.xlsx, .xls, .ods, .csv, .txt)</label><input type="file" id="impFile" accept=".xlsx,.xlsm,.xls,.ods,.csv,.txt,text/plain,text/csv">
+      <label class="f" for="impTxt">Oppure incolla il testo (anche da WhatsApp)</label>
+      <textarea id="impTxt" rows="9" placeholder="13/10/2026 calcio a 8&#10;CHIARI&#10;Serangeli (GK)&#10;Pargalia 2 gol (1 su rigore)&#10;Caruso&#10;…&#10;SCURI&#10;Novello (GK)&#10;Parisi autogol&#10;Nunnari rigore sbagliato&#10;…&#10;Risultato 6-2"></textarea>
+      <div class="err" id="impErr"></div>`,
+    actions: [{ label: 'Leggi e mostra anteprima', cls: 'primary', fn: async el => {
+      $('#impErr', el).textContent = '';
+      try {
+        const f = $('#impFile', el).files[0], t = $('#impTxt', el).value;
+        if (!f && !t.trim()) throw new Error('Scegli un file o incolla il testo.');
+        const grid = f ? await fileToGrid(f) : gridFromText(t);
+        const res = parseTabellino(grid, S.boot.players);
+        if (!res.rows.length) throw new Error('Non ho trovato giocatori sotto CHIARI e SCURI.');
+        importPreview(res, f ? f.name : 'testo incollato');
+        return true;
+      } catch (e) { $('#impErr', el).textContent = e.message; return false; }
+    } }]
+  });
+}
+function importPreview(res, src) {
+  const prog = (S.matches?.season === S.season ? S.matches.list : []).filter(m => m.status === 'programmata');
+  const st = { type: res.type, date: res.date || new Date().toISOString().slice(0, 10), note: res.note || '', target: 'new',
+    rows: res.rows.map((r, i) => ({ i, pid: r.pid, newName: r.newName, status: r.status, team: r.team, gk: r.gk && !r.gkGuess, auto: r.autoConceded, guess: r.gkGuess, raw: r.raws.join(' · '), ...r.ev })) };
+  const same = prog.find(m => m.date === st.date); if (same) st.target = String(same.id);
+  let nextI = st.rows.length;
+  const created = { players: {}, match: null };
+  const NUMF = [['goals', 'Gol'], ['pen_goals', 'di cui rig.'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti'], ['pen_saved', 'Rig. parati'], ['pen_missed', 'Rig. sbagl.']];
+  const plist = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const tgt = () => st.target === 'new' ? null : prog.find(m => String(m.id) === st.target);
+  const effType = () => tgt()?.type ?? st.type;
+  const optHtml = r => `<option value="new" ${r.pid == null ? 'selected' : ''}>➕ Nuovo giocatore…</option>` + plist.map(p => `<option value="${p.id}" ${p.id === r.pid ? 'selected' : ''}>${esc(p.name)}${p.is_gk ? ' · GK' : ''}${p.is_active ? '' : ' (disattivato)'}</option>`).join('');
+  const flag = r => r.pid == null ? '<span class="pill warn">nuovo giocatore</span>' : r.status === 'ambiguo' ? '<span class="pill warn">nome ambiguo: controlla</span>' : r.status === 'simile' ? '<span class="pill warn">nome simile: controlla</span>' : '';
+  const rowHtml = r => `<div class="imp-row ${r.pid == null || r.status === 'ambiguo' || r.status === 'simile' ? 'flag' : ''}" data-i="${r.i}">
+      <div class="imp-top"><select data-f="pid" aria-label="Giocatore">${optHtml(r)}</select>
+        <button class="tbtn W ${r.team === 'W' ? 'on' : ''}" data-team="W" title="${esc(TW)}">${esc(TW[0])}</button><button class="tbtn D ${r.team === 'D' ? 'on' : ''}" data-team="D" title="${esc(TD)}">${esc(TD[0])}</button>
+        <button class="btn sm danger" data-del title="Togli dalla partita" aria-label="Togli">✕</button></div>
+      <input type="text" data-f="newName" class="${r.pid == null ? '' : 'hidden'}" value="${esc(r.newName || '')}" placeholder="Nome del nuovo giocatore (es. Rossi M.)" style="margin-top:6px">
+      <div class="tiny muted" style="margin-top:4px">${flag(r)} ${r.raw ? 'dal file: <i>' + esc(r.raw) + '</i>' : 'aggiunto a mano'}${r.auto ? ` · gol subiti dati al portiere${r.guess ? ' (presunto)' : ''} in automatico` : ''}</div>
+      <div class="imp-nums">${NUMF.map(([k, l]) => `<label><span>${l}</span><input type="number" min="0" inputmode="numeric" data-f="${k}" value="${r[k] || 0}"></label>`).join('')}</div></div>`;
+  const calc = () => { let w = 0, d = 0; st.rows.forEach(r => { if (r.team === 'W') { w += +r.goals || 0; d += +r.own_goals || 0; } else { d += +r.goals || 0; w += +r.own_goals || 0; } }); return [w, d]; };
+  const mo = modal({
+    title: 'Anteprima tabellino', wide: true,
+    body: `${res.warn.length ? `<div class="card imp-warn"><b>Da controllare</b><ul>${res.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+      <div class="tiny muted">Letto da: ${esc(src)}. Niente è stato ancora salvato.</div>
+      <label class="f" for="impTarget">Dove salvare</label>
+      <select id="impTarget"><option value="new">Nuova partita</option>${prog.map(m => `<option value="${m.id}" ${String(m.id) === st.target ? 'selected' : ''}>Partita già creata: ${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</option>`).join('')}</select>
+      <div id="impMeta"></div>
+      <div class="bigscore" style="margin-top:14px"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
+        <input type="number" min="0" id="isw" value="${res.score.W ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="isd" value="${res.score.D ?? ''}" inputmode="numeric">
+        <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
+      <div class="small muted" style="text-align:center" id="impCalc"></div>
+      <div class="teams-grid" style="margin-top:10px">
+        ${['W', 'D'].map(t => `<div><div class="team" style="margin:6px 0"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)} <span class="muted small" id="impCnt${t}"></span></div><div id="impList${t}"></div><button class="btn sm" data-add="${t}">+ aggiungi giocatore</button></div>`).join('')}
+      </div>
+      <div id="impVotes" style="margin-top:14px"></div>`,
+    actions: [{ label: 'Salva partita', cls: 'primary', fn: el => saveImport(el) }],
+    onOpen: el => {
+      const drawMeta = () => {
+        const m = tgt();
+        $('#impMeta', el).innerHTML = m
+          ? `<div class="small muted" style="margin-top:6px">Uso tipo e data della partita già creata. Le squadre già inserite verranno sostituite da quelle del file.${m.fanta_state === 'aperto' ? ' <b>Gli schieramenti FantaNunnaree verranno chiusi.</b>' : ''}</div>`
+          : `<label class="f">Tipo</label>${segHtml('impType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), st.type)}
+             <div class="grid2"><div><label class="f" for="impDate">Data</label><input type="date" id="impDate" value="${st.date}"></div>
+             <div><label class="f" for="impNote">Nota</label><input type="text" id="impNote" value="${esc(st.note)}"></div></div>`;
+        if (!m) {
+          bindSeg($('#impType', el), v => { st.type = Number(v); $$('#impType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === v)); drawVotes(); });
+          $('#impDate', el).onchange = e => st.date = e.target.value;
+          $('#impNote', el).oninput = e => st.note = e.target.value;
+        }
+        drawVotes();
+      };
+      const drawVotes = () => {
+        const prev = $('#impOpenVotes', el)?.checked ?? true;
+        $('#impVotes', el).innerHTML = effType() === 5 ? '<p class="small muted">Calcio a 5: nessuna votazione.</p>'
+          : `<label class="row small" style="gap:8px;cursor:pointer"><input type="checkbox" id="impOpenVotes" ${prev ? 'checked' : ''}> Apri le votazioni per ${settings('vote_hours')} ore</label>`;
+      };
+      const drawHint = () => { const [w, d] = calc(); $('#impCalc', el).innerHTML = `Dai marcatori risulta <b>${w} – ${d}</b> <button class="btn sm" id="impUse">usa</button>`; $('#impUse', el).onclick = () => { $('#isw', el).value = w; $('#isd', el).value = d; }; };
+      const drawLists = () => {
+        for (const t of ['W', 'D']) {
+          const rs = st.rows.filter(r => r.team === t);
+          $('#impList' + t, el).innerHTML = rs.map(rowHtml).join('') || '<div class="muted small">Nessun giocatore</div>';
+          $('#impCnt' + t, el).textContent = `· ${rs.length} giocatori`;
+        }
+        drawHint();
+      };
+      drawMeta(); drawLists();
+      $('#impTarget', el).onchange = e => { st.target = e.target.value; drawMeta(); };
+      const body = el.querySelector('.body');
+      body.addEventListener('click', e => {
+        const add = e.target.closest('[data-add]');
+        if (add) { st.rows.push({ i: nextI++, pid: null, newName: '', status: 'manuale', team: add.dataset.add, goals: 0, pen_goals: 0, own_goals: 0, conceded: 0, pen_saved: 0, pen_missed: 0 }); drawLists(); return; }
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i));
+        const tb = e.target.closest('[data-team]');
+        if (tb) { r.team = tb.dataset.team; drawLists(); return; }
+        if (e.target.closest('[data-del]')) { st.rows = st.rows.filter(x => x !== r); drawLists(); }
+      });
+      body.addEventListener('change', e => {
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i)), f = e.target.dataset.f;
+        if (f === 'pid') { r.pid = e.target.value === 'new' ? null : Number(e.target.value); r.status = 'ok'; row.classList.toggle('flag', r.pid == null); $('[data-f=newName]', row).classList.toggle('hidden', r.pid != null); row.querySelector('.pill.warn')?.remove(); }
+      });
+      body.addEventListener('input', e => {
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i)), f = e.target.dataset.f;
+        if (f === 'newName') r.newName = e.target.value;
+        else if (f) { r[f] = Math.max(0, Math.floor(Number(e.target.value) || 0)); drawHint(); }
+      });
+    }
+  });
+  async function saveImport(el) {
+    const rows = st.rows, nameOf = r => r.pid != null ? pname(r.pid) : (r.newName || '').trim();
+    if (!rows.length) { toast('Nessun giocatore da salvare', true); return false; }
+    for (const r of rows) {
+      if (r.pid == null && nameOf(r).length < 2) { toast('Scegli il giocatore o scrivi il nome del nuovo', true); return false; }
+      if (r.pen_goals > r.goals) { toast(`${nameOf(r)}: gol su rigore più dei gol`, true); return false; }
+    }
+    const keys = rows.map(r => r.pid != null ? 'id' + r.pid : 'n' + nameOf(r).toLowerCase());
+    const dup = keys.find((k, i) => keys.indexOf(k) !== i);
+    if (dup) { toast(`${nameOf(rows[keys.indexOf(dup)])} compare due volte: togli una riga`, true); return false; }
+    const sw = $('#isw', el).value, sd = $('#isd', el).value;
+    if (sw === '' || sd === '') { toast('Inserisci il risultato finale', true); return false; }
+    const m = tgt(), type = effType(), date = m ? m.date : st.date;
+    if (!date) { toast('Inserisci la data', true); return false; }
+    const [cw, cd] = calc();
+    if ((Number(sw) !== cw || Number(sd) !== cd) && !await confirmBox(`Il risultato ${esc(sw)}–${esc(sd)} non coincide con i marcatori (${cw}–${cd}). Salvo lo stesso?`, 'Salva lo stesso')) return false;
+    const openVotes = type !== 5 && !!$('#impOpenVotes', el)?.checked;
+    const news = rows.filter(r => r.pid == null);
+    const nW = rows.filter(r => r.team === 'W').length, nD = rows.length - nW;
+    if (!await confirmBox(`Salvo <b>${esc(typeLabel(type))}</b> del <b>${esc(fmtDate(date))}</b>: ${esc(TW)} ${esc(sw)} – ${esc(sd)} ${esc(TD)}, ${nW} + ${nD} giocatori${news.length ? `, <b>${news.length} nuovi giocatori</b> da creare (${news.map(r => esc(nameOf(r))).join(', ')})` : ''}${openVotes ? `. Le votazioni si aprono per ${settings('vote_hours')} ore` : ''}.`, 'Salva')) return false;
+    try {
+      for (const r of news) {
+        const nm = nameOf(r);
+        const ex = S.boot.players.find(p => p.name.toLowerCase() === nm.toLowerCase());
+        if (ex) { r.pid = ex.id; continue; }
+        if (!created.players[nm]) created.players[nm] = (await rpc('admin_add_player', { p_token: T(), p_name: nm, p_is_gk: !!r.gk })).id;
+        r.pid = created.players[nm];
+      }
+      if (news.length) S.boot = await rpc('get_bootstrap', { p_token: T() });
+      let mid = m ? m.id : created.match;
+      if (!mid) mid = created.match = (await rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: st.note })).id;
+      const stats = rows.map(r => ({ player_id: r.pid, team: r.team, goals: r.goals, pen_goals: r.pen_goals, own_goals: r.own_goals, conceded: r.conceded, pen_saved: r.pen_saved, pen_missed: r.pen_missed }));
+      await rpc('admin_save_result', { p_token: T(), p_match: mid, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: openVotes });
+      toast('Partita importata e salvata');
+      await refreshAll();
+      if (S.tab === 'partite' && S.matches?.list.some(x => x.id === mid)) openMatch(mid);
+      return true;
+    } catch (e) {
+      toast(e.message + (created.match ? ' (la partita è stata creata: riprova a salvare)' : ''), true);
+      return false;
+    }
+  }
+}
+
 // ------------------------------------------------------------- VOTI
 const VOTE_OPTS = Array.from({ length: 41 }, (_, i) => i / 4);
 async function viewVoti(v) {
@@ -715,6 +1210,7 @@ async function viewCoppie(v) {
     </div>
     <div id="pHead"></div><div id="pTable"><div class="loader">Caricamento…</div></div>
     <div class="legend">Insieme = stessa squadra (V/N/P della coppia). Contro = squadre opposte (V/N/P dal punto di vista del giocatore selezionato).</div>`;
+  let data = null, box = null;
   $('#pA').onchange = e => { u.pairPlayer = Number(e.target.value); if (u.pairB === u.pairPlayer) u.pairB = null; S.partners = null; viewCoppie(v); };
   $('#pB').onchange = e => { u.pairB = e.target.value ? Number(e.target.value) : null; draw(); };
   bindSeg($('#pType'), val => { u.pairType = val; S.partners = null; viewCoppie(v); });
@@ -732,9 +1228,9 @@ async function viewCoppie(v) {
     { k: 'with_pct', label: '%V', sv: r => r.with_pg ? r.with_v / r.with_pg : null, fmt: r => pct(r.with_v, r.with_pg) },
     { k: 'vs_pg', label: 'Contro', title: 'Partite da avversari', cls: 'strong' }, { k: 'vs_v', label: 'V' , title: 'Vinte dal giocatore selezionato'}, { k: 'vs_n', label: 'N' }, { k: 'vs_s', label: 'P' },
   ];
-  const data = S.partners, box = $('#pTable');
+  data = S.partners; box = $('#pTable');
   function draw() {
-    if (!document.body.contains(box)) return;
+    if (!data || !document.body.contains(box)) return;
     const rows = data.rows;
     const b = u.pairB && rows.find(r => r.id === u.pairB);
     $('#pHead').innerHTML = u.pairB ? (b ? `<div class="kpis">
@@ -804,8 +1300,11 @@ async function viewFanta(v) {
       <div class="kpi"><div class="v">${F.free_phase ? 'Libero' : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? 'Mercato fino alla 1ª giornata' : 'Cambi rimasti'}</div></div>
     </div>`;
 
+  const openG = F.giornate.filter(g => g.state === 'aperto');
+  if (isPres() && S.season === S.boot.active_season && openG.length) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${openG.map(g => `<div class="stopbar card"><span class="small">Presidente: schieramenti <b>aperti</b> per ${esc(typeLabel(g.type))} del ${esc(fmtDate(g.date))}. Premi STOP prima del calcio d'inizio.</span><button class="btn stop" data-stop="${g.match_id}">■ STOP schieramenti</button></div>`).join('')}</div>`);
+  $('#stopBanner') && ($('#stopBanner').onclick = async e => { const b = e.target.closest('[data-stop]'); if (b) await stopFanta(Number(b.dataset.stop)); });
   if (u.fantaTab === 'squadra') {
-    const open = F.giornate.filter(g => g.state === 'aperto');
+    const open = openG;
     const rosterRows = mine.roster.map(r => ({ ...r, name: pname(r.player_id), now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now);
     const gkList = S.boot.players.filter(p => p.is_gk && p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
     const movSize = lineupSize - 1;
@@ -904,17 +1403,72 @@ async function viewFanta(v) {
   }
 
   if (u.fantaTab === 'regole') {
-    fv.innerHTML = `<div class="card"><h2>Regole</h2><ul>
-      <li>Budget di <b>${settings('fanta_budget')} crediti</b> per una rosa di <b>${rosterSize} giocatori di movimento</b> del gruppo. Lo stesso giocatore può stare in più squadre.</li>
-      <li>La rosa contiene solo giocatori di movimento. I <b>portieri (GK) non si comprano</b>: sono sempre disponibili per tutti.</li>
-      <li>Vale solo per le partite di <b>calcio a 8 e a 11</b> che il presidente sblocca. A ogni giornata schieri <b>1 portiere (P) + ${lineupSize - 1} di movimento</b> della tua rosa. Puoi partecipare anche se non giochi.</li>
-      <li>Ruolo P: se il tuo portiere gioca prende il suo punteggio; se non gioca prendi il <b>punteggio peggiore tra i portieri che hanno giocato</b>; se in partita non c'è nessun portiere, <b>${settings('fanta_gk_ufficio')} d'ufficio</b>. Se non scegli il portiere il ruolo vale 0.</li>
-      <li>Punteggio di ogni giocatore: <b>media voto</b> della partita + <b>${settings('fanta_goal_bonus')}</b> per gol − <b>${settings('fanta_conceded_malus')}</b> ogni <b>${settings('fanta_conceded_step')}</b> gol subiti (solo a chi ha gol subiti assegnati, calcolo per difetto) + <b>${settings('fanta_pen_saved_bonus')}</b> per rigore parato − <b>${settings('fanta_pen_missed_malus')}</b> per rigore sbagliato + <b>${settings('fanta_win_noscore_bonus')}</b> a chi non ha segnato se la sua squadra vince${settings('fanta_own_goal_malus') ? ` − ${settings('fanta_own_goal_malus')} per autogol` : ''}.</li>
-      <li>Chi non gioca prende <b>0</b>. Chi gioca ma riceve meno di ${settings('min_votes')} voti prende voto d'ufficio <b>${settings('fanta_voto_ufficio')}</b>.</li>
-      <li>I voti contano alla chiusura delle votazioni (${settings('vote_hours')} ore dopo il risultato). Nel calcio a 5 non si vota.</li>
-      <li>Fino alla prima giornata il mercato è libero. Dopo hai <b>${maxCh} cambi</b> a stagione: ogni cessione usa un cambio e restituisce il <b>valore attuale</b> del giocatore.</li>
-      <li>Le quotazioni partono dai dati della stagione precedente e si aggiornano dopo ogni partita a 8 o 11 in base a presenze e media punti fanta (voto + bonus/malus) della stagione in corso. Dopo ${settings('price_blend_matches')} partite stagionali contano solo i dati della stagione. Chi non ha partite costa 1.</li>
-      <li>Classifica cumulativa di stagione: vince chi somma più punti. A parità, chi ha più gol segnati dai giocatori schierati nelle giornate; poi ordine alfabetico.</li></ul></div>`;
+    const st = k => fmtNum(settings(k));
+    const gb = settings('fanta_goal_bonus'), cs = settings('fanta_conceded_step'), cm = settings('fanta_conceded_malus'), ps = settings('fanta_pen_saved_bonus'), pm = settings('fanta_pen_missed_malus'), wb = settings('fanta_win_noscore_bonus'), ogm = settings('fanta_own_goal_malus');
+    const ex1 = 6.5 + 2 * gb, ex2 = 6 - Math.floor(7 / cs) * cm + ps, ex3 = 6.25 + wb;
+    fv.innerHTML = `<div class="card rules"><h2>Regolamento FantaNunnaree</h2>
+      <p class="small muted">I numeri in grassetto sono quelli impostati ora dai presidenti (Area presidente → Impostazioni). Se cambiano, cambia anche questo regolamento e i punteggi vengono ricalcolati, anche quelli passati.</p>
+
+      <h3>1. Chi gioca e quando</h3><ul>
+      <li>Può partecipare chiunque abbia accesso all'app, anche chi non scende in campo.</li>
+      <li>Il FantaNunnaree vale solo per le partite di <b>calcio a 8 e calcio a 11</b>. Calcio a 5 e calcio a 7 non hanno giornata fanta (nel calcio a 7 si vota, ma non conta per il fanta).</li>
+      <li>Una partita diventa una <b>giornata</b> solo quando un presidente sblocca gli schieramenti dalla scheda partita. Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le formazioni cancellate.</li></ul>
+
+      <h3>2. La rosa e il mercato</h3><ul>
+      <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare fino a <b>${rosterSize} giocatori di movimento</b>.</li>
+      <li>Lo stesso giocatore può essere nella rosa di più squadre: non ci sono esclusive.</li>
+      <li>I <b>portieri (GK) non si comprano</b>: sono sempre disponibili a tutti per il ruolo P. Chi è GK lo decidono i presidenti.</li>
+      <li>Si paga il prezzo del momento dell'acquisto, che resta fisso come “prezzo pagato”.</li>
+      <li><b>Mercato libero</b>: finché non si chiude la prima giornata della stagione (STOP o risultato inserito) puoi comprare e cedere quanto vuoi, con rimborso pieno del prezzo pagato e senza usare cambi.</li>
+      <li><b>Dopo</b>: hai <b>${maxCh} cambi</b> per tutta la stagione. Ogni cessione usa 1 cambio e ti restituisce il <b>valore attuale</b> del giocatore (può essere più o meno di quanto l'hai pagato). Gli acquisti non consumano cambi, ma servono crediti e un posto libero in rosa. Finiti i cambi non puoi più cedere.</li>
+      <li>Crediti disponibili = ${st('fanta_budget')} − prezzi pagati + incassi delle cessioni.</li>
+      <li>Se cedi un giocatore schierato in una giornata ancora aperta, viene tolto da quella formazione.</li>
+      <li>A stagione terminata il mercato è chiuso.</li></ul>
+
+      <h3>3. Le quotazioni</h3><ul>
+      <li>Ogni giocatore parte da una <b>quotazione base</b> di inizio stagione, calcolata sulla stagione precedente e approvata dai presidenti (che possono correggerla).</li>
+      <li>Dopo ogni partita a 8 o a 11 il prezzo si aggiorna in base alla stagione in corso: <b>punti attesi</b> = (partite giocate dal giocatore ÷ partite disputate) × media dei suoi punti fanta (voto, o ${st('fanta_voto_ufficio')} d'ufficio, + bonus/malus).</li>
+      <li>Prezzo dalla stagione = 1 + (punti attesi − 1)², arrotondato, minimo 1 e massimo <b>${st('price_max')}</b>.</li>
+      <li>Prezzo attuale = mix tra base e prezzo dalla stagione: il peso della stagione cresce del ${fmtNum(100 / settings('price_blend_matches'))}% a partita; dopo <b>${st('price_blend_matches')} partite</b> conta solo la stagione. Chi non gioca mai scende partita dopo partita verso 1.</li>
+      <li>Le partite che i presidenti escludono dalle quotazioni (per esempio le prime 5 del 2026-27) non contano.</li></ul>
+
+      <h3>4. La formazione</h3><ul>
+      <li>A ogni giornata schieri <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa.</li>
+      <li>Puoi modificarla quante volte vuoi finché gli schieramenti sono aperti. Le formazioni sono visibili a tutti.</li>
+      <li>Gli schieramenti si chiudono quando un presidente preme <b>STOP</b> (da fare prima del calcio d'inizio) o, al più tardi, quando viene inserito il risultato. Dopo, nessuno può più cambiare: l'app lo blocca.</li>
+      <li>Se non salvi una formazione, quella giornata prendi 0. I posti lasciati vuoti valgono 0.</li></ul>
+
+      <h3>5. Il punteggio di ogni giocatore</h3><ul>
+      <li><b>Chi non gioca</b> la partita prende <b>0</b>.</li>
+      <li><b>Voto</b>: media dei voti ricevuti dagli altri giocatori della partita (da 0 a 10, passi di 0,25). Vale solo se ha ricevuto <b>almeno ${st('min_votes')} voti</b>, altrimenti prende <b>${st('fanta_voto_ufficio')} d'ufficio</b>.</li>
+      <li>Il voto entra solo alla chiusura delle votazioni (<b>${st('vote_hours')} ore</b> dopo il risultato). Prima vedi solo bonus e malus e la giornata è “provvisoria”.</li>
+      <li><b>+${fmtNum(gb)}</b> per ogni gol segnato (anche su rigore).</li>
+      <li><b>−${fmtNum(cm)}</b> ogni <b>${fmtNum(cs)}</b> gol subiti, per difetto (0–${cs - 1} subiti: 0; ${cs}–${2 * cs - 1}: −${fmtNum(cm)}; ${2 * cs}–${3 * cs - 1}: −${fmtNum(2 * cm)}…). Vale per chi ha gol subiti assegnati, di norma il portiere.</li>
+      <li><b>+${fmtNum(ps)}</b> per ogni rigore parato · <b>−${fmtNum(pm)}</b> per ogni rigore sbagliato.</li>
+      <li><b>+${fmtNum(wb)}</b> se la sua squadra vince e lui non ha segnato (vale anche per il portiere). Chi segna prende già il bonus gol, quindi non anche questo.</li>
+      <li>Autogol: ${ogm ? `<b>−${fmtNum(ogm)}</b> per ogni autogol` : 'nessun malus (conta solo per il risultato)'}.</li></ul>
+
+      <h3>6. Il ruolo P (portiere)</h3><ul>
+      <li>Se il portiere che hai schierato ha giocato, prendi <b>il suo punteggio</b>.</li>
+      <li>Se non ha giocato, prendi <b>il punteggio peggiore tra i portieri (GK) che hanno giocato</b> quella partita.</li>
+      <li>Se in partita non c'era nessun GK, il ruolo P vale <b>${st('fanta_gk_ufficio')} d'ufficio</b>.</li>
+      <li>Se non scegli nessun portiere, il ruolo P vale 0.</li>
+      <li>“Ha giocato” = è segnato GK ed è in una delle due squadre della partita.</li></ul>
+
+      <h3>7. Esempi</h3><ul>
+      <li>Attaccante: media 6,5, 2 gol, squadra vince → 6,5 + ${fmtNum(2 * gb)} = <b>${fmtNum(ex1)}</b>.</li>
+      <li>Portiere: meno di ${st('min_votes')} voti (${st('fanta_voto_ufficio')} d'ufficio), 7 gol subiti, 1 rigore parato, squadra perde → ${st('fanta_voto_ufficio')} − ${fmtNum(Math.floor(7 / cs) * cm)} + ${fmtNum(ps)} = <b>${fmtNum(ex2)}</b>.</li>
+      <li>Difensore: media 6,25, nessun gol, squadra vince → 6,25 + ${fmtNum(wb)} = <b>${fmtNum(ex3)}</b>.</li></ul>
+
+      <h3>8. Classifica</h3><ul>
+      <li>Punteggio di giornata = somma dei ${lineupSize - 1} di movimento + ruolo P.</li>
+      <li>Classifica <b>cumulativa</b> di stagione: si sommano tutte le giornate chiuse. “prov.” = almeno una giornata ha ancora le votazioni aperte.</li>
+      <li>A parità di punti vince chi ha <b>più gol segnati dai giocatori schierati</b> (somma su tutte le giornate; il portiere conta solo se ha giocato lui). Poi conta l'<b>ordine alfabetico</b>.</li></ul>
+
+      <h3>9. Correzioni dei presidenti</h3><ul>
+      <li>I presidenti possono correggere in ogni momento squadre, gol, risultati e statistiche: punteggi, classifica e quotazioni si ricalcolano da soli.</li>
+      <li>Possono riaprire gli schieramenti dopo uno STOP finché la partita non ha il risultato.</li>
+      <li>“Annulla giornata fanta” cancella la giornata e tutte le formazioni di quella partita.</li></ul></div>`;
     fv.onclick = null;
   }
 }
