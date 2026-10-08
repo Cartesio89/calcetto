@@ -529,7 +529,7 @@ function openMatch(id) {
       ${m.fanta_state === 'aperto' ? '<button class="btn sm" data-fanta="bloccato">Chiudi schieramenti</button>' : ''}
       ${m.fanta_state !== 'chiuso' ? '<button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button>' : ''}</div>
       <div class="tiny muted" style="margin-top:6px">Inserendo il risultato gli schieramenti si chiudono da soli.</div></div>` : '';
-  const voteCtl = pres && played ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
+  const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
       <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
       <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
@@ -574,6 +574,12 @@ function editMatchMeta(m, retro) {
     actions: [{ label: m ? 'Salva' : 'Avanti: squadre', cls: 'primary', fn: async el => {
       const type = Number($('#mType .on', el).dataset.v), date = $('#mDate', el).value, note = $('#mNote', el).value;
       if (!date) { toast('Inserisci la data', true); return false; }
+      if (m && type !== m.type) {
+        const warn = [];
+        if (![8, 11].includes(type) && m.fanta_state !== 'chiuso') warn.push('la giornata FantaNunnaree verrà annullata e le formazioni cancellate');
+        if (type === 5 && (m.votes_close_at || m.voters)) warn.push('i voti di questa partita verranno cancellati (nel calcio a 5 non si vota)');
+        if (warn.length && !await confirmBox(`Passando a calcio a ${type}: ${warn.join('; ')}. Confermi?`, 'Conferma', true)) return false;
+      }
       if (m) { const ok = await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: type, p_date: date, p_note: note }), 'Salvato'); if (ok) await refreshAll(); return ok; }
       const r = await act(() => rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: note }));
       if (!r) return false;
@@ -641,8 +647,8 @@ function editResult(m, openVotesDefault) {
         <div><div class="team" style="margin:6px 0"><span class="dot W"></span>${esc(TW)}</div>${rowsFor('W')}</div>
         <div><div class="team" style="margin:6px 0"><span class="dot D"></span>${esc(TD)}</div>${rowsFor('D')}</div>
       </div>
-      <label class="row small" style="margin-top:14px;gap:8px;cursor:pointer"><input type="checkbox" id="openVotes" ${openDefault ? 'checked' : ''} ${played && m.votes_close_at ? 'disabled' : ''}>
-        ${played && m.votes_close_at ? 'Votazioni già aperte in precedenza (gestiscile dalla scheda partita)' : `Apri le votazioni per ${settings('vote_hours')} ore`}</label>`,
+      ${m.type === 5 ? '<p class="small muted" style="margin-top:14px">Calcio a 5: nessuna votazione.</p><input type="checkbox" id="openVotes" class="hidden" disabled>' : `<label class="row small" style="margin-top:14px;gap:8px;cursor:pointer"><input type="checkbox" id="openVotes" ${openDefault ? 'checked' : ''} ${played && m.votes_close_at ? 'disabled' : ''}>
+        ${played && m.votes_close_at ? 'Votazioni già aperte in precedenza (gestiscile dalla scheda partita)' : `Apri le votazioni per ${settings('vote_hours')} ore`}</label>`}`,
     onOpen: el => {
       const hint = () => { const [w, d] = calc(); $('#calcHint', el).innerHTML = `Dai marcatori risulta <b>${w} – ${d}</b> <button class="btn sm" id="useCalc">usa</button>`; $('#useCalc', el).onclick = () => { $('#sw', el).value = w; $('#sd', el).value = d; }; };
       hint();
@@ -778,8 +784,9 @@ function giornataScores(g) {
       } else gk = { pid: l.gk, mode: 'ufficio', v: settings('fanta_gk_ufficio') };
       if (gk.v != null) tot += gk.v;
     } else if (played) gk = { pid: null, mode: 'none', v: 0 };
-    return { owner: l.owner_id, total: Math.round(tot * 100) / 100, det, gk, pending: pending || !played };
-  }).sort((a, b) => b.total - a.total);
+    const goals = det.reduce((a, d) => a + (d.played ? Number(pts[d.pid]?.goals || 0) : 0), 0) + (gk && gk.mode === 'own' ? Number(pts[gk.pid]?.goals || 0) : 0);
+    return { owner: l.owner_id, total: Math.round(tot * 100) / 100, det, gk, goals, pending: pending || !played };
+  }).sort((a, b) => b.total - a.total || b.goals - a.goals || pname(a.owner).localeCompare(pname(b.owner), 'it'));
 }
 async function viewFanta(v) {
   const u = S.ui;
@@ -876,15 +883,15 @@ async function viewFanta(v) {
 
   if (u.fantaTab === 'classifica') {
     const tot = {};
-    F.owners.forEach(o => tot[o.owner_id] = { id: o.owner_id, name: pname(o.owner_id), pts: 0, g: 0, best: null, prov: false });
+    F.owners.forEach(o => tot[o.owner_id] = { id: o.owner_id, name: pname(o.owner_id), pts: 0, g: 0, gol: 0, best: null, prov: false });
     F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata').forEach(g => giornataScores(g).forEach(s => {
-      const t = tot[s.owner] ||= { id: s.owner, name: pname(s.owner), pts: 0, g: 0, best: null, prov: false };
-      t.pts += s.total; t.g++; t.best = Math.max(t.best ?? -Infinity, s.total); if (!g.final) t.prov = true;
+      const t = tot[s.owner] ||= { id: s.owner, name: pname(s.owner), pts: 0, g: 0, gol: 0, best: null, prov: false };
+      t.pts += s.total; t.g++; t.gol += s.goals; t.best = Math.max(t.best ?? -Infinity, s.total); if (!g.final) t.prov = true;
     }));
-    const rows = Object.values(tot).sort((a, b) => b.pts - a.pts || a.name.localeCompare(b.name, 'it'));
-    fv.innerHTML = rows.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Squadra</th><th>Punti</th><th>Giornate</th><th>Migliore</th></tr></thead><tbody>
-      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}${r.prov ? ' <span class="tiny muted">prov.</span>' : ''}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
-      </tbody></table></div><div class="legend">Classifica cumulativa della stagione. “prov.” = una giornata ha ancora le votazioni aperte.</div>` : '<div class="card empty">Ancora nessuna squadra.</div>';
+    const rows = Object.values(tot).sort((a, b) => (Math.round(b.pts * 100) - Math.round(a.pts * 100)) || b.gol - a.gol || a.name.localeCompare(b.name, 'it'));
+    fv.innerHTML = rows.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Squadra</th><th>Punti</th><th>Gol</th><th>Giornate</th><th>Migliore</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}${r.prov ? ' <span class="tiny muted">prov.</span>' : ''}</td><td>${r.gol}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
+      </tbody></table></div><div class="legend">Classifica cumulativa della stagione. A parità di punti vince chi ha più gol segnati dai giocatori schierati; poi ordine alfabetico. “prov.” = una giornata ha ancora le votazioni aperte.</div>` : '<div class="card empty">Ancora nessuna squadra.</div>';
     fv.onclick = null;
   }
 
@@ -904,10 +911,10 @@ async function viewFanta(v) {
       <li>Ruolo P: se il tuo portiere gioca prende il suo punteggio; se non gioca prendi il <b>punteggio peggiore tra i portieri che hanno giocato</b>; se in partita non c'è nessun portiere, <b>${settings('fanta_gk_ufficio')} d'ufficio</b>. Se non scegli il portiere il ruolo vale 0.</li>
       <li>Punteggio di ogni giocatore: <b>media voto</b> della partita + <b>${settings('fanta_goal_bonus')}</b> per gol − <b>${settings('fanta_conceded_malus')}</b> ogni <b>${settings('fanta_conceded_step')}</b> gol subiti (solo a chi ha gol subiti assegnati, calcolo per difetto) + <b>${settings('fanta_pen_saved_bonus')}</b> per rigore parato − <b>${settings('fanta_pen_missed_malus')}</b> per rigore sbagliato + <b>${settings('fanta_win_noscore_bonus')}</b> a chi non ha segnato se la sua squadra vince${settings('fanta_own_goal_malus') ? ` − ${settings('fanta_own_goal_malus')} per autogol` : ''}.</li>
       <li>Chi non gioca prende <b>0</b>. Chi gioca ma riceve meno di ${settings('min_votes')} voti prende voto d'ufficio <b>${settings('fanta_voto_ufficio')}</b>.</li>
-      <li>I voti contano alla chiusura delle votazioni (${settings('vote_hours')} ore dopo il risultato).</li>
+      <li>I voti contano alla chiusura delle votazioni (${settings('vote_hours')} ore dopo il risultato). Nel calcio a 5 non si vota.</li>
       <li>Fino alla prima giornata il mercato è libero. Dopo hai <b>${maxCh} cambi</b> a stagione: ogni cessione usa un cambio e restituisce il <b>valore attuale</b> del giocatore.</li>
       <li>Le quotazioni partono dai dati della stagione precedente e si aggiornano dopo ogni partita a 8 o 11 in base a presenze e media punti fanta (voto + bonus/malus) della stagione in corso. Dopo ${settings('price_blend_matches')} partite stagionali contano solo i dati della stagione. Chi non ha partite costa 1.</li>
-      <li>Classifica cumulativa di stagione: vince chi somma più punti.</li></ul></div>`;
+      <li>Classifica cumulativa di stagione: vince chi somma più punti. A parità, chi ha più gol segnati dai giocatori schierati nelle giornate; poi ordine alfabetico.</li></ul></div>`;
     fv.onclick = null;
   }
 }
