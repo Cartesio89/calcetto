@@ -178,6 +178,7 @@ details.box{border:1px solid var(--line);border-radius:12px;background:var(--sur
 details.box summary{padding:12px 14px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
 details.box summary::-webkit-details-marker{display:none}
 details.box > div{padding:0 14px 12px}
+.guestbar{margin:12px 0 -6px;padding:7px 12px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:center}
 /* STOP schieramenti */
 .btn.stop{background:#d0021b;border-color:#d0021b;color:#fff;font-weight:800;letter-spacing:.3px}
 .btn.stop:hover{background:#a80016}
@@ -276,12 +277,13 @@ const S = {
   token: store.get('calc_token'),
   boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
   matches: null, stats: null, myVotes: null, fanta: null, partners: null,
-  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, matchType: 'all', matchPlayer: null,
+  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, statRole: 'all', matchType: 'all', matchPlayer: null,
         pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
         fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
 };
 const me = () => S.boot?.me;
 const isPres = () => !!S.boot?.me?.is_president;
+const isGuest = () => !!S.boot?.me?.is_guest;
 const pname = id => S.boot?.players.find(p => p.id === id)?.name || ('#' + id);
 const activePlayers = () => S.boot.players.filter(p => p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
 const settings = k => Number(S.boot?.settings?.[k]);
@@ -312,6 +314,7 @@ async function renderLogin(msg = '') {
     <div class="err" id="lerr">${esc(msg)}</div>
     <button class="btn primary" id="lgo" style="width:100%;justify-content:center;margin-top:6px">Entra</button>
     <div class="tiny muted" style="margin-top:12px" id="lhint">Al primo accesso scegli il tuo nome e crea la tua password. Se la dimentichi, chiedi al presidente di resettarla.</div>
+    <button class="btn" id="lguest" style="width:100%;justify-content:center;margin-top:12px">👀 Entra come ospite (sola lettura)</button>
   </div></div>`;
   if (!CFG.SUPABASE_URL || /INCOLLA/.test(CFG.SUPABASE_URL)) {
     $('#lerr').textContent = 'App non configurata: inserisci URL e chiave Supabase in config.js.'; return;
@@ -346,6 +349,7 @@ async function renderLogin(msg = '') {
     } catch (e) { $('#lerr').textContent = e.message; $('#lgo').disabled = false; }
   };
   $('#lgo').onclick = go;
+  $('#lguest').onclick = () => guestLogin();
   $('#lpw').onkeydown = $('#lpw2').onkeydown = e => { if (e.key === 'Enter') go(); };
 }
 function logoutLocal() { S.token = null; store.set('calc_token', null); S.boot = null; renderLogin('Sessione scaduta: rientra.'); }
@@ -364,10 +368,10 @@ async function start() {
   try { S.boot = await rpc('get_bootstrap', { p_token: T() }); }
   catch (e) { if (!S.token) return; S.token = null; store.set('calc_token', null); return renderLogin(e.message); }
   S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
-  if (!S.ui.pairPlayer) S.ui.pairPlayer = me().id;
-  if (S.tab === 'admin' && !isPres()) S.tab = 'classifica';
+  if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
+  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest())) S.tab = 'classifica';
   renderShell();
-  loadVotesBadge();
+  if (!isGuest()) loadVotesBadge();
 }
 function renderShell() {
   document.title = CFG.APP_NAME || 'Calcetto';
@@ -381,9 +385,9 @@ function renderShell() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
       </button>
     </div>
-    <nav class="tabs" id="tabs">${TABS.filter(t => !t.pres || isPres()).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
+    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
   </div>
-  <main><div class="wrap" id="view"></div></main>`;
+  <main><div class="wrap">${isGuest() ? '<div class="guestbar small">👀 Modalità ospite · sola lettura</div>' : ''}<div id="view"></div></div></main>`;
   $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
   $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; S.tab = b.dataset.tab; store.set('calc_tab', S.tab); $$('.tab').forEach(x => x.classList.toggle('on', x === b)); renderTab(); scrollTo(0, 0); };
   $('#userBtn').onclick = openAccount;
@@ -406,6 +410,8 @@ async function loadVotesBadge() {
   } catch {}
 }
 function openAccount() {
+  if (isGuest()) return modal({ title: 'Ospite', body: '<p class="small">Stai guardando l\'app in sola lettura. Per votare e giocare al FantaNunnaree serve un account del gruppo.</p>',
+    actions: [{ label: 'Esci', cls: 'danger', fn: async () => { await logout(); return true; } }] });
   modal({
     title: me().name,
     body: `<div class="muted small">${isPres() ? 'Presidente · accesso completo' : 'Giocatore'}</div>
@@ -479,10 +485,12 @@ async function viewClassifica(v) {
   v.innerHTML = `<div class="section-title"><h2>Classifica</h2><div class="spacer"></div>${segHtml('stType', typeOpts, u.statType)}</div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="Cerca giocatore…" value="${esc(u.statSearch)}" style="max-width:260px">
       <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> solo chi ha giocato</label>
+      ${segHtml('stRole', [{ v: 'all', l: 'Tutti' }, { v: 'gk', l: 'Portieri' }, { v: 'mov', l: 'Movimento' }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">PG almeno <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"></label></div>
     <div id="stTable"><div class="loader">Caricamento…</div></div>
     <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
   let data = null, box = null;
+  bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
   $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
   $('#stHide').onchange = e => { u.hideZero = e.target.checked; draw(); };
@@ -510,6 +518,7 @@ async function viewClassifica(v) {
     let rows = data.rows;
     if (u.hideZero) rows = rows.filter(r => r.pg > 0);
     if (u.minPg) rows = rows.filter(r => r.pg >= u.minPg);
+    if (u.statRole === 'gk') rows = rows.filter(r => r.is_gk); else if (u.statRole === 'mov') rows = rows.filter(r => !r.is_gk);
     if (u.statSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.statSearch.toLowerCase()));
     rows = sortRows(rows, u.statSort, cols);
     box.innerHTML = tableHtml(cols, rows, u.statSort, { rowCls: r => r.id === me().id ? 'me' : '', empty: u.minPg ? `Nessun giocatore con almeno ${u.minPg} partite in questa selezione.` : 'Nessuna partita in questa selezione.' });
@@ -535,8 +544,7 @@ function matchStatusPills(m) {
   const p = [];
   if (m.status === 'programmata') p.push('<span class="pill warn">Da giocare</span>');
   if (m.votes_open) p.push(`<span class="pill live">Voti aperti fino a ${fmtDateTime(m.votes_close_at)}</span>`);
-  if (m.fanta_state === 'aperto') p.push('<span class="pill live">Fanta: schieramenti aperti</span>');
-  if (m.fanta_state === 'bloccato') p.push(`<span class="pill">${m.status === 'giocata' ? 'FantaNunnaree' : 'Fanta: schieramenti chiusi'}</span>`);
+  if (m.fanta_state === 'bloccato') p.push(`<span class="pill">${m.status === 'giocata' ? 'FantaNunnaree' : 'Fanta: formazioni bloccate'}</span>`);
   return p.join(' ');
 }
 async function viewPartite(v) {
@@ -547,6 +555,7 @@ async function viewPartite(v) {
     <div class="row" style="margin-bottom:12px">${segHtml('mFilType', typeOpts, u.matchType)}
       <select id="mFilPl" aria-label="Filtra per giocatore" style="max-width:240px"><option value="">Tutti i giocatori</option>${plOpts.map(p => `<option value="${p.id}" ${p.id === u.matchPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
       <span class="small muted" id="mCount"></span></div>
+    <div id="pBanner"></div>
     <div id="mlist"><div class="loader">Caricamento…</div></div>`;
   if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); $('#importMatch').onclick = openImport; }
   let list = null;
@@ -576,16 +585,16 @@ async function viewPartite(v) {
         <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
       </div>
       ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
-      ${isPres() && S.season === S.boot.active_season && m.fanta_state === 'aperto' ? `<div class="stopbar"><span class="small">Schieramenti FantaNunnaree <b>aperti</b></span><button class="btn stop" data-stop="${m.id}">■ STOP schieramenti</button></div>` : ''}
     </div>`;
     }).join('') : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
   };
   bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
+  if (isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended) loadFanta().then(F => { const b = $('#pBanner'); if (b && S.tab === 'partite') { b.innerHTML = fantaLockBanner(F.lock); b.onclick = fantaBannerClick; } }).catch(() => {});
   try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   if (S.tab !== 'partite' || !$('#mlist')) return;
   draw();
-  $('#mlist').onclick = e => { const sb = e.target.closest('[data-stop]'); if (sb) { e.stopPropagation(); stopFanta(Number(sb.dataset.stop)); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+  $('#mlist').onclick = e => { const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
 }
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
@@ -603,7 +612,7 @@ function openMatch(id) {
         return `<li><span>${esc(pname(p.id))}<br><span class="tiny muted">${tags.join(' · ')}</span></span><span>${p.avg != null ? `<b>${fmtVote(p.avg)}</b><span class="tiny muted"> (${p.n_votes})</span>` : ''}</span></li>`;
       }).join('') || '<li class="muted">Nessun giocatore</li>'}</ul></div>`;
   };
-  const pres = isPres() && S.season === S.boot.active_season;
+  const pres = isPres();
   const actions = [];
   if (pres) {
     actions.push({ label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox('Eliminare definitivamente la partita con statistiche, voti e formazioni fanta?', 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_match', { p_token: T(), p_match: m.id }), 'Partita eliminata'); if (ok) await refreshAll(); return ok; } });
@@ -611,12 +620,9 @@ function openMatch(id) {
     actions.push({ label: 'Squadre', fn: async () => { editTeams(m); return true; } });
     actions.push({ label: played ? 'Modifica risultato' : 'Inserisci risultato', cls: 'primary', fn: async () => { editResult(m, true); return true; } });
   }
-  const fantaCtl = pres && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
-      <div class="small muted" style="margin-bottom:8px">Stato: <b>${{ chiuso: 'non attivo', aperto: 'schieramenti aperti', bloccato: 'schieramenti chiusi (giornata valida)' }[m.fanta_state]}</b></div>
-      <div class="row">${m.fanta_state !== 'aperto' && !played ? '<button class="btn accent sm" data-fanta="aperto">Sblocca schieramenti</button>' : ''}
-      ${m.fanta_state === 'aperto' ? `<button class="btn stop" data-stopm="${m.id}">■ STOP schieramenti</button>` : ''}
-      ${m.fanta_state !== 'chiuso' ? '<button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button>' : ''}</div>
-      <div class="tiny muted" style="margin-top:6px">Premi STOP prima del calcio d'inizio: da quel momento nessuno può più cambiare formazione. Se non lo premi, gli schieramenti restano modificabili fino a quando inserisci il risultato.</div></div>` : '';
+  const fantaCtl = pres && S.season === S.boot.active_season && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
+      <div class="small muted" style="margin-bottom:8px">${m.fanta_state === 'bloccato' ? '<b>Giornata valida</b>: questa partita usa le formazioni bloccate con lo STOP.' : 'Nessuna giornata fanta su questa partita. Le formazioni si bloccano con il pulsante STOP in Partite o nel FantaNunnaree, e vanno alla prima partita a 8 o a 11 caricata.'}</div>
+      ${m.fanta_state !== 'chiuso' ? '<div class="row"><button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button></div>' : ''}</div>` : '';
   const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
       <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
@@ -631,8 +637,7 @@ function openMatch(id) {
   });
   mo.el.addEventListener('click', async e => {
     const f = e.target.closest('[data-fanta]');
-    if (f) { if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
-    if (e.target.closest('[data-stopm]')) { if (await stopFanta(m.id)) { mo.close(); openMatch(m.id); } }
+    if (f) { if (!await confirmBox('Annullare la giornata fanta di questa partita? Le formazioni bloccate per questa partita vengono cancellate.', 'Annulla giornata', true)) return; if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
     const vv = e.target.closest('[data-votes]');
     if (vv) { if (await act(() => rpc('admin_set_votes_close', { p_token: T(), p_match: m.id, p_hours: Number(vv.dataset.votes) }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
     if (e.target.closest('[data-seevotes]')) showVotes(m);
@@ -645,11 +650,23 @@ async function showVotes(m) {
   const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
   modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
 }
-async function stopFanta(mid) {
-  if (!await confirmBox('<b>STOP schieramenti FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione per questa partita: valgono quelle salvate finora. Se l\'hai premuto per errore puoi riaprirli dalla scheda partita finché non inserisci il risultato.', 'STOP', true)) return false;
-  const ok = await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: mid, p_state: 'bloccato' }), 'Schieramenti bloccati');
-  if (ok) { S.fanta = null; await refreshAll(); }
-  return ok;
+function fantaLockBanner(lock) {
+  const where = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
+  if (isPres()) return lock
+    ? `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>bloccate</b> ${where}. Si riaprono da sole con il risultato.</span><button class="btn sm" data-reopen>Riapri formazioni</button></div>`
+    : `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>aperte</b>: premi STOP poco prima del calcio d'inizio.</span><button class="btn stop" data-fstop>■ STOP formazioni</button></div>`;
+  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate dai presidenti ${where}.</div>` : '';
+}
+async function fantaBannerClick(e) {
+  if (e.target.closest('[data-fstop]')) {
+    if (!await confirmBox('<b>STOP formazioni FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione: valgono quelle salvate in questo momento, per la prima partita a 8 o a 11 caricata (già creata o che caricherete). Si riaprono da sole quando inserite il risultato.', 'STOP', true)) return;
+    const r = await act(() => rpc('admin_fanta_stop', { p_token: T() }));
+    if (r) { toast(`Formazioni bloccate (${r.teams} squadre)${r.match_id ? '' : ': in attesa della partita'}`); S.fanta = null; await refreshAll(); }
+  }
+  if (e.target.closest('[data-reopen]')) {
+    if (!await confirmBox('Riaprire le formazioni? Il blocco attuale viene annullato e ognuno può modificarle di nuovo. Usalo solo se lo STOP è stato premuto per errore.', 'Riapri', true)) return;
+    if (await act(() => rpc('admin_fanta_reopen', { p_token: T() }), 'Formazioni riaperte')) { S.fanta = null; await refreshAll(); }
+  }
 }
 async function refreshAll() {
   S.stats = S.fanta = S.partners = null;
@@ -1095,7 +1112,7 @@ function importPreview(res, src) {
       const drawMeta = () => {
         const m = tgt();
         $('#impMeta', el).innerHTML = m
-          ? `<div class="small muted" style="margin-top:6px">Uso tipo e data della partita già creata. Le squadre già inserite verranno sostituite da quelle del file.${m.fanta_state === 'aperto' ? ' <b>Gli schieramenti FantaNunnaree verranno chiusi.</b>' : ''}</div>`
+          ? `<div class="small muted" style="margin-top:6px">Uso tipo e data della partita già creata. Le squadre già inserite verranno sostituite da quelle del file.</div>`
           : `<label class="f">Tipo</label>${segHtml('impType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), st.type)}
              <div class="grid2"><div><label class="f" for="impDate">Data</label><input type="date" id="impDate" value="${st.date}"></div>
              <div><label class="f" for="impNote">Nota</label><input type="text" id="impNote" value="${esc(st.note)}"></div></div>`;
@@ -1309,43 +1326,44 @@ function giornataScores(g) {
 }
 async function viewFanta(v) {
   const u = S.ui;
-  v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [{ v: 'squadra', l: 'La mia squadra' }, { v: 'mercato', l: 'Mercato' }, { v: 'giornate', l: 'Giornate' }, { v: 'classifica', l: 'Classifica' }, { v: 'squadre', l: 'Squadre' }, { v: 'regole', l: 'Regole' }], u.fantaTab)}</div><div id="fv"><div class="loader">Caricamento…</div></div>`;
+  if (isGuest() && u.fantaTab === 'squadra') u.fantaTab = 'classifica';
+  v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [...(isGuest() ? [] : [{ v: 'squadra', l: 'La mia squadra' }]), { v: 'mercato', l: isGuest() ? 'Quotazioni' : 'Mercato' }, { v: 'giornate', l: 'Giornate' }, { v: 'classifica', l: 'Classifica' }, { v: 'squadre', l: 'Squadre' }, { v: 'regole', l: 'Regole' }], u.fantaTab)}</div><div id="fv"><div class="loader">Caricamento…</div></div>`;
   bindSeg($('#fTab'), val => { u.fantaTab = val; viewFanta(v); });
   let F; try { F = await loadFanta(); } catch (e) { if ($('#fv')) $('#fv').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   const fv = $('#fv'); if (S.tab !== 'fanta' || !fv) return;
   const price = {}; F.prices.forEach(p => price[p.id] = p);
   const mine = F.owners.find(o => o.owner_id === me().id) || { credits: settings('fanta_budget'), changes_used: 0, roster: [] };
-  const canTrade = S.season === S.boot.active_season && !F.season_ended;
+  const canTrade = S.season === S.boot.active_season && !F.season_ended && !isGuest();
   const rosterSize = settings('fanta_roster_size'), lineupSize = settings('fanta_lineup_size'), maxCh = settings('fanta_max_changes');
-  const head = `<div class="kpis">
+  const head = isGuest() ? '' : `<div class="kpis">
       <div class="kpi"><div class="v">${fmtNum(mine.credits)}</div><div class="l">Crediti disponibili</div></div>
       <div class="kpi"><div class="v">${mine.roster.length}/${rosterSize}</div><div class="l">Giocatori in rosa</div></div>
-      <div class="kpi"><div class="v">${F.free_phase ? 'Libero' : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? 'Mercato fino alla 1ª giornata' : 'Cambi rimasti'}</div></div>
+      <div class="kpi"><div class="v">${F.free_phase ? 'Libero' : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? 'Mercato fino al 1° STOP' : 'Cambi rimasti'}</div></div>
     </div>`;
 
-  const openG = F.giornate.filter(g => g.state === 'aperto');
-  if (isPres() && S.season === S.boot.active_season && openG.length) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${openG.map(g => `<div class="stopbar card"><span class="small">Presidente: schieramenti <b>aperti</b> per ${esc(typeLabel(g.type))} del ${esc(fmtDate(g.date))}. Premi STOP prima del calcio d'inizio.</span><button class="btn stop" data-stop="${g.match_id}">■ STOP schieramenti</button></div>`).join('')}</div>`);
-  $('#stopBanner') && ($('#stopBanner').onclick = async e => { const b = e.target.closest('[data-stop]'); if (b) await stopFanta(Number(b.dataset.stop)); });
+  const lock = F.lock;
+  const lockText = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
+  const isActiveSeason = S.season === S.boot.active_season && !F.season_ended;
+  if (isActiveSeason) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${fantaLockBanner(lock)}</div>`);
+  $('#stopBanner') && ($('#stopBanner').onclick = fantaBannerClick);
   if (u.fantaTab === 'squadra') {
-    const open = openG;
     const rosterRows = mine.roster.map(r => ({ ...r, name: pname(r.player_id), now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now);
     const gkList = S.boot.players.filter(p => p.is_gk && p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
     const movSize = lineupSize - 1;
-    fv.innerHTML = head + open.map(g => {
-      const mineL = g.lineups.find(l => l.owner_id === me().id) || {};
-      const lu = mineL.players || [], myGk = mineL.gk ?? null;
-      return `<div class="card" data-g="${g.match_id}"><div class="row"><h2 style="margin:0">Formazione · ${esc(typeLabel(g.type))}</h2><span class="muted small">${esc(fmtDate(g.date))}</span><div class="spacer"></div><span class="pill live" data-cnt>${(myGk != null ? 1 : 0) + lu.length}/${lineupSize}</span></div>
-        <div class="tiny muted" style="margin:4px 0 8px">1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0. Se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo; se in campo non c'è nessun portiere, ${settings('fanta_gk_ufficio')} d'ufficio.</div>
+    const myD = F.drafts.find(d => d.owner_id === me().id) || {};
+    const lu = myD.players || [], myGk = myD.gk ?? null, ro = !!lock || !canTrade;
+    fv.innerHTML = head + (canTrade ? `<div class="card" data-g="draft"><div class="row"><h2 style="margin:0">La mia formazione</h2><div class="spacer"></div><span class="pill ${lock ? '' : 'live'}" data-cnt>${(myGk != null ? 1 : 0) + lu.length}/${lineupSize}</span></div>
+        <div class="tiny muted" style="margin:4px 0 8px">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}.</b> Si riaprono da sole quando viene inserito il risultato.` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.'}
+        1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0; se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo, se non c'è nessun portiere ${settings('fanta_gk_ufficio')} d'ufficio.</div>
         <h3 style="font-size:17px;margin:10px 0 2px">Portiere (P) <span class="tiny muted">· sempre disponibili, non si comprano</span></h3>
-        ${gkList.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span><button class="tbtn sel ${myGk === p.id ? 'on' : ''}" data-gk="${p.id}">${myGk === p.id ? 'In porta' : 'Scegli'}</button></div>`).join('') || '<div class="muted small">Nessun portiere segnato GK.</div>'}
+        ${gkList.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span><button class="tbtn sel ${myGk === p.id ? 'on' : ''}" data-gk="${p.id}" ${ro ? 'disabled' : ''}>${myGk === p.id ? 'In porta' : 'Scegli'}</button></div>`).join('') || '<div class="muted small">Nessun portiere segnato GK.</div>'}
         <h3 style="font-size:17px;margin:14px 0 2px">Movimento <span class="tiny muted" data-mcnt>${lu.length}/${movSize}</span></h3>
-        ${rosterRows.length ? rosterRows.map(r => `<div class="pick"><span class="nm">${esc(r.name)}</span><button class="tbtn sel ${lu.includes(r.player_id) ? 'on' : ''}" data-lu="${r.player_id}">${lu.includes(r.player_id) ? 'In campo' : 'Schiera'}</button></div>`).join('') : '<div class="muted small">Prima compra i giocatori nel Mercato.</div>'}
-        <div class="row" style="margin-top:10px"><div class="spacer"></div><button class="btn primary" data-savelu>Salva formazione</button></div></div>`;
-    }).join('') + `<div class="card"><div class="row"><h2 style="margin:0">La mia rosa</h2><div class="spacer"></div>${canTrade ? '<button class="btn accent sm" data-gomarket>Vai al mercato</button>' : ''}</div>
+        ${rosterRows.length ? rosterRows.map(r => `<div class="pick"><span class="nm">${esc(r.name)}</span><button class="tbtn sel ${lu.includes(r.player_id) ? 'on' : ''}" data-lu="${r.player_id}" ${ro ? 'disabled' : ''}>${lu.includes(r.player_id) ? 'In campo' : 'Schiera'}</button></div>`).join('') : '<div class="muted small">Prima compra i giocatori nel Mercato.</div>'}
+        ${ro ? '' : '<div class="row" style="margin-top:10px"><div class="spacer"></div><button class="btn primary" data-savelu>Salva formazione</button></div>'}</div>` : '') + `<div class="card"><div class="row"><h2 style="margin:0">La mia rosa</h2><div class="spacer"></div>${canTrade ? '<button class="btn accent sm" data-gomarket>Vai al mercato</button>' : ''}</div>
       ${rosterRows.length ? `<div class="tbl-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>Giocatore</th><th>Pagato</th><th>Ora</th><th></th></tr></thead><tbody>
         ${rosterRows.map(r => `<tr><td>${esc(r.name)}</td><td>${r.buy_price}</td><td><b>${r.now}</b> ${r.now > r.buy_price ? `<span class="up">▲${r.now - r.buy_price}</span>` : r.now < r.buy_price ? `<span class="down">▼${r.buy_price - r.now}</span>` : ''}</td>
           <td>${canTrade ? `<button class="btn sm danger" data-sell="${r.player_id}">Cedi</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Rosa vuota. Hai ' + settings('fanta_budget') + ' crediti per ' + rosterSize + ' giocatori.</div>'}
-      <div class="tiny muted" style="margin-top:8px">${F.free_phase ? 'Fino alla prima giornata FantaNunnaree puoi cedere e ricomprare liberamente con rimborso pieno.' : `Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`}</div></div>`;
+      <div class="tiny muted" style="margin-top:8px">${F.free_phase ? 'Fino al primo STOP delle formazioni puoi cedere e ricomprare liberamente con rimborso pieno.' : `Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`}</div></div>`;
     fv.onclick = async e => {
       if (e.target.closest('[data-gomarket]')) { u.fantaTab = 'mercato'; return viewFanta(v); }
       const lu = e.target.closest('[data-lu]');
@@ -1357,7 +1375,7 @@ async function viewFanta(v) {
       if (sv) { const c = sv.closest('.card'); const ids = $$('[data-lu].on', c).map(b => Number(b.dataset.lu)); const gkb = $('[data-gk].on', c); const gk = gkb ? Number(gkb.dataset.gk) : null;
         if (!gk && !await confirmBox('Non hai scelto il portiere (P): il ruolo varrà 0. Salvo lo stesso?', 'Salva')) return;
         if (ids.length < lineupSize - 1 && !await confirmBox(`Hai schierato ${ids.length} giocatori di movimento su ${lineupSize - 1}. I posti vuoti valgono 0. Salvo?`, 'Salva')) return;
-        if (await act(() => rpc('fanta_set_lineup', { p_token: T(), p_match: Number(c.dataset.g), p_players: ids, p_gk: gk }), 'Formazione salvata')) { await loadFanta(true); } return; }
+        if (await act(() => rpc('fanta_save_draft', { p_token: T(), p_players: ids, p_gk: gk }), 'Formazione salvata')) { await loadFanta(true); viewFanta(v); } return; }
       const sl = e.target.closest('[data-sell]');
       if (sl) { const pid = Number(sl.dataset.sell); const msg = F.free_phase ? `Cedere ${esc(pname(pid))}? Mercato libero: rimborso pieno, nessun cambio usato.` : `Cedere ${esc(pname(pid))} per ${price[pid]?.price} crediti? Userai 1 cambio (te ne restano ${maxCh - mine.changes_used - 1}).`;
         if (!await confirmBox(msg, 'Cedi', true)) return; if (await act(() => rpc('fanta_sell', { p_token: T(), p_player: pid }), 'Ceduto')) { await loadFanta(true); viewFanta(v); } }
@@ -1371,7 +1389,7 @@ async function viewFanta(v) {
       { k: 'price', label: 'Prezzo', cls: 'strong' },
       { k: 'delta', label: 'Var.', title: 'Variazione rispetto alla quotazione di inizio stagione', fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
       { k: 'pres', label: 'PG', title: 'Presenze stagione (calcio a 8 e 11)' },
-      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? '<span class="pill ok">In rosa</span>' : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>Compra</button>` : '' },
+      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? '<span class="pill ok">In rosa</span>' : r.id === me().id ? '<span class="pill">sei tu</span>' : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>Compra</button>` : '' },
     ];
     const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
     fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="Cerca giocatore…" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso.</span></div><div id="mt"></div>`;
@@ -1387,10 +1405,11 @@ async function viewFanta(v) {
   }
 
   if (u.fantaTab === 'giornate') {
-    if (!F.giornate.length) { fv.innerHTML = '<div class="card empty">Nessuna giornata FantaNunnaree. Il presidente sblocca gli schieramenti dalla scheda di una partita a 8 o a 11.</div>'; return; }
-    fv.innerHTML = F.giornate.map(g => {
+    const pend = lock && !lock.match_id ? `<div class="card small">Formazioni bloccate il ${esc(fmtDateTime(lock.frozen_at))}: verranno usate per la prima partita a 8 o a 11 caricata.</div>` : '';
+    if (!F.giornate.length) { fv.innerHTML = pend || '<div class="card empty">Nessuna giornata FantaNunnaree. Una giornata nasce quando i presidenti premono STOP sulle formazioni e la partita a 8 o a 11 viene caricata.</div>'; fv.onclick = null; return; }
+    fv.innerHTML = pend + F.giornate.map(g => {
       const sc = giornataScores(g);
-      const state = g.state === 'aperto' ? '<span class="pill live">Schieramenti aperti</span>' : g.status !== 'giocata' ? '<span class="pill warn">In attesa del risultato</span>' : g.final ? '<span class="pill ok">Definitiva</span>' : '<span class="pill warn">Provvisoria: voti in corso</span>';
+      const state = g.status !== 'giocata' ? '<span class="pill warn">In attesa del risultato</span>' : g.final ? '<span class="pill ok">Definitiva</span>' : '<span class="pill warn">Provvisoria: voti in corso</span>';
       return `<details class="box" ${g === F.giornate[0] ? 'open' : ''}><summary><b>${esc(typeLabel(g.type))}</b><span class="muted small">${esc(fmtDate(g.date))}${g.status === 'giocata' ? ` · ${g.score_w}–${g.score_d}` : ''}</span><div class="spacer"></div>${state}</summary><div>
         ${sc.length ? '<div class="tiny muted" style="margin-bottom:8px">Classifica della giornata tra le squadre fanta. Tocca una squadra per vedere i punti dei suoi giocatori schierati.</div>' : ''}${sc.length ? sc.map((s, i) => `<details class="box"><summary><span class="rank">${i + 1}</span><span style="flex:1">Squadra di <b>${esc(pname(s.owner))}</b>${s.owner === me().id ? ' <span class="pill live">tu</span>' : ''}</span><b>${fmtNum(s.total)} pt</b></summary><div><ul class="plist">
           ${s.gk ? `<li><span><span class="pill">P</span> ${s.gk.pid ? esc(pname(s.gk.pid)) : '<span class="muted">nessun portiere scelto</span>'}${s.gk.mode === 'sub' ? `<br><span class="tiny muted">non ha giocato: preso il peggiore in campo, ${esc(pname(s.gk.sub))}</span>` : s.gk.mode === 'ufficio' ? `<br><span class="tiny muted">nessun portiere in campo: ${settings('fanta_gk_ufficio')} d'ufficio</span>` : ''}</span>
@@ -1419,7 +1438,9 @@ async function viewFanta(v) {
 
   if (u.fantaTab === 'squadre') {
     const owners = [...F.owners].sort((a, b) => pname(a.owner_id).localeCompare(pname(b.owner_id), 'it'));
-    fv.innerHTML = owners.length ? owners.map(o => `<details class="box"><summary><span style="flex:1">${esc(pname(o.owner_id))}</span><span class="small muted">${o.roster.length}/${rosterSize} · ${fmtNum(o.credits)} cr</span></summary><div><ul class="plist">
+    const dr = {}; F.drafts.forEach(d => dr[d.owner_id] = d);
+    fv.innerHTML = owners.length ? owners.map(o => `<details class="box"><summary><span style="flex:1">${esc(pname(o.owner_id))}</span><span class="small muted">${o.roster.length}/${rosterSize} · ${fmtNum(o.credits)} cr</span></summary><div>
+      <div class="small" style="margin-bottom:6px"><b>Formazione attuale:</b> ${dr[o.owner_id] ? `${dr[o.owner_id].gk ? '<span class="pill">P</span> ' + esc(pname(dr[o.owner_id].gk)) + ' · ' : ''}${dr[o.owner_id].players.map(x => esc(pname(x))).join(', ') || '—'}` : '<span class="muted">non ancora inserita</span>'}</div><ul class="plist">
       ${o.roster.map(r => ({ ...r, now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now).map(r => `<li><span>${esc(pname(r.player_id))}</span><span class="small">pagato ${r.buy_price} · ora <b>${r.now}</b></span></li>`).join('')}
       </ul></div></details>`).join('') : '<div class="card empty">Ancora nessuna squadra.</div>';
     fv.onclick = null;
@@ -1435,14 +1456,15 @@ async function viewFanta(v) {
       <h3>1. Chi gioca e quando</h3><ul>
       <li>Può partecipare chiunque abbia accesso all'app, anche chi non scende in campo.</li>
       <li>Il FantaNunnaree vale solo per le partite di <b>calcio a 8 e calcio a 11</b>. Calcio a 5 e calcio a 7 non hanno giornata fanta (nel calcio a 7 si vota, ma non conta per il fanta).</li>
-      <li>Una partita diventa una <b>giornata</b> solo quando un presidente sblocca gli schieramenti dalla scheda partita. Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le formazioni cancellate.</li></ul>
+      <li>Una partita diventa una <b>giornata</b> quando i presidenti premono <b>STOP</b> sulle formazioni: le formazioni bloccate vanno alla <b>prima partita a 8 o a 11 caricata</b> dal giorno dello STOP in poi, sia che sia già stata creata (da giocare) sia che venga caricata dopo con il tabellino.</li>
+      <li>Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le sue formazioni cancellate.</li></ul>
 
       <h3>2. La rosa e il mercato</h3><ul>
       <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare fino a <b>${rosterSize} giocatori di movimento</b>.</li>
       <li>Lo stesso giocatore può essere nella rosa di più squadre: non ci sono esclusive.</li>
       <li>I <b>portieri (GK) non si comprano</b>: sono sempre disponibili a tutti per il ruolo P. Chi è GK lo decidono i presidenti.</li>
       <li>Si paga il prezzo del momento dell'acquisto, che resta fisso come “prezzo pagato”.</li>
-      <li><b>Mercato libero</b>: finché non si chiude la prima giornata della stagione (STOP o risultato inserito) puoi comprare e cedere quanto vuoi, con rimborso pieno del prezzo pagato e senza usare cambi.</li>
+      <li><b>Mercato libero</b>: fino al primo STOP delle formazioni della stagione puoi comprare e cedere quanto vuoi, con rimborso pieno del prezzo pagato e senza usare cambi.</li>
       <li><b>Dopo</b>: hai <b>${maxCh} cambi</b> per tutta la stagione. Ogni cessione usa 1 cambio e ti restituisce il <b>valore attuale</b> del giocatore (può essere più o meno di quanto l'hai pagato). Gli acquisti non consumano cambi, ma servono crediti e un posto libero in rosa. Finiti i cambi non puoi più cedere.</li>
       <li>Crediti disponibili = ${st('fanta_budget')} − prezzi pagati + incassi delle cessioni.</li>
       <li>Se cedi un giocatore schierato in una giornata ancora aperta, viene tolto da quella formazione.</li>
@@ -1456,10 +1478,11 @@ async function viewFanta(v) {
       <li>Le partite che i presidenti escludono dalle quotazioni (per esempio le prime 5 del 2026-27) non contano.</li></ul>
 
       <h3>4. La formazione</h3><ul>
-      <li>A ogni giornata schieri <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa.</li>
-      <li>Puoi modificarla quante volte vuoi finché gli schieramenti sono aperti. Le formazioni sono visibili a tutti.</li>
-      <li>Gli schieramenti si chiudono quando un presidente preme <b>STOP</b> (da fare prima del calcio d'inizio) o, al più tardi, quando viene inserito il risultato. Dopo, nessuno può più cambiare: l'app lo blocca.</li>
-      <li>Se non salvi una formazione, quella giornata prendi 0. I posti lasciati vuoti valgono 0.</li></ul>
+      <li>Ogni squadra ha sempre una <b>formazione attuale</b>: <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa. Puoi cambiarla quando vuoi.</li>
+      <li>Poco prima del calcio d'inizio i presidenti premono <b>STOP</b>: le formazioni salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
+      <li>Le formazioni si <b>riaprono da sole</b> quando viene inserito il risultato di quella partita. La tua formazione resta quella di prima: per la giornata successiva la cambi solo se vuoi.</li>
+      <li>Se non hai mai salvato una formazione, alla giornata prendi 0. I posti lasciati vuoti valgono 0.</li>
+      <li>Le formazioni attuali di tutti sono visibili nella scheda Squadre.</li></ul>
 
       <h3>5. Il punteggio di ogni giocatore</h3><ul>
       <li><b>Chi non gioca</b> la partita prende <b>0</b>.</li>
@@ -1490,7 +1513,7 @@ async function viewFanta(v) {
 
       <h3>9. Correzioni dei presidenti</h3><ul>
       <li>I presidenti possono correggere in ogni momento squadre, gol, risultati e statistiche: punteggi, classifica e quotazioni si ricalcolano da soli.</li>
-      <li>Possono riaprire gli schieramenti dopo uno STOP finché la partita non ha il risultato.</li>
+      <li>Se lo STOP è stato premuto per errore possono riaprire le formazioni (il blocco viene annullato).</li>
       <li>“Annulla giornata fanta” cancella la giornata e tutte le formazioni di quella partita.</li></ul></div>`;
     fv.onclick = null;
   }
@@ -1575,7 +1598,12 @@ async function viewAdmin(v) {
 }
 
 // ------------------------------------------------------------- BOOT
-if (S.token) start(); else renderLogin();
+async function guestLogin() {
+  try { const r = await rpc('guest_login', {}); S.token = r.token; store.set('calc_token', r.token); S.tab = 'classifica'; await start(); }
+  catch (e) { const el = $('#lerr'); if (el) el.textContent = e.message; else renderLogin(e.message); }
+}
+if (/[?&]ospite\b/.test(location.search) && !S.token) guestLogin();
+else if (S.token) start(); else renderLogin();
 </script>
 </body>
 </html>
