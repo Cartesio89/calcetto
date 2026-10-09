@@ -179,6 +179,52 @@ details.box summary{padding:12px 14px;cursor:pointer;font-weight:600;display:fle
 details.box summary::-webkit-details-marker{display:none}
 details.box > div{padding:0 14px 12px}
 .guestbar{margin:12px 0 -6px;padding:7px 12px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:center}
+/* icone e liste partita */
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.icn{display:inline-flex;align-items:center;gap:1px;font-size:11px;font-weight:800}
+.pd{width:13px;height:13px;border-radius:50%;background:#5cc23b;display:inline-block;flex:none}
+.pd.gk{background:#f5a524}
+.ico-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:14px 0 4px}
+.ico-legend span{display:inline-flex;align-items:center;gap:5px}
+.ml-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.ml-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;min-height:24px}
+.ml-row .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-row .ev{display:inline-flex;gap:1px;flex:none}
+.ml-row.hl .nm{font-weight:800}
+.ml-col.r .ml-row{flex-direction:row-reverse}
+/* dettaglio partita */
+.mx-head{background:linear-gradient(165deg,#0f3d2e 0%,#1d6b4f 62%,#2c8a62 100%);color:#fff;border-radius:16px;padding:14px 16px 0;margin-bottom:12px;overflow:hidden;position:relative}
+.mx-head::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-34px;height:58px;background:#0b2a20;border-radius:50% 50% 0 0;opacity:.85}
+.mx-top{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start;position:relative;z-index:1}
+.mx-team{font-family:'Barlow Condensed',Inter,sans-serif;font-size:26px;font-weight:700;line-height:1.05}
+.mx-team.r{text-align:right}
+.mx-score{font-family:'Barlow Condensed',Inter,sans-serif;font-size:50px;font-weight:800;line-height:1;text-align:center;letter-spacing:1px}
+.mx-sub{font-size:12px;opacity:.8;text-align:center;margin-top:4px}
+.mx-shirts{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2;margin-top:-6px}
+.mx-shirts{padding:0 4%}
+.mx-shirts img{height:150px;width:auto;margin-bottom:-12px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35))}
+.mx-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mx-row{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--line);min-height:44px}
+.mx-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:15px}
+.mx-row .ev{display:inline-flex;align-items:center;gap:1px;flex:none}
+.mx-row .vt{flex:none;min-width:40px;height:32px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px;background:color-mix(in srgb,var(--brand-2) 13%,var(--surface));color:var(--brand-2);font-variant-numeric:tabular-nums}
+.mx-row .vt.none{color:var(--muted);font-weight:600;opacity:.7}
+.mx-row .vt.few{opacity:.6}
+.mx-col.r .mx-row{flex-direction:row-reverse}
+.mx-col.r .mx-row .nm{text-align:right}
+@media (max-width:600px){
+  .mx-head{padding:12px 12px 0}
+  .mx-team{font-size:21px}
+  .mx-score{font-size:40px}
+  .mx-shirts img{height:92px}
+  .mx-cols{gap:8px}
+  .mx-row{gap:5px;min-height:40px;padding:6px 0}
+  .mx-row .nm{font-size:13.5px}
+  .mx-row .vt{min-width:34px;height:28px;font-size:13px;padding:0 4px}
+  .pd{width:11px;height:11px}
+  .ml-cols{gap:8px}
+  .ml-row{font-size:12.5px;gap:4px}
+}
 /* STOP schieramenti */
 .btn.stop{background:#d0021b;border-color:#d0021b;color:#fff;font-weight:800;letter-spacing:.3px}
 .btn.stop:hover{background:#a80016}
@@ -541,6 +587,27 @@ function scorersText(m, team) {
   m.players.filter(p => p.team !== team && p.own_goals > 0).forEach(p => out.push(`${esc(pname(p.id))} <span class="tiny">(aut${p.own_goals > 1 ? ' ×' + p.own_goals : ''})</span>`));
   return out.join(', ');
 }
+// ------------------------------------------------------------- ICONE TABELLINO
+const BALL = (fill = '#fff', ink = '#1a1a1a') => `<circle cx="12" cy="12" r="10.3" fill="${fill}" stroke="${ink}" stroke-width="1.6"/><path d="M12 7.3l3.5 2.5-1.3 4.1H9.8L8.5 9.8z" fill="${ink}"/><path d="M12 7.3V2.4M15.5 9.8l4.5-1.5M14.2 13.9l2.8 3.9M9.8 13.9L7 17.8M8.5 9.8L4 8.3" stroke="${ink}" stroke-width="1.3" fill="none"/>`;
+const ICONS = {
+  goal: { t: 'Gol', svg: BALL() },
+  pen: { t: 'Gol su rigore', svg: BALL() + '<circle cx="18.5" cy="18.5" r="5.3" fill="#1d6b4f" stroke="#fff" stroke-width="1.2"/><text x="18.5" y="21.2" font-size="7.6" font-weight="800" text-anchor="middle" fill="#fff" font-family="Arial">R</text>' },
+  own: { t: 'Autogol', svg: BALL('#e5383b', '#5a0d10') },
+  saved: { t: 'Rigore parato', svg: '<path d="M7.2 21.5v-6.3L4.4 12.3a1.7 1.7 0 0 1 2.4-2.4l1.4 1.4V5a1.55 1.55 0 0 1 3.1 0v5.2V3.5a1.55 1.55 0 0 1 3.1 0v6.7V4.6a1.55 1.55 0 0 1 3.1 0v6.2V7.3a1.5 1.5 0 0 1 3 0v8.2c0 3.4-2.5 6-5.8 6z" fill="#2fb36d" stroke="#14532d" stroke-width="1.2" stroke-linejoin="round"/><rect x="7.2" y="18.6" width="10.6" height="2.9" rx=".6" fill="#14532d"/>' },
+  missed: { t: 'Rigore sbagliato', svg: BALL('#d9dde2', '#5b6470') + '<path d="M4 4l16 16M20 4L4 20" stroke="#e5383b" stroke-width="2.6" stroke-linecap="round"/>' },
+  conceded: { t: 'Gol subiti', svg: '<path d="M2.5 19.5V6h19v13.5" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/><path d="M5 8.8h14M5 11.8h14M5 14.8h14M8.5 6.8v12.7M12 6.8v12.7M15.5 6.8v12.7" stroke="#9aa3ad" stroke-width=".9"/><circle cx="16.8" cy="16" r="3.7" fill="#fff" stroke="#e5383b" stroke-width="1.7"/>' },
+};
+const icon = (k, size = 15) => `<svg class="ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="${ICONS[k].t}" role="img"><title>${ICONS[k].t}</title>${ICONS[k].svg}</svg>`;
+// 1-2 eventi: icone ripetute; da 3 in su (e sempre per i gol subiti): icona + numero
+const iconN = (k, n, size) => !n ? '' : (n <= 2 && k !== 'conceded') ? icon(k, size).repeat(n) : `<span class="icn">${icon(k, size)}<b>${n}</b></span>`;
+function evIcons(p, size) {
+  const g = (p.goals || 0) - (p.pen_goals || 0);
+  return iconN('goal', g, size) + iconN('pen', p.pen_goals, size) + iconN('own', p.own_goals, size) + iconN('saved', p.pen_saved, size) + iconN('missed', p.pen_missed, size) + iconN('conceded', p.conceded, size);
+}
+const isGkId = id => !!S.boot.players.find(x => x.id === id)?.is_gk;
+const sortLineup = ps => [...ps].sort((a, b) => (isGkId(b.id) - isGkId(a.id)) || pname(a.id).localeCompare(pname(b.id), 'it'));
+const iconLegend = () => `<div class="ico-legend">${Object.keys(ICONS).map(k => `<span>${icon(k, 14)} ${ICONS[k].t}</span>`).join('')}<span><i class="pd"></i> giocatore</span><span><i class="pd gk"></i> portiere</span></div>`;
+
 function matchStatusPills(m) {
   const p = [];
   if (m.status === 'programmata') p.push('<span class="pill warn">Da giocare</span>');
@@ -585,9 +652,9 @@ async function viewPartite(v) {
         <div class="num">${played ? `${m.score_w} – ${m.score_d}` : '<span class="muted" style="font-size:24px">vs</span>'}</div>
         <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
       </div>
-      ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
+      ${m.players.length ? `<div class="ml-cols">${['W', 'D'].map(t => `<div class="ml-col ${t === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === t)).map(p => `<div class="ml-row ${p.id === pid ? 'hl' : ''}"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 13)}</span></div>`).join('')}</div>`).join('')}</div>` : ''}
     </div>`;
-    }).join('') : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
+    }).join('') + iconLegend() : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
   };
   bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
@@ -600,19 +667,19 @@ async function viewPartite(v) {
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
   const played = m.status === 'giocata';
-  const side = team => {
-    const ps = m.players.filter(p => p.team === team).sort((a, b) => pname(a.id).localeCompare(pname(b.id), 'it'));
-    return `<div><div class="team" style="margin-bottom:6px"><span class="dot ${team}"></span>${esc(team === 'W' ? TW : TD)} ${played ? `<span class="muted">· ${team === 'W' ? m.score_w : m.score_d}</span>` : ''}</div>
-      <ul class="plist">${ps.map(p => {
-        const tags = [];
-        if (p.goals) tags.push(`⚽ ${p.goals}${p.pen_goals ? ` (${p.pen_goals} rig)` : ''}`);
-        if (p.own_goals) tags.push(`AG ${p.own_goals}`);
-        if (p.conceded) tags.push(`GS ${p.conceded}`);
-        if (p.pen_saved) tags.push(`RP ${p.pen_saved}`);
-        if (p.pen_missed) tags.push(`RS ${p.pen_missed}`);
-        return `<li><span>${esc(pname(p.id))}<br><span class="tiny muted">${tags.join(' · ')}</span></span><span>${p.avg != null ? `<b>${fmtVote(p.avg)}</b><span class="tiny muted"> (${p.n_votes})</span>` : ''}</span></li>`;
-      }).join('') || '<li class="muted">Nessun giocatore</li>'}</ul></div>`;
-  };
+  const minV = settings('min_votes');
+  const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
+      const v = p.avg != null ? `<span class="vt ${p.n_votes < minV ? 'few' : ''}" title="${p.n_votes} voti${p.n_votes < minV ? ` (meno di ${minV}: voto d'ufficio nel fanta)` : ''}">${fmtVote(p.avg)}</span>` : '<span class="vt none">–</span>';
+      return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
+    }).join('') || '<div class="muted small" style="padding:10px 0">Nessun giocatore</div>'}</div>`;
+  const header = `<div class="mx-head">
+      <div class="mx-top">
+        <div class="mx-team">${esc(TW)}</div>
+        <div class="mx-mid"><div class="mx-score">${played ? `${m.score_w} - ${m.score_d}` : 'vs'}</div><div class="mx-sub">${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</div></div>
+        <div class="mx-team r">${esc(TD)}</div>
+      </div>
+      <div class="mx-shirts"><img src="maglia-chiari.webp" alt="Maglia ${esc(TW)}" onerror="this.style.visibility='hidden'"><img src="maglia-scuri.webp" alt="Maglia ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
+    </div>`;
   const pres = isPres();
   const actions = [];
   if (pres) {
@@ -629,10 +696,11 @@ function openMatch(id) {
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
       <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
   const mo = modal({
-    title: `${typeLabel(m.type)} · ${fmtDate(m.date)}`, wide: true,
-    body: `<div class="row" style="margin-bottom:10px">${matchStatusPills(m)}</div>${m.note ? `<p class="muted">${esc(m.note)}</p>` : ''}
-      <div class="teams-grid">${side('W')}${side('D')}</div>
-      ${played && !m.votes_open ? '' : played ? '<p class="tiny muted">Le medie voto compaiono alla chiusura delle votazioni.</p>' : ''}
+    title: 'Dettaglio partita', wide: true,
+    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+      <div class="mx-cols">${col('W')}${col('D')}</div>
+      ${played && m.votes_open ? '<p class="tiny muted">I voti compaiono al centro quando si chiudono le votazioni.</p>' : ''}
+      ${iconLegend()}
       ${fantaCtl}${voteCtl}`,
     actions
   });
