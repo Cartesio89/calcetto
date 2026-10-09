@@ -650,16 +650,20 @@ async function showVotes(m) {
   const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
   modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
 }
+function fantaLockWhen(lock) {
+  if (!lock) return '';
+  return lock.played && lock.votes_close_at ? `fino alla chiusura delle votazioni (${esc(fmtDateTime(lock.votes_close_at))})` : 'fino alla chiusura delle votazioni della partita';
+}
 function fantaLockBanner(lock) {
   const where = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
   if (isPres()) return lock
-    ? `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>bloccate</b> ${where}. Si riaprono da sole con il risultato.</span><button class="btn sm" data-reopen>Riapri formazioni</button></div>`
+    ? `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>bloccate</b> ${where}, ${fantaLockWhen(lock)}.</span><button class="btn sm" data-reopen>Riapri formazioni</button></div>`
     : `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>aperte</b>: premi STOP poco prima del calcio d'inizio.</span><button class="btn stop" data-fstop>■ STOP formazioni</button></div>`;
-  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate dai presidenti ${where}.</div>` : '';
+  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate dai presidenti ${where}, ${fantaLockWhen(lock)}.</div>` : '';
 }
 async function fantaBannerClick(e) {
   if (e.target.closest('[data-fstop]')) {
-    if (!await confirmBox('<b>STOP formazioni FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione: valgono quelle salvate in questo momento, per la prima partita a 8 o a 11 caricata (già creata o che caricherete). Si riaprono da sole quando inserite il risultato.', 'STOP', true)) return;
+    if (!await confirmBox(`<b>STOP formazioni FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione: valgono quelle salvate in questo momento, per la prima partita a 8 o a 11 caricata (già creata o che caricherete). Si riaprono da sole quando si chiudono le votazioni della partita (${settings('vote_hours')} ore dopo il tabellino).`, 'STOP', true)) return;
     const r = await act(() => rpc('admin_fanta_stop', { p_token: T() }));
     if (r) { toast(`Formazioni bloccate (${r.teams} squadre)${r.match_id ? '' : ': in attesa della partita'}`); S.fanta = null; await refreshAll(); }
   }
@@ -1353,7 +1357,7 @@ async function viewFanta(v) {
     const myD = F.drafts.find(d => d.owner_id === me().id) || {};
     const lu = myD.players || [], myGk = myD.gk ?? null, ro = !!lock || !canTrade;
     fv.innerHTML = head + (canTrade ? `<div class="card" data-g="draft"><div class="row"><h2 style="margin:0">La mia formazione</h2><div class="spacer"></div><span class="pill ${lock ? '' : 'live'}" data-cnt>${(myGk != null ? 1 : 0) + lu.length}/${lineupSize}</span></div>
-        <div class="tiny muted" style="margin:4px 0 8px">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}.</b> Si riaprono da sole quando viene inserito il risultato.` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.'}
+        <div class="tiny muted" style="margin:4px 0 8px">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}, ${fantaLockWhen(lock)}.</b>` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.'}
         1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0; se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo, se non c'è nessun portiere ${settings('fanta_gk_ufficio')} d'ufficio.</div>
         <h3 style="font-size:17px;margin:10px 0 2px">Portiere (P) <span class="tiny muted">· sempre disponibili, non si comprano</span></h3>
         ${gkList.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span><button class="tbtn sel ${myGk === p.id ? 'on' : ''}" data-gk="${p.id}" ${ro ? 'disabled' : ''}>${myGk === p.id ? 'In porta' : 'Scegli'}</button></div>`).join('') || '<div class="muted small">Nessun portiere segnato GK.</div>'}
@@ -1480,7 +1484,8 @@ async function viewFanta(v) {
       <h3>4. La formazione</h3><ul>
       <li>Ogni squadra ha sempre una <b>formazione attuale</b>: <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa. Puoi cambiarla quando vuoi.</li>
       <li>Poco prima del calcio d'inizio i presidenti premono <b>STOP</b>: le formazioni salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
-      <li>Le formazioni si <b>riaprono da sole</b> quando viene inserito il risultato di quella partita. La tua formazione resta quella di prima: per la giornata successiva la cambi solo se vuoi.</li>
+      <li>Dopo il tabellino partono le votazioni (${st('vote_hours')} ore). Le formazioni si <b>riaprono da sole alla chiusura delle votazioni</b>: da lì inserisci la formazione per la partita successiva. La tua formazione resta quella di prima, la cambi solo se vuoi.</li>
+      <li>Anche i presidenti caricano la partita successiva solo dopo la chiusura delle votazioni della precedente (o chiudendole prima a mano).</li>
       <li>Se non hai mai salvato una formazione, alla giornata prendi 0. I posti lasciati vuoti valgono 0.</li>
       <li>Le formazioni attuali di tutti sono visibili nella scheda Squadre.</li></ul>
 
@@ -1512,7 +1517,7 @@ async function viewFanta(v) {
       <li>A parità di punti vince chi ha <b>più gol segnati dai giocatori schierati</b> (somma su tutte le giornate; il portiere conta solo se ha giocato lui). Poi conta l'<b>ordine alfabetico</b>.</li></ul>
 
       <h3>9. Correzioni dei presidenti</h3><ul>
-      <li>I presidenti possono correggere in ogni momento squadre, gol, risultati e statistiche: punteggi, classifica e quotazioni si ricalcolano da soli.</li>
+      <li>I presidenti possono correggere in ogni momento squadre e tabellino di qualsiasi partita, anche delle stagioni passate: punteggi, classifica e quotazioni si ricalcolano da soli.</li>
       <li>Se lo STOP è stato premuto per errore possono riaprire le formazioni (il blocco viene annullato).</li>
       <li>“Annulla giornata fanta” cancella la giornata e tutte le formazioni di quella partita.</li></ul></div>`;
     fv.onclick = null;
