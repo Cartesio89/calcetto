@@ -180,6 +180,8 @@ details.box summary::-webkit-details-marker{display:none}
 details.box > div{padding:0 14px 12px}
 .guestbar{margin:12px 0 -6px;padding:7px 12px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:center}
 /* icone e liste partita */
+.open-hint{font-size:12px;font-weight:600;color:var(--brand-2);white-space:nowrap}
+.match:hover .open-hint{text-decoration:underline}
 .ico{display:inline-block;vertical-align:middle;flex:none}
 .icn{display:inline-flex;align-items:center;gap:1px;font-size:11px;font-weight:800}
 .pd{width:13px;height:13px;border-radius:50%;background:#5cc23b;display:inline-block;flex:none}
@@ -644,7 +646,7 @@ async function viewPartite(v) {
       const played = m.status === 'giocata';
       const me = pid && m.players.find(p => p.id === pid);
       return `<div class="card match" data-id="${m.id}">
-      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
+      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">apri per i dettagli ›</span><div class="spacer"></div>${matchStatusPills(m)}</div>
       ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
       ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} con i ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? 'pareggio' : (me.team === 'W') === (m.score_w > m.score_d) ? 'vittoria' : 'sconfitta'}</b>` : ''}${me.goals ? ` · ${me.goals} gol` : ''}</div>` : ''}
       <div class="score">
