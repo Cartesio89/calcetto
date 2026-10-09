@@ -652,9 +652,9 @@ async function viewPartite(v) {
         <div class="num">${played ? `${m.score_w} – ${m.score_d}` : '<span class="muted" style="font-size:24px">vs</span>'}</div>
         <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
       </div>
-      ${m.players.length ? `<div class="ml-cols">${['W', 'D'].map(t => `<div class="ml-col ${t === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === t)).map(p => `<div class="ml-row ${p.id === pid ? 'hl' : ''}"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 13)}</span></div>`).join('')}</div>`).join('')}</div>` : ''}
+      ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
     </div>`;
-    }).join('') + iconLegend() : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
+    }).join('') : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
   };
   bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
