@@ -488,7 +488,7 @@ async function viewClassifica(v) {
       ${segHtml('stRole', [{ v: 'all', l: 'Tutti' }, { v: 'gk', l: 'Portieri' }, { v: 'mov', l: 'Movimento' }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">PG almeno <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"></label></div>
     <div id="stTable"><div class="loader">Caricamento…</div></div>
-    <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
+    <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
   let data = null, box = null;
   bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
@@ -505,6 +505,7 @@ async function viewClassifica(v) {
     { k: 'name', label: 'Giocatore', fmt: (r, i) => `<span class="rank">${i + 1}</span>${esc(r.name)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
     { k: 'pg', label: 'PG', title: 'Partite giocate', cls: 'strong' }, { k: 'v', label: 'V', title: 'Vittorie' }, { k: 'n', label: 'N', title: 'Pareggi' }, { k: 's', label: 'P', title: 'Sconfitte' },
     { k: 'pct', label: '%V', title: 'Percentuale vittorie', sv: r => r.pg ? r.v / r.pg : null, fmt: r => r.pg ? Math.round(r.v / r.pg * 100) + '%' : '–' },
+    { k: 'pt', label: 'PT', title: 'Punti: 3 a vittoria, 1 a pareggio, 0 a sconfitta', cls: 'strong', sv: r => 3 * r.v + r.n, fmt: r => 3 * r.v + r.n },
     { k: 'gf', label: 'GF', title: 'Gol fatti', cls: 'strong' }, { k: 'rig', label: 'Rig', title: 'Gol su rigore' }, { k: 'ag', label: 'AG', title: 'Autogol' },
     { k: 'gs', label: 'GS', title: 'Gol subiti' }, { k: 'rp', label: 'RP', title: 'Rigori parati' }, { k: 'rs', label: 'RS', title: 'Rigori sbagliati' },
     { k: 'mv', label: 'Voto', title: 'Media voto pulita', cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
