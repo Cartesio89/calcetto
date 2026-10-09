@@ -419,6 +419,7 @@ async function start() {
   if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
   if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest())) S.tab = 'classifica';
   renderShell();
+  navInit();
   if (!isGuest()) loadVotesBadge();
 }
 function renderShell() {
@@ -437,7 +438,7 @@ function renderShell() {
   </div>
   <main><div class="wrap">${isGuest() ? '<div class="guestbar small">👀 Modalità ospite · sola lettura</div>' : ''}<div id="view"></div></div></main>`;
   $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
-  $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; S.tab = b.dataset.tab; store.set('calc_tab', S.tab); $$('.tab').forEach(x => x.classList.toggle('on', x === b)); renderTab(); scrollTo(0, 0); };
+  $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; if (b.dataset.tab === S.tab) return; S.tab = b.dataset.tab; store.set('calc_tab', S.tab); $$('.tab').forEach(x => x.classList.toggle('on', x === b)); navPush(); renderTab(); scrollTo(0, 0); };
   $('#userBtn').onclick = openAccount;
   renderTab();
 }
@@ -473,27 +474,65 @@ function openAccount() {
   });
 }
 
+// ------------------------------------------------------------- TASTO INDIETRO (cronologia)
+// ogni schermata (scheda, sotto-scheda) è una voce della cronologia; le finestre aperte sono un livello in più:
+// "indietro" chiude prima la finestra aperta, poi torna alla schermata precedente, e solo all'inizio esce dal sito.
+const NAV = { ignore: 0, overlay: false, rootWarned: false };
+const navState = extra => ({ app: 1, tab: S.tab, ft: S.ui.fantaTab, at: S.ui.adminTab, ...extra });
+function navPush() { if (!S.boot) return; NAV.rootWarned = false; try { history.pushState(navState(), ''); } catch {} }
+function navInit() { try { history.replaceState(navState({ root: true }), ''); history.pushState(navState(), ''); } catch {} NAV.overlay = false; }
+function navOverlayOpened() { if (!S.boot || NAV.overlay) return; NAV.overlay = true; try { history.pushState(navState({ overlay: true }), ''); } catch {} }
+function navOverlayClosed() {
+  setTimeout(() => { if (NAV.overlay && !$('.modal-bg')) { NAV.overlay = false; NAV.ignore++; history.back(); } }, 0);
+}
+window.addEventListener('popstate', e => {
+  if (NAV.ignore) { NAV.ignore--; return; }
+  const mods = $$('.modal-bg');
+  if (mods.length) {                       // indietro con una finestra aperta: chiude quella in primo piano
+    NAV.overlay = false;
+    const top = mods[mods.length - 1];
+    if (mods.length > 1) navOverlayOpened(); // restano altre finestre: ricrea il livello
+    top._close && top._close();
+    return;
+  }
+  const st = e.state;
+  if (!S.boot || !st || !st.app) return;
+  if (st.root) {                           // prima schermata: avviso, il prossimo indietro esce
+    if (!NAV.rootWarned) { NAV.rootWarned = true; toast('Premi di nuovo indietro per uscire'); }
+    return;
+  }
+  if (st.overlay) return;
+  if (st.ft) S.ui.fantaTab = st.ft;
+  if (st.at) S.ui.adminTab = st.at;
+  if (st.tab) { S.tab = st.tab; store.set('calc_tab', S.tab); }
+  $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === S.tab));
+  renderTab(); scrollTo(0, 0);
+});
+
 // ------------------------------------------------------------- MODAL
-function modal({ title, body, actions = [], onOpen, wide }) {
+function modal({ title, body, actions = [], onOpen, wide, onClose }) {
   const bg = document.createElement('div'); bg.className = 'modal-bg';
   bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true" ${wide ? 'style="max-width:900px"' : ''}>
     <header><h2>${esc(title)}</h2><button class="iconbtn" data-x aria-label="Chiudi" style="color:var(--text)">✕</button></header>
     <div class="body">${body}</div>
     ${actions.length ? `<footer>${actions.map((a, i) => `<button class="btn ${a.cls || ''}" data-a="${i}">${esc(a.label)}</button>`).join('')}</footer>` : ''}
   </div>`;
-  const close = () => { bg.remove(); document.body.style.overflow = ''; };
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; bg.remove(); if (!$('.modal-bg')) document.body.style.overflow = ''; if (onClose) onClose(); navOverlayClosed(); };
+  bg._close = close;
   bg.addEventListener('click', async e => {
     if (e.target === bg || e.target.closest('[data-x]')) return close();
     const a = e.target.closest('[data-a]');
     if (a) { a.disabled = true; const r = await actions[a.dataset.a].fn(bg); a.disabled = false; if (r) close(); }
   });
   document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  navOverlayOpened();
   if (onOpen) onOpen(bg, close);
   return { el: bg, close };
 }
 function confirmBox(text, label = 'Conferma', danger = false) {
   return new Promise(res => {
-    const m = modal({ title: 'Confermi?', body: `<p>${text}</p>`, actions: [
+    const m = modal({ title: 'Confermi?', body: `<p>${text}</p>`, onClose: () => res(false), actions: [
       { label: 'Annulla', fn: async () => { res(false); return true; } },
       { label, cls: danger ? 'danger' : 'primary', fn: async () => { res(true); return true; } }
     ] });
@@ -600,8 +639,9 @@ const ICONS = {
   conceded: { t: 'Gol subiti', svg: '<path d="M2.5 19.5V6h19v13.5" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/><path d="M5 8.8h14M5 11.8h14M5 14.8h14M8.5 6.8v12.7M12 6.8v12.7M15.5 6.8v12.7" stroke="#9aa3ad" stroke-width=".9"/><circle cx="16.8" cy="16" r="3.7" fill="#fff" stroke="#e5383b" stroke-width="1.7"/>' },
 };
 const icon = (k, size = 15) => `<svg class="ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="${ICONS[k].t}" role="img"><title>${ICONS[k].t}</title>${ICONS[k].svg}</svg>`;
-// 1-2 eventi: icone ripetute; da 3 in su (e sempre per i gol subiti): icona + numero
-const iconN = (k, n, size) => !n ? '' : (n <= 2 && k !== 'conceded') ? icon(k, size).repeat(n) : `<span class="icn">${icon(k, size)}<b>${n}</b></span>`;
+// 1 evento: icona; da 2 in su (e sempre per i gol subiti): icona + numero
+const MAGLIE = { W: 'maglia-chiari-2.webp', D: 'maglia-scuri-2.webp' };   // le versioni precedenti: maglia-chiari.webp / maglia-scuri.webp
+const iconN = (k, n, size) => !n ? '' : (n === 1 && k !== 'conceded') ? icon(k, size) : `<span class="icn">${icon(k, size)}<b>${n}</b></span>`;
 function evIcons(p, size) {
   const g = (p.goals || 0) - (p.pen_goals || 0);
   return iconN('goal', g, size) + iconN('pen', p.pen_goals, size) + iconN('own', p.own_goals, size) + iconN('saved', p.pen_saved, size) + iconN('missed', p.pen_missed, size) + iconN('conceded', p.conceded, size);
@@ -680,7 +720,7 @@ function openMatch(id) {
         <div class="mx-mid"><div class="mx-score">${played ? `${m.score_w} - ${m.score_d}` : 'vs'}</div><div class="mx-sub">${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</div></div>
         <div class="mx-team r">${esc(TD)}</div>
       </div>
-      <div class="mx-shirts"><img src="maglia-chiari.webp" alt="Maglia ${esc(TW)}" onerror="this.style.visibility='hidden'"><img src="maglia-scuri.webp" alt="Maglia ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
+      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="Maglia ${esc(TW)}" onerror="this.style.visibility='hidden'"><img src="${MAGLIE.D}" alt="Maglia ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
     </div>`;
   const pres = isPres();
   const actions = [];
@@ -1403,7 +1443,7 @@ async function viewFanta(v) {
   const u = S.ui;
   if (isGuest() && u.fantaTab === 'squadra') u.fantaTab = 'classifica';
   v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [...(isGuest() ? [] : [{ v: 'squadra', l: 'La mia squadra' }]), { v: 'mercato', l: isGuest() ? 'Quotazioni' : 'Mercato' }, { v: 'giornate', l: 'Giornate' }, { v: 'classifica', l: 'Classifica' }, { v: 'squadre', l: 'Squadre' }, { v: 'regole', l: 'Regole' }], u.fantaTab)}</div><div id="fv"><div class="loader">Caricamento…</div></div>`;
-  bindSeg($('#fTab'), val => { u.fantaTab = val; viewFanta(v); });
+  bindSeg($('#fTab'), val => { if (val === u.fantaTab) return; u.fantaTab = val; navPush(); viewFanta(v); });
   let F; try { F = await loadFanta(); } catch (e) { if ($('#fv')) $('#fv').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   const fv = $('#fv'); if (S.tab !== 'fanta' || !fv) return;
   const price = {}; F.prices.forEach(p => price[p.id] = p);
@@ -1440,7 +1480,7 @@ async function viewFanta(v) {
           <td>${canTrade ? `<button class="btn sm danger" data-sell="${r.player_id}">Cedi</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Rosa vuota. Hai ' + settings('fanta_budget') + ' crediti per ' + rosterSize + ' giocatori.</div>'}
       <div class="tiny muted" style="margin-top:8px">${F.free_phase ? 'Fino al primo STOP delle formazioni puoi cedere e ricomprare liberamente con rimborso pieno.' : `Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`}</div></div>`;
     fv.onclick = async e => {
-      if (e.target.closest('[data-gomarket]')) { u.fantaTab = 'mercato'; return viewFanta(v); }
+      if (e.target.closest('[data-gomarket]')) { u.fantaTab = 'mercato'; navPush(); return viewFanta(v); }
       const lu = e.target.closest('[data-lu]');
       const upd = c => { const nm = $$('[data-lu].on', c).length, ng = $$('[data-gk].on', c).length; c.querySelector('[data-cnt]').textContent = `${nm + ng}/${lineupSize}`; c.querySelector('[data-mcnt]').textContent = `${nm}/${lineupSize - 1}`; };
       if (lu) { const c = lu.closest('.card'); const on = !lu.classList.contains('on'); if (on && $$('[data-lu].on', c).length >= lineupSize - 1) return toast(`Massimo ${lineupSize - 1} giocatori di movimento`, true); lu.classList.toggle('on', on); lu.textContent = on ? 'In campo' : 'Schiera'; upd(c); return; }
@@ -1600,7 +1640,7 @@ async function viewAdmin(v) {
   if (!isPres()) return viewClassifica(v);
   const u = S.ui;
   v.innerHTML = `<div class="section-title"><h2>Area presidente</h2><div class="spacer"></div>${segHtml('aTab', [{ v: 'giocatori', l: 'Giocatori' }, { v: 'quotazioni', l: 'Quotazioni' }, { v: 'stagione', l: 'Stagione' }, { v: 'impostazioni', l: 'Impostazioni' }], u.adminTab)}</div><div id="av"></div>`;
-  bindSeg($('#aTab'), val => { u.adminTab = val; viewAdmin(v); });
+  bindSeg($('#aTab'), val => { if (val === u.adminTab) return; u.adminTab = val; navPush(); viewAdmin(v); });
   const av = $('#av');
   const reloadBoot = async () => { S.boot = await rpc('get_bootstrap', { p_token: T() }); };
 
