@@ -60,10 +60,10 @@ h1,h2,h3{font-family:'Barlow Condensed',Inter,sans-serif;letter-spacing:.3px;mar
   .tab{padding:6px 8px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px;min-width:56px}
   .tab .ti{display:block;font-size:18px;line-height:1}
   .tab .badge{position:absolute;top:0;right:4px;margin:0}
-  main{padding-bottom:90px}
 }
 @media (min-width:721px){ .tab .ti{display:none} }
 main{padding:18px 0 40px}
+@media (max-width:720px){ main{padding-bottom:calc(110px + env(safe-area-inset-bottom))} }
 /* cards */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
 .card h2{font-size:22px;margin-bottom:10px}
@@ -730,7 +730,7 @@ async function viewPartite(v) {
   };
   bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
-  if (isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended) loadFanta().then(F => { const b = $('#pBanner'); if (b && S.tab === 'partite') { b.innerHTML = fantaLockBanner(F.lock); b.onclick = fantaBannerClick; } }).catch(() => {});
+  if (isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended) loadFanta().then(F => { const b = $('#pBanner'); if (b && S.tab === 'partite') { b.innerHTML = fantaLockBanner(F.lock, F); b.onclick = fantaBannerClick; } }).catch(() => {});
   try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   if (S.tab !== 'partite' || !$('#mlist')) return;
   draw();
@@ -769,7 +769,7 @@ function openMatch(id) {
       <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
   const mo = modal({
     title: 'Dettaglio partita', wide: true,
-    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">Lineup manager: <b>${esc(pname(m.lineup_manager))}</b></p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
       <div class="mx-cols">${col('W')}${col('D')}</div>
       ${played && m.votes_open ? '<p class="tiny muted">I voti compaiono al centro quando si chiudono le votazioni.</p>' : ''}
       ${iconLegend()}
@@ -795,14 +795,39 @@ function fantaLockWhen(lock) {
   if (!lock) return '';
   return lock.played && lock.votes_close_at ? `fino alla chiusura delle votazioni (${esc(fmtDateTime(lock.votes_close_at))})` : 'fino alla chiusura delle votazioni della partita';
 }
-function fantaLockBanner(lock) {
+const DOW_IT = ['', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+const fmtStop = d => { if (!d) return ''; const x = new Date(d); return `${x.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'numeric', timeZone: 'Europe/Rome' })} alle ${x.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })}`; };
+const weeklyStopText = () => settings('fanta_stop_auto') == 1 ? `${DOW_IT[settings('fanta_stop_dow')] || 'martedì'} alle ${String(settings('fanta_stop_hour') ?? 19).padStart(2, '0')}:${String(settings('fanta_stop_minute') ?? 45).padStart(2, '0')}` : '';
+function fantaLockBanner(lock, F) {
   const where = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
+  const hasAuto = !!F && 'next_stop' in F;   // backend con chiusura automatica
+  const nxt = !hasAuto ? 'Premi STOP poco prima del calcio d\'inizio.' : F.next_stop ? `Chiusura automatica: <b>${esc(fmtStop(F.next_stop))}</b>${F.stop_override ? ' <span class="pill warn">data cambiata a mano</span>' : ''}.` : 'Chiusura automatica spenta.';
   if (isPres()) return lock
     ? `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>bloccate</b> ${where}, ${fantaLockWhen(lock)}.</span><button class="btn sm" data-reopen>Riapri formazioni</button></div>`
-    : `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>aperte</b>: premi STOP poco prima del calcio d'inizio.</span><button class="btn stop" data-fstop>■ STOP formazioni</button></div>`;
-  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate dai presidenti ${where}, ${fantaLockWhen(lock)}.</div>` : '';
+    : `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>aperte</b>. ${nxt}</span><div class="row" style="gap:6px">${hasAuto ? '<button class="btn sm" data-fdead>Cambia chiusura</button>' : ''}<button class="btn stop" data-fstop>■ STOP adesso</button></div></div>`;
+  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate ${where}, ${fantaLockWhen(lock)}.</div>` : '';
+}
+function editDeadline(F) {
+  const cur = F?.next_stop ? new Date(F.next_stop) : null;
+  const loc = d => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 16); };
+  const wk = weeklyStopText();
+  modal({
+    title: 'Chiusura formazioni',
+    body: `<p class="small" style="margin-top:0">${cur ? `Prossima chiusura: <b>${esc(fmtStop(cur))}</b>${F.stop_override ? ' (scelta a mano)' : ''}.` : 'Chiusura automatica spenta.'} ${wk ? `Di norma le formazioni si chiudono da sole ogni <b>${esc(wk)}</b>.` : ''}</p>
+      <p class="small muted">Cambiala solo per questa settimana se la partita si sposta, oppure scegli una data più avanti per saltare una settimana. Dopo questa chiusura si torna a quella settimanale.</p>
+      <label class="f" for="dlAt">Nuova data e ora di chiusura</label><input type="datetime-local" id="dlAt" value="${cur ? loc(cur) : ''}">
+      <div class="err" id="dlErr"></div>`,
+    actions: [
+      ...(F?.stop_override ? [{ label: 'Torna a quella settimanale', fn: async () => { const ok = await act(() => rpc('admin_fanta_set_deadline', { p_token: T(), p_at: null }), 'Chiusura settimanale ripristinata'); if (ok) { S.fanta = null; await refreshAll(); } return ok; } }] : []),
+      { label: 'Salva', cls: 'primary', fn: async el => {
+        const v = $('#dlAt', el).value; if (!v) { $('#dlErr', el).textContent = 'Scegli data e ora.'; return false; }
+        const d = new Date(v); if (!(d > new Date())) { $('#dlErr', el).textContent = 'La nuova chiusura deve essere nel futuro.'; return false; }
+        const ok = await act(() => rpc('admin_fanta_set_deadline', { p_token: T(), p_at: d.toISOString() }), 'Chiusura impostata: ' + fmtStop(d));
+        if (ok) { S.fanta = null; await refreshAll(); } return ok; } }]
+  });
 }
 async function fantaBannerClick(e) {
+  if (e.target.closest('[data-fdead]')) { try { editDeadline(await loadFanta()); } catch (er) { toast(er.message, true); } return; }
   if (e.target.closest('[data-fstop]')) {
     if (!await confirmBox(`<b>STOP formazioni FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione: valgono quelle salvate in questo momento, per la prima partita a 8 o a 11 caricata (già creata o che caricherete). Si riaprono da sole quando si chiudono le votazioni della partita (${settings('vote_hours')} ore dopo il tabellino).`, 'STOP', true)) return;
     const r = await act(() => rpc('admin_fanta_stop', { p_token: T() }));
@@ -851,18 +876,21 @@ function editTeams(m, thenResult) {
   const sel = {}; m.players.forEach(p => sel[p.id] = p.team);
   const list = activePlayers();
   m.players.forEach(p => { if (!list.some(x => x.id === p.id)) list.push(S.boot.players.find(x => x.id === p.id)); });
-  let q = '';
+  let q = '', lm = m.lineup_manager ?? '';
+  const lmOpts = () => '<option value="">— nessuno —</option>' + [...S.boot.players].filter(p => p.is_active || p.id === m.lineup_manager).sort((a, b) => a.name.localeCompare(b.name, 'it')).map(p => `<option value="${p.id}" ${String(p.id) === String(lm) ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
   const counts = () => { const w = Object.values(sel).filter(x => x === 'W').length, d = Object.values(sel).filter(x => x === 'D').length; return `<span class="team"><span class="dot W"></span>${esc(TW)} ${w}</span> &nbsp; <span class="team"><span class="dot D"></span>${esc(TD)} ${d}</span> <span class="muted small">· obiettivo ${m.type} per squadra</span>`; };
   const rows = () => list.filter(p => !q || p.name.toLowerCase().includes(q)).map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>
       <button class="tbtn W ${sel[p.id] === 'W' ? 'on' : ''}" data-p="${p.id}" data-t="W">${esc(TW[0])}</button><button class="tbtn D ${sel[p.id] === 'D' ? 'on' : ''}" data-p="${p.id}" data-t="D">${esc(TD[0])}</button></div>`).join('');
   modal({
     title: `Squadre · ${typeLabel(m.type)}`,
-    body: `<div id="tcount" style="margin-bottom:10px">${counts()}</div>
+    body: `<label class="f" for="tlm" style="margin-top:0">Lineup manager (chi ha fatto le squadre)</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>
+      <div id="tcount" style="margin-bottom:10px">${counts()}</div>
       <input type="text" id="tq" placeholder="Cerca…" style="margin-bottom:6px">
       <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. Tocca di nuovo per togliere.</div>
       <div id="tlist">${rows()}</div>`,
     onOpen: el => {
       $('#tq', el).oninput = e => { q = e.target.value.toLowerCase(); $('#tlist', el).innerHTML = rows(); };
+      $('#tlm', el).onchange = e => lm = e.target.value;
       $('#tlist', el).onclick = e => { const b = e.target.closest('.tbtn'); if (!b) return; const id = Number(b.dataset.p); sel[id] = sel[id] === b.dataset.t ? undefined : b.dataset.t; if (!sel[id]) delete sel[id];
         b.parentElement.querySelectorAll('.tbtn').forEach(x => x.classList.toggle('on', sel[id] === x.dataset.t)); $('#tcount', el).innerHTML = counts(); };
     },
@@ -870,6 +898,7 @@ function editTeams(m, thenResult) {
       const w = Object.keys(sel).filter(k => sel[k] === 'W').map(Number), d = Object.keys(sel).filter(k => sel[k] === 'D').map(Number);
       const ok = await act(() => rpc('admin_set_teams', { p_token: T(), p_match: m.id, p_white: w, p_dark: d }), thenResult ? null : 'Squadre salvate');
       if (!ok) return false;
+      if (String(lm) !== String(m.lineup_manager ?? '') && !await act(() => rpc('admin_set_lineup_manager', { p_token: T(), p_match: m.id, p_player: lm === '' ? null : Number(lm) }))) return false;
       await loadMatches(true); renderTab();
       if (thenResult) editResult(S.matches.list.find(x => x.id === m.id), false);
       return true;
@@ -1065,7 +1094,8 @@ function parseTabellino(grid, players) {
     blocks.push({ h: b, r0: b.r + 1, r1: G.length, c0: b.c, c1: right(b) });
   }
   const score = { W: hW.score, D: hD.score };
-  const entries = []; let note = '';
+  const entries = []; let note = '', lmName = '';
+  const LM_RE = /^\s*(?:lineup|line-up|line up)\s*manager\s*:?\s*|^\s*(?:formazion\w*|squadre)\s+(?:a cura di|fatt\w* da)\s*:?\s*/i;
   const inBlock = new Set();
   for (const bl of blocks) {
     const team = bl.h.team; let phase = 'roster';
@@ -1080,6 +1110,7 @@ function parseTabellino(grid, players) {
       const joined = cells.map(c => c instanceof Date ? '' : String(c)).filter(Boolean).join(' ');
       const low = normTxt(joined);
       if (/^\s*note\b/.test(low)) { const t = joined.replace(/^\s*note\s*:?\s*/i, '').trim(); if (t) note += (note ? ' · ' : '') + t; if (hW.r === hD.r) break; continue; }
+      if (LM_RE.test(joined)) { const t = joined.replace(LM_RE, '').trim(); if (t && !lmName) lmName = t; continue; }
       if (findDate(joined) && entries.some(e => e.team === team)) break;   // inizia un'altra partita
       if (STOP_RE.test(low.replace(/^["'«\s]+/, '')) || findDate(joined) || findScoreLine(joined)) continue;
       if (/^\s*(marcatori|gol|reti|eventi)\s*:?\s*$/.test(low)) { phase = 'scorers'; continue; }
@@ -1110,6 +1141,7 @@ function parseTabellino(grid, players) {
       const t = s.match(/calcio\s*a\s*(5|7|8|11)\b|\bc\s*(5|7|8|11)\b|\b(5|7|8|11)\s*(?:vs|contro)\s*(5|7|8|11)\b/);
       if (!type && t) type = Number(t[1] || t[2] || t[3]);
       const sl = findScoreLine(c); if (sl && score.W == null && score.D == null) { score.W = sl[0]; score.D = sl[1]; }
+      if (!inBlock.has(r + ':' + ci) && LM_RE.test(c) && !lmName) lmName = c.replace(LM_RE, '').trim();
       if (!inBlock.has(r + ':' + ci) && /^\s*note\s*:/.test(s)) { const t2 = c.replace(/^\s*note\s*:\s*/i, '').trim(); if (t2 && !note.includes(t2)) note += (note ? ' · ' : '') + t2; }
     }
   }));
@@ -1164,7 +1196,14 @@ function parseTabellino(grid, players) {
     else if (opp > 0) warn.push(`${t === 'W' ? 'Chiari' : 'Scuri'}: ${gks.length ? 'più portieri' : 'nessun portiere (GK)'} indicato, gol subiti non assegnati. Inseriscili a mano se serve.`);
   }
   rows.forEach(r => { if (r.ev.pen_goals > r.ev.goals) r.ev.goals = r.ev.pen_goals; });
-  return { date, type, score, note, rows, warn };
+  let lineupManager = null;
+  if (lmName) {
+    const lmm = matchPlayer(lmName, players);
+    lineupManager = { name: lmName, pid: lmm.id ?? null };
+    if (lmm.id == null) warn.push(`Lineup manager "${lmName}" non trovato tra i giocatori: sceglilo a mano.`);
+    else if (lmm.status === 'ambiguo' || lmm.status === 'simile') warn.push(`Lineup manager "${lmName}" letto come ${players.find(p => p.id === lmm.id)?.name}: controlla.`);
+  }
+  return { date, type, score, note, rows, warn, lineupManager };
 }
 // </PARSER>
 
@@ -1221,6 +1260,7 @@ function importPreview(res, src) {
   const st = { type: res.type, date: res.date || new Date().toISOString().slice(0, 10), note: res.note || '', target: 'new',
     rows: res.rows.map((r, i) => ({ i, pid: r.pid, newName: r.newName, status: r.status, team: r.team, gk: r.gk && !r.gkGuess, auto: r.autoConceded, guess: r.gkGuess, raw: r.raws.join(' · '), ...r.ev })) };
   const same = prog.find(m => m.date === st.date); if (same) st.target = String(same.id);
+  st.lm = res.lineupManager?.pid ?? (same?.lineup_manager ?? null);
   let nextI = st.rows.length;
   const created = { players: {}, match: null };
   const NUMF = [['goals', 'Gol'], ['pen_goals', 'di cui rig.'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti'], ['pen_saved', 'Rig. parati'], ['pen_missed', 'Rig. sbagl.']];
@@ -1244,6 +1284,7 @@ function importPreview(res, src) {
       <label class="f" for="impTarget">Dove salvare</label>
       <select id="impTarget"><option value="new">Nuova partita</option>${prog.map(m => `<option value="${m.id}" ${String(m.id) === st.target ? 'selected' : ''}>Partita già creata: ${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</option>`).join('')}</select>
       <div id="impMeta"></div>
+      <label class="f" for="impLm">Lineup manager</label><select id="impLm"><option value="">— nessuno —</option>${plist.filter(p => p.is_active || p.id === st.lm).map(p => `<option value="${p.id}" ${p.id === st.lm ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>${res.lineupManager ? `<div class="tiny muted">dal file: <i>${esc(res.lineupManager.name)}</i></div>` : ''}
       <div class="bigscore" style="margin-top:14px"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
         <input type="number" min="0" id="isw" value="${res.score.W ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="isd" value="${res.score.D ?? ''}" inputmode="numeric">
         <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
@@ -1284,6 +1325,7 @@ function importPreview(res, src) {
       };
       drawMeta(); drawLists();
       $('#impTarget', el).onchange = e => { st.target = e.target.value; drawMeta(); };
+      $('#impLm', el).onchange = e => st.lm = e.target.value === '' ? null : Number(e.target.value);
       const body = el.querySelector('.body');
       body.addEventListener('click', e => {
         const add = e.target.closest('[data-add]');
@@ -1340,6 +1382,7 @@ function importPreview(res, src) {
       if (!mid) mid = created.match = (await rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: st.note })).id;
       const stats = rows.map(r => ({ player_id: r.pid, team: r.team, goals: r.goals, pen_goals: r.pen_goals, own_goals: r.own_goals, conceded: r.conceded, pen_saved: r.pen_saved, pen_missed: r.pen_missed }));
       await rpc('admin_save_result', { p_token: T(), p_match: mid, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: openVotes });
+      if (st.lm != null || m?.lineup_manager) await rpc('admin_set_lineup_manager', { p_token: T(), p_match: mid, p_player: st.lm });
       toast('Partita importata e salvata');
       await refreshAll();
       if (S.tab === 'partite' && S.matches?.list.some(x => x.id === mid)) openMatch(mid);
@@ -1570,7 +1613,7 @@ async function viewFanta(v) {
   const lock = F.lock;
   const lockText = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
   const isActiveSeason = S.season === S.boot.active_season && !F.season_ended;
-  if (isActiveSeason) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${fantaLockBanner(lock)}</div>`);
+  if (isActiveSeason) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${fantaLockBanner(lock, F)}</div>`);
   $('#stopBanner') && ($('#stopBanner').onclick = fantaBannerClick);
   if (u.fantaTab === 'squadra') {
     const rosterRows = mine.roster.map(r => ({ ...r, name: pname(r.player_id), now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now);
@@ -1597,7 +1640,7 @@ async function viewFanta(v) {
     const draftHtml = () => {
       const dirty = !ro && (st.gk !== saved.gk || st.mov.length !== saved.mov.length || st.mov.some((x, i) => x !== saved.mov[i]));
       return `<div class="row"><h2 style="margin:0">La mia formazione</h2><div class="spacer"></div>${dirty ? '<span class="pill warn">da salvare</span>' : ''}<span class="pill ${lock ? '' : 'live'}">${(st.gk != null ? 1 : 0) + st.mov.length}/${lineupSize}</span></div>
-        <div class="tiny muted" style="margin:4px 0 0">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}, ${fantaLockWhen(lock)}.</b>` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.'}
+        <div class="tiny muted" style="margin:4px 0 0">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}, ${fantaLockWhen(lock)}.</b>` : (F.next_stop ? `Puoi cambiarla fino a <b>${esc(fmtStop(F.next_stop))}</b>: a quell'ora si chiude da sola e vale quella salvata, per la prima partita a 8 o a 11 caricata.` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.')}
         1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0; se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo, se non c'è nessun portiere ${settings('fanta_gk_ufficio')} d'ufficio.</div>
         ${pitchHtml(st, ro, where, teamsOk, me().id)}
         ${ro ? '' : '<div class="tiny muted" style="text-align:center;margin:-4px 0 10px">Tocca un giocatore in campo per toglierlo. I posti liberi valgono 0.</div>'}
@@ -1647,7 +1690,7 @@ async function viewFanta(v) {
       { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? '<span class="pill ok">In rosa</span>' : r.id === me().id ? '<span class="pill">sei tu</span>' : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>Compra</button>` : '' },
     ];
     const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
-    fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="Cerca giocatore…" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso.</span></div><div id="mt"></div>`;
+    fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="Cerca giocatore…" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.</span></div><div id="mt"></div>`;
     const draw = () => {
       let rows = rowsAll; if (u.marketSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.marketSearch.toLowerCase()));
       $('#mt').innerHTML = tableHtml(cols, sortRows(rows, u.marketSort, cols), u.marketSort, { rowCls: r => inRoster.has(r.id) ? 'me' : '' });
@@ -1664,7 +1707,7 @@ async function viewFanta(v) {
     if (!F.giornate.length) {
       const nm = isActiveSeason ? fantaNextMatch(lock) : null;
       const msg = nm?.players?.length
-        ? `<b>Prossima giornata: ${esc(typeLabel(nm.type))} del ${esc(fmtDate(nm.date))}.</b> Le squadre sono fatte${isGuest() ? ': la giornata parte con lo STOP dei presidenti.' : ': schiera la tua formazione prima dello STOP.'}`
+        ? `<b>Prossima giornata: ${esc(typeLabel(nm.type))} del ${esc(fmtDate(nm.date))}.</b> Le squadre sono fatte${isGuest() ? '.' : `: schiera la tua formazione ${F.next_stop ? `entro ${esc(fmtStop(F.next_stop))}` : 'prima dello STOP'}.`}`
         : isActiveSeason ? `<b>Giornata da creare</b>${isGuest() ? '.' : `, ma inizia a schierare la tua top ${lineupSize}.`}` : 'Nessuna giornata FantaNunnaree in questa stagione.';
       fv.innerHTML = pend || `<div class="card empty">${msg}${isGuest() || !isActiveSeason ? '' : '<div style="margin-top:12px"><button class="btn primary sm" data-gosq>Vai alla mia formazione</button></div>'}</div>`;
       fv.onclick = e => { if (e.target.closest('[data-gosq]')) { u.fantaTab = 'squadra'; navPush(); viewFanta(v); } }; return; }
@@ -1736,11 +1779,13 @@ async function viewFanta(v) {
       <li>Dopo ogni partita a 8 o a 11 il prezzo si aggiorna in base alla stagione in corso: <b>punti attesi</b> = (partite giocate dal giocatore ÷ partite disputate) × media dei suoi punti fanta (voto, o ${st('fanta_voto_ufficio')} d'ufficio, + bonus/malus).</li>
       <li>Prezzo dalla stagione = 1 + (punti attesi − 1)², arrotondato, minimo 1 e massimo <b>${st('price_max')}</b>.</li>
       <li>Prezzo attuale = mix tra base e prezzo dalla stagione: il peso della stagione cresce del ${fmtNum(100 / settings('price_blend_matches'))}% a partita; dopo <b>${st('price_blend_matches')} partite</b> conta solo la stagione. Chi non gioca mai scende partita dopo partita verso 1.</li>
+      <li>La <b>prima giornata FantaNunnaree</b> della stagione è di prova: vale per la classifica, ma <b>non muove le quotazioni</b>. Le quotazioni cambiano dalla seconda giornata in poi.</li>
       <li>Le partite che i presidenti escludono dalle quotazioni (per esempio le prime 5 del 2026-27) non contano.</li></ul>
 
       <h3>4. La formazione</h3><ul>
       <li>Ogni squadra ha sempre una <b>formazione attuale</b>: <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa. Puoi cambiarla quando vuoi.</li>
-      <li>Poco prima del calcio d'inizio i presidenti premono <b>STOP</b>: le formazioni salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
+      <li>Le formazioni si <b>chiudono da sole${weeklyStopText() ? ' ogni ' + esc(weeklyStopText()) : ''}</b>: quelle salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
+      <li>Se la partita si sposta, i presidenti possono cambiare l'orario di chiusura per quella settimana, o premere <b>STOP</b> a mano.</li>
       <li>Dopo il tabellino partono le votazioni (${st('vote_hours')} ore). Le formazioni si <b>riaprono da sole alla chiusura delle votazioni</b>: da lì inserisci la formazione per la partita successiva. La tua formazione resta quella di prima, la cambi solo se vuoi.</li>
       <li>Anche i presidenti caricano la partita successiva solo dopo la chiusura delle votazioni della precedente (o chiudendole prima a mano).</li>
       <li>Se non hai mai salvato una formazione, alla giornata prendi 0. I posti lasciati vuoti valgono 0.</li>
