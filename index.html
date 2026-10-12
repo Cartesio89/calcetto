@@ -304,7 +304,10 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .topbar .langsw button{color:rgba(255,255,255,.75)}
 .topbar .langsw button.on{background:#d8f36a;color:#13200a}
 html.fanta .topbar .langsw button.on{background:#ff3d9a;color:#fff}
-@media (max-width:720px){ .topbar .langsw{display:none} }
+@media (max-width:720px){
+  .topbar .langsw{flex-direction:column;border-radius:9px}
+  .topbar .langsw button{font-size:10px;line-height:1;padding:4px 6px;letter-spacing:.2px}
+}
 /* titolo leggibile su smartphone */
 @media (max-width:720px){
   .topbar .wrap{gap:8px}
@@ -317,6 +320,9 @@ html.fanta .topbar .langsw button.on{background:#ff3d9a;color:#fff}
   .iconbtn{padding:6px}
 }
 @media (max-width:350px){ .logo h1{font-size:17px} .logo .ball{width:22px;height:22px} .topbar select{max-width:84px;font-size:12px;padding:4px 3px} }
+/* spazio per IT|EN nella barra in alto */
+@media (max-width:375px){ .topbar .wrap{gap:6px} .topbar select{max-width:74px;font-size:12px;padding:4px 2px} .iconbtn{padding:4px} .logo h1{font-size:17px} }
+@media (max-width:330px){ .topbar .wrap{gap:5px} .logo{gap:6px} .logo h1{font-size:15px} .logo .ball{width:20px;height:20px} .topbar select{max-width:76px;font-size:11.5px;padding:4px 1px} .iconbtn{padding:2px} }
 </style>
 </head>
 <body>
