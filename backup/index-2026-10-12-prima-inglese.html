@@ -1,0 +1,1916 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f3d2e">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>Calcetto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230f3d2e'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23d8f36a' stroke-width='5'/%3E%3C/svg%3E">
+<script src="config.js"></script>
+<style>
+:root{
+  --bg:#f3f5f1; --surface:#ffffff; --surface-2:#eef1ea; --line:#dde3d7; --text:#14201a; --muted:#5f6f66;
+  --brand:#0f3d2e; --brand-2:#1d6b4f; --accent:#d8f36a; --accent-ink:#1b2a07;
+  --danger:#b3261e; --warn:#a15c00; --ok:#1d7a45;
+  --white-team:#ffffff; --white-ink:#14201a; --dark-team:#1f2a33; --dark-ink:#ffffff;
+  --radius:14px; --shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0c1210; --surface:#141c18; --surface-2:#1b2520; --line:#26332c; --text:#e8efe9; --muted:#93a59a;
+    --brand:#d8f36a; --brand-2:#9fd36b; --accent:#d8f36a; --accent-ink:#13200a;
+    --danger:#ff7b72; --warn:#f0b35a; --ok:#6fd49a;
+    --white-team:#eef2ee; --white-ink:#111; --dark-team:#000000; --dark-ink:#fff;
+    --shadow:none;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:'Barlow Condensed',Inter,sans-serif;letter-spacing:.3px;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+.hidden{display:none!important}
+.muted{color:var(--muted)} .small{font-size:13px} .tiny{font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.spacer{flex:1}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:#0f3d2e;color:#fff;padding-top:env(safe-area-inset-top)}
+.topbar .wrap{display:flex;align-items:center;gap:10px;height:56px}
+.logo{display:flex;align-items:center;gap:10px;min-width:0}
+.logo .ball{width:30px;height:30px;border-radius:50%;background:#d8f36a;display:grid;place-items:center;flex:none}
+.logo .ball::after{content:"";width:12px;height:12px;border-radius:50%;border:3px solid #0f3d2e}
+.logo h1{font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.topbar select{max-width:170px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:6px 8px}
+.topbar select option{color:#111}
+.iconbtn{background:none;border:0;color:inherit;padding:8px;border-radius:10px;cursor:pointer;display:grid;place-items:center}
+.iconbtn:hover{background:rgba(255,255,255,.1)}
+/* tabs */
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;background:#0f3d2e;padding:0 12px 10px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:none;background:transparent;border:0;color:rgba(255,255,255,.75);padding:8px 14px;border-radius:999px;cursor:pointer;font-weight:600;font-size:14px;position:relative}
+.tab.on{background:#d8f36a;color:#13200a}
+.badge{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#ff5a4f;color:#fff;font-size:11px;font-weight:700;margin-left:6px}
+@media (max-width:720px){
+  .tabs{position:fixed;bottom:0;left:0;right:0;z-index:30;padding:6px 6px calc(6px + env(safe-area-inset-bottom));justify-content:space-around;gap:0;border-top:1px solid rgba(255,255,255,.08)}
+  .tab{padding:6px 8px;font-size:11.5px;display:flex;flex-direction:column;align-items:center;gap:2px;border-radius:12px;min-width:56px}
+  .tab .ti{display:block;font-size:18px;line-height:1}
+  .tab .badge{position:absolute;top:0;right:4px;margin:0}
+}
+@media (min-width:721px){ .tab .ti{display:none} }
+main{padding:18px 0 40px}
+@media (max-width:720px){ main{padding-bottom:calc(110px + env(safe-area-inset-bottom))} }
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px;margin-bottom:14px}
+.card h2{font-size:22px;margin-bottom:10px}
+.rules h3{font-size:19px;margin:16px 0 4px}
+.rules ul{margin:4px 0;padding-left:20px}
+.rules li{margin:4px 0}
+.section-title{display:flex;align-items:center;gap:10px;margin:4px 0 12px;flex-wrap:wrap}
+.section-title h2{font-size:26px}
+/* controls */
+.btn{border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:10px;cursor:pointer;font-weight:600;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+@media (prefers-color-scheme: dark){ .btn.primary{color:#13200a} }
+.btn.accent{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,var(--line))}
+.btn.sm{padding:6px 10px;font-size:13px;border-radius:9px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+input[type=text],input[type=password],input[type=number],input[type=date],select,textarea{
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-width:0;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--brand-2);outline-offset:1px}
+label.f{display:block;font-size:13px;font-weight:600;color:var(--muted);margin:10px 0 5px}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:10px;padding:3px;gap:2px;flex-wrap:wrap}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+/* tables */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.t{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}
+.t th,.t td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+.t th{font-size:12px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);background:var(--surface-2);position:sticky;top:0;cursor:pointer;user-select:none}
+.t th.sorted{color:var(--text)}
+.t th.sorted::after{content:attr(data-dir);margin-left:3px;font-size:10px}
+.t td:first-child,.t th:first-child{text-align:left;position:sticky;left:0;background:var(--surface);z-index:1}
+.t th:first-child{background:var(--surface-2);z-index:2}
+.t tr:last-child td{border-bottom:0}
+.t tr.me td{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}
+.t td.strong{font-weight:700}
+.t .rank{color:var(--muted);font-size:12px;width:26px;display:inline-block}
+/* team chips */
+.team{display:inline-flex;align-items:center;gap:6px;font-weight:700}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1.5px solid var(--text);flex:none}
+.dot.W{background:var(--white-team)} .dot.D{background:var(--dark-team);border-color:var(--dark-team)}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;background:var(--surface-2);color:var(--muted)}
+.pill.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok)}
+.pill.warn{background:color-mix(in srgb,var(--warn) 15%,transparent);color:var(--warn)}
+.pill.live{background:var(--accent);color:var(--accent-ink)}
+/* match card */
+.match{cursor:pointer}
+.match .score{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;margin:10px 0 4px}
+.match .score .side{display:flex;flex-direction:column;gap:2px}
+.match .score .side.r{align-items:flex-end;text-align:right}
+.match .score .num{font-family:'Barlow Condensed',Inter,sans-serif;font-size:38px;font-weight:800;line-height:1;letter-spacing:1px}
+.scorers{font-size:13px;color:var(--muted)}
+.teams-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:600px){ .teams-grid{grid-template-columns:1fr} }
+.plist{list-style:none;margin:0;padding:0}
+.plist li{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--line);gap:8px}
+.plist li:last-child{border:0}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+@media (min-width:721px){ .modal-bg{align-items:center;padding:20px} }
+.modal{background:var(--bg);width:100%;max-width:720px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden}
+@media (min-width:721px){ .modal{border-radius:18px} }
+.modal header{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:var(--surface)}
+.modal header h2{font-size:22px;flex:1}
+.modal .body{padding:14px 16px;overflow:auto;flex:1}
+.modal footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--surface);flex-wrap:wrap}
+/* picker rows */
+.pick{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line)}
+.pick .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tbtn{border:1.5px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 10px;cursor:pointer;font-weight:700;font-size:13px;min-width:44px}
+.tbtn.W.on{background:var(--white-team);color:var(--white-ink);border-color:var(--text)}
+.tbtn.D.on{background:var(--dark-team);color:var(--dark-ink);border-color:var(--dark-team)}
+.tbtn.sel.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface)}
+.stepper button{border:0;background:transparent;width:32px;height:32px;cursor:pointer;font-size:17px;font-weight:700}
+.stepper button:active{background:var(--surface-2)}
+.stepper span{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.stat-row{padding:10px 0;border-bottom:1px solid var(--line)}
+.stat-row .top{display:flex;align-items:center;gap:8px}
+.stat-row .extra{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-top:8px}
+.stat-row .extra > div{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:13px;color:var(--muted)}
+.bigscore{display:flex;align-items:center;justify-content:center;gap:14px;margin:6px 0 10px}
+.bigscore input{width:78px;text-align:center;font-family:'Barlow Condensed',Inter,sans-serif;font-size:34px;font-weight:800;padding:4px}
+.vote-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.vote-row .nm{flex:1;min-width:0}
+.vote-row select{width:96px;text-align:center;font-weight:700}
+.vote-row.done select{border-color:var(--ok)}
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(1200px 600px at 50% -10%,#1d6b4f,#0f3d2e 55%,#0a2a20)}
+.login .box{width:100%;max-width:380px;background:var(--surface);border-radius:20px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.login h1{font-size:30px;line-height:1.05;margin:12px 0 4px}
+.login .ball{width:44px;height:44px;border-radius:50%;background:#d8f36a;display:grid;place-items:center}
+.login .ball::after{content:"";width:18px;height:18px;border-radius:50%;border:4px solid #0f3d2e}
+.err{color:var(--danger);font-size:14px;margin-top:10px;min-height:20px}
+/* toast */
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:80;background:#14201a;color:#fff;padding:10px 16px;border-radius:12px;font-weight:600;box-shadow:0 8px 30px rgba(0,0,0,.3);max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1} #toast.bad{background:var(--danger);color:#fff}
+@media (max-width:720px){ #toast{bottom:92px}
+  .t th,.t td{padding:8px 6px}
+  .t .btn.sm{padding:5px 8px;font-size:12px}
+  .kpi{padding:10px} .kpi .v{font-size:24px} .kpi .l{font-size:10.5px}
+  .card{padding:13px}
+}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px}
+.kpi .v{font-family:'Barlow Condensed',Inter,sans-serif;font-size:30px;font-weight:800;line-height:1}
+.kpi .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:4px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+.up{color:var(--ok);font-weight:700} .down{color:var(--danger);font-weight:700}
+.loader{padding:30px;text-align:center;color:var(--muted)}
+details.box{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:10px}
+details.box summary{padding:12px 14px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:10px;list-style:none}
+details.box summary::-webkit-details-marker{display:none}
+details.box > div{padding:0 14px 12px}
+.guestbar{margin:12px 0 -6px;padding:7px 12px;border-radius:10px;background:var(--surface-2);color:var(--muted);text-align:center}
+/* icone e liste partita */
+.open-hint{font-size:12px;font-weight:600;color:var(--brand-2);white-space:nowrap}
+.match:hover .open-hint{text-decoration:underline}
+.ico{display:inline-block;vertical-align:middle;flex:none}
+.icn{display:inline-flex;align-items:center;gap:1px;font-size:11px;font-weight:800}
+.pd{width:13px;height:13px;border-radius:50%;background:#5cc23b;display:inline-block;flex:none}
+.pd.gk{background:#f5a524}
+.ico-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:14px 0 4px}
+.ico-legend span{display:inline-flex;align-items:center;gap:5px}
+.ml-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;border-top:1px solid var(--line);padding-top:6px}
+.ml-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:13px;min-height:24px}
+.ml-row .nm{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ml-row .ev{display:inline-flex;gap:1px;flex:none}
+.ml-row.hl .nm{font-weight:800}
+.ml-col.r .ml-row{flex-direction:row-reverse}
+/* dettaglio partita */
+.mx-head{background:linear-gradient(165deg,#0f3d2e 0%,#1d6b4f 62%,#2c8a62 100%);color:#fff;border-radius:16px;padding:14px 16px 0;margin-bottom:12px;overflow:hidden;position:relative}
+.mx-head::after{content:"";position:absolute;left:-10%;right:-10%;bottom:-34px;height:58px;background:#0b2a20;border-radius:50% 50% 0 0;opacity:.85}
+.mx-top{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:start;position:relative;z-index:1}
+.mx-team{font-family:'Barlow Condensed',Inter,sans-serif;font-size:26px;font-weight:700;line-height:1.05}
+.mx-team.r{text-align:right}
+.mx-score{font-family:'Barlow Condensed',Inter,sans-serif;font-size:50px;font-weight:800;line-height:1;text-align:center;letter-spacing:1px}
+.mx-sub{font-size:12px;opacity:.8;text-align:center;margin-top:4px}
+.mx-shirts{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2;margin-top:-6px}
+.mx-shirts{padding:0 4%}
+.mx-shirts img{height:150px;width:auto;margin-bottom:-12px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35))}
+.mx-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mx-row{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--line);min-height:44px}
+.mx-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:15px}
+.mx-row .ev{display:inline-flex;align-items:center;gap:1px;flex:none}
+.mx-row .vt{flex:none;min-width:40px;height:32px;padding:0 6px;border-radius:8px;display:grid;place-items:center;font-weight:800;font-size:14px;background:color-mix(in srgb,var(--brand-2) 13%,var(--surface));color:var(--brand-2);font-variant-numeric:tabular-nums}
+.mx-row .vt.none{color:var(--muted);font-weight:600;opacity:.7}
+.mx-row .vt.few{opacity:.6}
+.mx-col.r .mx-row{flex-direction:row-reverse}
+.mx-col.r .mx-row .nm{text-align:right}
+/* FantaNunnaree: campo formazione e squadre della giornata */
+.pitch{position:relative;aspect-ratio:4/5;width:100%;max-width:460px;margin:10px auto 12px;border-radius:14px;overflow:hidden;background:repeating-linear-gradient(180deg,#2e8b4c 0 12.5%,#287d43 12.5% 25%);box-shadow:0 6px 18px rgba(0,0,0,.25)}
+.pitch .lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.ps{position:absolute;transform:translate(-50%,-50%);width:25%;display:flex;flex-direction:column;align-items:center;gap:1px;background:none;border:0;padding:0;color:#fff;cursor:pointer;font:inherit;-webkit-tap-highlight-color:transparent}
+.ps:disabled{cursor:default}
+.ps:focus-visible{outline:2px solid #fff;outline-offset:2px;border-radius:8px}
+.ps .av{width:76%;aspect-ratio:100/132;display:block}
+.ps .av svg{width:100%;height:100%;display:block}
+.ps .av.emp{display:grid;place-items:center}
+.ps .av.emp span{width:62%;aspect-ratio:1;border-radius:50%;border:2px dashed rgba(255,255,255,.75);display:grid;place-items:center;font-size:24px;font-weight:700;color:rgba(255,255,255,.9);background:rgba(0,0,0,.12)}
+.ps .pn{max-width:100%;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:700;font-size:15px;line-height:1.1;text-shadow:0 1px 3px rgba(0,0,0,.8);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:4px}
+.ps:not(.on) .pn{opacity:.8;font-weight:600}
+.ps .pn .dot{width:9px;height:9px;border-width:1px}
+.ps .pn .pt{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ps .pn .dot{flex:none}
+.ps .ptag{font-size:10px;font-weight:700;line-height:1;padding:2px 5px;border-radius:999px;background:#ff6b81;color:#fff;white-space:nowrap}
+.ps .pk{position:absolute;top:0;right:12%;font-size:10px;font-weight:800;background:#f5a524;color:#111;border-radius:6px;padding:1px 5px}
+.fnext-cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fnext-cols>div{min-width:0}
+.fnext-h{display:flex;align-items:center;gap:6px;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:700;font-size:19px;padding-bottom:4px;border-bottom:1px solid var(--line)}
+.fnext-p{display:flex;align-items:center;gap:6px;padding:5px 0;font-size:14px;border-bottom:1px solid var(--line);min-width:0}
+.fnext-p>span:not(.pill){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fnext-p.mine>span:not(.pill){font-weight:700;color:var(--brand-2)}
+.fnext-p .pill{font-size:10.5px;padding:1px 6px}
+.tmb{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;flex:none;border:1px solid var(--line);white-space:nowrap}
+.tmb.W{background:var(--white-team);color:var(--white-ink)}
+.tmb.D{background:var(--dark-team);color:var(--dark-ink);border-color:var(--muted)}
+.tmb.no{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 55%,transparent)}
+@media (max-width:420px){ .ps{width:30%} .ps .av{width:64%} .ps .pn{font-size:13px} .fnext-cols{gap:10px} .fnext-p{font-size:13px} .tmb{font-size:10px;padding:2px 5px} }
+@media (max-width:600px){
+  .mx-head{padding:12px 12px 0}
+  .mx-team{font-size:21px}
+  .mx-score{font-size:40px}
+  .mx-shirts img{height:92px}
+  .mx-cols{gap:8px}
+  .mx-row{gap:5px;min-height:40px;padding:6px 0}
+  .mx-row .nm{font-size:13.5px}
+  .mx-row .vt{min-width:34px;height:28px;font-size:13px;padding:0 4px}
+  .pd{width:11px;height:11px}
+  .ml-cols{gap:8px}
+  .ml-row{font-size:12.5px;gap:4px}
+}
+/* STOP schieramenti */
+.btn.stop{background:#d0021b;border-color:#d0021b;color:#fff;font-weight:800;letter-spacing:.3px}
+.btn.stop:hover{background:#a80016}
+.stopbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,#d0021b 10%,var(--surface));border:1px solid color-mix(in srgb,#d0021b 45%,var(--line))}
+.card.stopbar{margin:0 0 14px}
+/* import tabellino */
+textarea{resize:vertical;font-size:14px}
+.imp-row{border:1px solid var(--line);border-radius:12px;padding:8px;margin-bottom:8px;background:var(--surface)}
+.imp-row.flag{border-color:var(--warn);box-shadow:inset 3px 0 0 var(--warn)}
+.imp-top{display:flex;gap:6px;align-items:center}
+.imp-top select{flex:1;min-width:0}
+.imp-nums{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:6px}
+.imp-nums label{display:flex;flex-direction:column;gap:2px;font-size:10.5px;color:var(--muted);text-align:center;line-height:1.1}
+.imp-nums input[type=number]{padding:6px 2px;text-align:center;font-weight:700}
+@media (max-width:420px){ .imp-nums{grid-template-columns:repeat(3,minmax(0,1fr))} }
+.imp-warn{border-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,var(--surface))}
+.imp-warn ul{margin:6px 0 0;padding-left:18px;font-size:14px}
+/* FantaNunnaree: tema rosa e nero */
+html.fanta{
+  --bg:#09090b; --surface:#141417; --surface-2:#1e1e23; --line:#2e2e35; --text:#f7f2f5; --muted:#ada4ab;
+  --brand:#ff3d9a; --brand-2:#ff79b8; --accent:#ff3d9a; --accent-ink:#ffffff;
+  --ok:#5fd39a; --warn:#ffb454; --danger:#ff6b81; --shadow:none;
+  --white-team:#f3f3f3; --white-ink:#111; --dark-team:#000; --dark-ink:#fff;
+  color-scheme:dark;
+}
+html.fanta .topbar,html.fanta .tabs{background:#000}
+html.fanta .topbar{border-bottom:2px solid #ff3d9a}
+html.fanta .tab.on{background:#ff3d9a;color:#fff}
+html.fanta .logo .ball{background:#ff3d9a}
+html.fanta .logo .ball::after{border-color:#000}
+html.fanta .btn.primary{color:#fff}
+html.fanta .section-title h2{color:#ff3d9a}
+html.fanta .card h2,html.fanta .kpi .v{color:#ff8cc4}
+html.fanta .t tr.me td{background:color-mix(in srgb,#ff3d9a 24%,var(--surface))}
+html.fanta .seg button.on{background:#ff3d9a;color:#fff;box-shadow:none}
+html.fanta .tbtn.sel.on{color:#fff}
+html.fanta .dot{border-color:#f7f2f5}
+html.fanta .dot.D{border-color:#f7f2f5}
+html.fanta #toast{background:#ff3d9a;color:#fff}
+/* titolo leggibile su smartphone */
+@media (max-width:720px){
+  .topbar .wrap{gap:8px}
+  .logo{flex:1;gap:8px}
+  .logo .ball{width:26px;height:26px}
+  .logo .ball::after{width:10px;height:10px;border-width:2.5px}
+  .logo h1{font-size:19px;line-height:1.02;white-space:normal;overflow:visible;text-overflow:clip;text-wrap:balance;letter-spacing:.2px}
+  .topbar .spacer{display:none}
+  .topbar select{max-width:92px;padding:5px 6px;font-size:13px}
+  .iconbtn{padding:6px}
+}
+@media (max-width:350px){ .logo h1{font-size:17px} .logo .ball{width:22px;height:22px} .topbar select{max-width:84px;font-size:12px;padding:4px 3px} }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="toast"></div>
+<script>
+'use strict';
+const CFG = window.APP_CONFIG || {};
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmtVote = v => v == null ? '–' : Number(v).toFixed(2).replace(/0$/, '').replace('.', ',');
+const fmtNum = v => v == null ? '–' : String(Math.round(v * 100) / 100).replace('.', ',');
+const fmtDate = d => d ? new Date(d + (String(d).length === 10 ? 'T12:00:00' : '')).toLocaleDateString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }) : '';
+const fmtDateTime = d => d ? new Date(d).toLocaleString('it-IT', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+const TYPES = [5, 7, 8, 11];
+const TW = CFG.TEAM_W || 'Chiari', TD = CFG.TEAM_D || 'Scuri';
+const typeLabel = t => 'Calcio a ' + t;
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} }
+};
+
+// ------------------------------------------------------------- API
+async function rpc(fn, args = {}) {
+  const url = CFG.SUPABASE_URL.replace(/\/$/, '') + '/rest/v1/rpc/' + fn;
+  const headers = { 'Content-Type': 'application/json', apikey: CFG.SUPABASE_KEY };
+  if (/^eyJ/.test(CFG.SUPABASE_KEY)) headers.Authorization = 'Bearer ' + CFG.SUPABASE_KEY;
+  let res;
+  try { res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(args) }); }
+  catch (e) { throw new Error('Connessione non riuscita. Controlla la rete.'); }
+  const txt = await res.text();
+  let data = null; try { data = txt ? JSON.parse(txt) : null; } catch { data = txt; }
+  if (!res.ok) {
+    const msg = (data && data.message) || ('Errore ' + res.status);
+    if (/Sessione scaduta/.test(msg) && S.token) { logoutLocal(); }
+    throw new Error(msg);
+  }
+  return data;
+}
+const T = () => S.token;
+
+// ------------------------------------------------------------- STATE
+const S = {
+  token: store.get('calc_token'),
+  boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
+  matches: null, stats: null, myVotes: null, fanta: null, partners: null,
+  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, statRole: 'all', matchType: 'all', matchPlayer: null,
+        pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
+        fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
+};
+const me = () => S.boot?.me;
+const isPres = () => !!S.boot?.me?.is_president;
+const isGuest = () => !!S.boot?.me?.is_guest;
+const pname = id => S.boot?.players.find(p => p.id === id)?.name || ('#' + id);
+const activePlayers = () => S.boot.players.filter(p => p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
+const settings = k => Number(S.boot?.settings?.[k]);
+
+function toast(msg, bad = false) {
+  const t = $('#toast'); t.textContent = msg; t.className = 'on' + (bad ? ' bad' : '');
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = '', bad ? 4200 : 2200);
+}
+async function act(fn, okMsg) {
+  try { const r = await fn(); if (okMsg) toast(okMsg); return r ?? true; }
+  catch (e) { toast(e.message, true); return false; }
+}
+
+// ------------------------------------------------------------- LOGIN
+async function renderLogin(msg = '') {
+  const app = $('#app'); document.documentElement.classList.remove('fanta');
+  app.innerHTML = `<div class="login"><div class="box">
+    <div class="ball"></div>
+    <h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1>
+    <div class="muted small">Statistiche, voti e FantaNunnaree</div>
+    <label class="f" for="lp">Chi sei?</label>
+    <select id="lp"><option value="">Caricamento…</option></select>
+    <div id="pwbox">
+      <label class="f" for="lpw" id="lpwl">Password</label>
+      <input type="password" id="lpw" autocomplete="current-password">
+      <div id="pw2box" class="hidden"><label class="f" for="lpw2">Ripeti password</label><input type="password" id="lpw2" autocomplete="new-password"></div>
+    </div>
+    <div class="err" id="lerr">${esc(msg)}</div>
+    <button class="btn primary" id="lgo" style="width:100%;justify-content:center;margin-top:6px">Entra</button>
+    <div class="tiny muted" style="margin-top:12px" id="lhint">Al primo accesso scegli il tuo nome e crea la tua password. Se la dimentichi, chiedi al presidente di resettarla.</div>
+    <button class="btn" id="lguest" style="width:100%;justify-content:center;margin-top:12px">👀 Entra come ospite (sola lettura)</button>
+  </div></div>`;
+  if (!CFG.SUPABASE_URL || /INCOLLA/.test(CFG.SUPABASE_URL)) {
+    $('#lerr').textContent = 'App non configurata: inserisci URL e chiave Supabase in config.js.'; return;
+  }
+  let list = [];
+  try { list = await rpc('list_players_public'); } catch (e) { $('#lerr').textContent = e.message; return; }
+  const sel = $('#lp');
+  const last = store.get('calc_last_player');
+  sel.innerHTML = '<option value="">— seleziona il tuo nome —</option>' + list.map(p => `<option value="${p.id}" ${String(p.id) === last ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const sync = () => {
+    const p = list.find(x => String(x.id) === sel.value);
+    const first = p && !p.has_pw;
+    $('#pw2box').classList.toggle('hidden', !first);
+    $('#lpwl').textContent = first ? 'Primo accesso: scegli una password (min 4 caratteri)' : 'Password';
+    $('#lgo').textContent = first ? 'Crea password ed entra' : 'Entra';
+  };
+  sel.onchange = sync; sync();
+  const go = async () => {
+    const p = list.find(x => String(x.id) === sel.value);
+    const pw = $('#lpw').value; $('#lerr').textContent = '';
+    if (!p) { $('#lerr').textContent = 'Seleziona il tuo nome.'; return; }
+    if (!pw) { $('#lerr').textContent = 'Inserisci la password.'; return; }
+    $('#lgo').disabled = true;
+    try {
+      let r;
+      if (!p.has_pw) {
+        if (pw !== $('#lpw2').value) throw new Error('Le due password non coincidono.');
+        r = await rpc('set_first_password', { p_player: p.id, p_password: pw });
+      } else r = await rpc('login', { p_player: p.id, p_password: pw });
+      S.token = r.token; store.set('calc_token', r.token); store.set('calc_last_player', String(p.id));
+      await start();
+    } catch (e) { $('#lerr').textContent = e.message; $('#lgo').disabled = false; }
+  };
+  $('#lgo').onclick = go;
+  $('#lguest').onclick = () => guestLogin();
+  $('#lpw').onkeydown = $('#lpw2').onkeydown = e => { if (e.key === 'Enter') go(); };
+}
+function logoutLocal() { S.token = null; store.set('calc_token', null); S.boot = null; renderLogin('Sessione scaduta: rientra.'); }
+async function logout() { try { await rpc('logout', { p_token: T() }); } catch {} S.token = null; store.set('calc_token', null); S.boot = null; renderLogin(); }
+
+// ------------------------------------------------------------- SHELL
+const TABS = [
+  { id: 'classifica', label: 'Classifica', ic: '🏆' },
+  { id: 'partite', label: 'Partite', ic: '⚽' },
+  { id: 'voti', label: 'Voti', ic: '★' },
+  { id: 'coppie', label: 'Coppie', ic: '⇄' },
+  { id: 'fanta', label: 'FantaNunnaree', short: 'Fanta', ic: '🎲' },
+  { id: 'admin', label: 'Presidente', short: 'Admin', ic: '⚙', pres: true },
+];
+async function start() {
+  try { S.boot = await rpc('get_bootstrap', { p_token: T() }); }
+  catch (e) { if (!S.token) return; S.token = null; store.set('calc_token', null); return renderLogin(e.message); }
+  S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
+  if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
+  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest())) S.tab = 'classifica';
+  renderShell();
+  navInit();
+  if (!isGuest()) loadVotesBadge();
+}
+function renderShell() {
+  document.title = CFG.APP_NAME || 'Calcetto';
+  $('#app').innerHTML = `
+  <div class="topbar">
+    <div class="wrap">
+      <div class="logo"><div class="ball"></div><h1>${esc(CFG.APP_NAME || 'Calcetto')}</h1></div>
+      <div class="spacer"></div>
+      <select id="seasonSel" aria-label="Stagione">${S.boot.seasons.map(s => `<option value="${s.id}" ${s.id === S.season ? 'selected' : ''}>${esc(s.name)}${s.ended && innerWidth > 720 ? ' (finita)' : ''}</option>`).join('')}</select>
+      <button class="iconbtn" id="userBtn" title="Account" aria-label="Account">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
+      </button>
+    </div>
+    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
+  </div>
+  <main><div class="wrap">${isGuest() ? '<div class="guestbar small">👀 Modalità ospite · sola lettura</div>' : ''}<div id="view"></div></div></main>`;
+  $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
+  $('#tabs').onclick = e => { const b = e.target.closest('.tab'); if (!b) return; if (b.dataset.tab === S.tab) return; S.tab = b.dataset.tab; store.set('calc_tab', S.tab); $$('.tab').forEach(x => x.classList.toggle('on', x === b)); navPush(); renderTab(); scrollTo(0, 0); };
+  $('#userBtn').onclick = openAccount;
+  renderTab();
+}
+function setTheme() {
+  const f = S.tab === 'fanta' && !!S.boot && !!$('#view');
+  document.documentElement.classList.toggle('fanta', f);
+  $('meta[name=theme-color]')?.setAttribute('content', f ? '#000000' : '#0f3d2e');
+}
+function renderTab() {
+  const v = $('#view'); setTheme(); if (!v) return;
+  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, admin: viewAdmin }[S.tab] || viewClassifica)(v);
+}
+async function loadVotesBadge() {
+  try {
+    S.myVotes = await rpc('get_my_votes', { p_token: T() });
+    const missing = S.myVotes.reduce((a, m) => a + m.targets.filter(t => t.value == null).length, 0);
+    const b = $('#voteBadge'); if (b) { b.textContent = S.myVotes.length; b.classList.toggle('hidden', !S.myVotes.length || !missing); }
+  } catch {}
+}
+function openAccount() {
+  if (isGuest()) return modal({ title: 'Ospite', body: '<p class="small">Stai guardando l\'app in sola lettura. Per votare e giocare al FantaNunnaree serve un account del gruppo.</p>',
+    actions: [{ label: 'Esci', cls: 'danger', fn: async () => { await logout(); return true; } }] });
+  modal({
+    title: me().name,
+    body: `<div class="muted small">${isPres() ? 'Presidente · accesso completo' : 'Giocatore'}</div>
+      <h3 style="margin:16px 0 4px;font-size:19px">Cambia password</h3>
+      <label class="f">Password attuale</label><input type="password" id="op">
+      <label class="f">Nuova password</label><input type="password" id="np">`,
+    actions: [
+      { label: 'Esci', cls: 'danger', fn: async () => { await logout(); return true; } },
+      { label: 'Salva password', cls: 'primary', fn: async () => act(() => rpc('change_password', { p_token: T(), p_old: $('#op').value, p_new: $('#np').value }), 'Password aggiornata') },
+    ]
+  });
+}
+
+// ------------------------------------------------------------- TASTO INDIETRO (cronologia)
+// ogni schermata (scheda, sotto-scheda) è una voce della cronologia; le finestre aperte sono un livello in più:
+// "indietro" chiude prima la finestra aperta, poi torna alla schermata precedente, e solo all'inizio esce dal sito.
+const NAV = { ignore: 0, overlay: false, rootWarned: false };
+const navState = extra => ({ app: 1, tab: S.tab, ft: S.ui.fantaTab, at: S.ui.adminTab, ...extra });
+function navPush() { if (!S.boot) return; NAV.rootWarned = false; try { history.pushState(navState(), ''); } catch {} }
+function navInit() { try { history.replaceState(navState({ root: true }), ''); history.pushState(navState(), ''); } catch {} NAV.overlay = false; }
+function navOverlayOpened() { if (!S.boot || NAV.overlay) return; NAV.overlay = true; try { history.pushState(navState({ overlay: true }), ''); } catch {} }
+function navOverlayClosed() {
+  setTimeout(() => { if (NAV.overlay && !$('.modal-bg')) { NAV.overlay = false; NAV.ignore++; history.back(); } }, 0);
+}
+window.addEventListener('popstate', e => {
+  if (NAV.ignore) { NAV.ignore--; return; }
+  const mods = $$('.modal-bg');
+  if (mods.length) {                       // indietro con una finestra aperta: chiude quella in primo piano
+    NAV.overlay = false;
+    const top = mods[mods.length - 1];
+    if (mods.length > 1) navOverlayOpened(); // restano altre finestre: ricrea il livello
+    top._close && top._close();
+    return;
+  }
+  const st = e.state;
+  if (!S.boot || !st || !st.app) return;
+  if (st.root) {                           // prima schermata: avviso, il prossimo indietro esce
+    if (!NAV.rootWarned) { NAV.rootWarned = true; toast('Premi di nuovo indietro per uscire'); }
+    return;
+  }
+  if (st.overlay) return;
+  if (st.ft) S.ui.fantaTab = st.ft;
+  if (st.at) S.ui.adminTab = st.at;
+  if (st.tab) { S.tab = st.tab; store.set('calc_tab', S.tab); }
+  $$('.tab').forEach(x => x.classList.toggle('on', x.dataset.tab === S.tab));
+  renderTab(); scrollTo(0, 0);
+});
+
+// ------------------------------------------------------------- MODAL
+function modal({ title, body, actions = [], onOpen, wide, onClose }) {
+  const bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true" ${wide ? 'style="max-width:900px"' : ''}>
+    <header><h2>${esc(title)}</h2><button class="iconbtn" data-x aria-label="Chiudi" style="color:var(--text)">✕</button></header>
+    <div class="body">${body}</div>
+    ${actions.length ? `<footer>${actions.map((a, i) => `<button class="btn ${a.cls || ''}" data-a="${i}">${esc(a.label)}</button>`).join('')}</footer>` : ''}
+  </div>`;
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; bg.remove(); if (!$('.modal-bg')) document.body.style.overflow = ''; if (onClose) onClose(); navOverlayClosed(); };
+  bg._close = close;
+  bg.addEventListener('click', async e => {
+    if (e.target === bg || e.target.closest('[data-x]')) return close();
+    const a = e.target.closest('[data-a]');
+    if (a) { a.disabled = true; const r = await actions[a.dataset.a].fn(bg); a.disabled = false; if (r) close(); }
+  });
+  document.body.appendChild(bg); document.body.style.overflow = 'hidden';
+  navOverlayOpened();
+  if (onOpen) onOpen(bg, close);
+  return { el: bg, close };
+}
+function confirmBox(text, label = 'Conferma', danger = false) {
+  return new Promise(res => {
+    const m = modal({ title: 'Confermi?', body: `<p>${text}</p>`, onClose: () => res(false), actions: [
+      { label: 'Annulla', fn: async () => { res(false); return true; } },
+      { label, cls: danger ? 'danger' : 'primary', fn: async () => { res(true); return true; } }
+    ] });
+    m.el.addEventListener('click', e => { if (e.target === m.el || e.target.closest('[data-x]')) res(false); });
+  });
+}
+
+// ------------------------------------------------------------- SORTABLE TABLE
+function sortRows(rows, sort, cols) {
+  const c = cols.find(c => c.k === sort.k) || cols[0];
+  const get = c.sv || (r => r[c.k]);
+  return [...rows].sort((a, b) => {
+    let x = get(a), y = get(b);
+    if (typeof x === 'string' || typeof y === 'string') return String(x ?? '').localeCompare(String(y ?? ''), 'it') * sort.d;
+    if (x == null && y == null) return 0; if (x == null) return 1; if (y == null) return -1;
+    return (x - y) * sort.d || String(a.name).localeCompare(String(b.name), 'it');
+  });
+}
+function tableHtml(cols, rows, sort, opts = {}) {
+  return `<div class="tbl-wrap"><table class="t"><thead><tr>${cols.map(c => `<th data-k="${c.k}" title="${esc(c.title || c.label)}" class="${sort.k === c.k ? 'sorted' : ''}" data-dir="${sort.d > 0 ? '▲' : '▼'}">${esc(c.label)}</th>`).join('')}</tr></thead>
+  <tbody>${rows.length ? rows.map((r, i) => `<tr class="${opts.rowCls ? opts.rowCls(r) : ''}">${cols.map(c => `<td class="${c.cls || ''}">${c.fmt ? c.fmt(r, i) : esc(r[c.k] ?? '')}</td>`).join('')}</tr>`).join('') : `<tr><td colspan="${cols.length}" class="empty">${opts.empty || 'Nessun dato'}</td></tr>`}</tbody></table></div>`;
+}
+function bindSort(container, sort, rerender) {
+  container.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
+    const k = th.dataset.k;
+    if (sort.k === k) sort.d = -sort.d; else { sort.k = k; sort.d = k === 'name' ? 1 : -1; }
+    rerender();
+  });
+}
+function segHtml(id, opts, val) { return `<div class="seg" id="${id}">${opts.map(o => `<button data-v="${o.v}" class="${String(o.v) === String(val) ? 'on' : ''}">${esc(o.l)}</button>`).join('')}</div>`; }
+function bindSeg(el, fn) { el.onclick = e => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); }; }
+const typeOpts = [{ v: 'all', l: 'Tutte' }, ...TYPES.map(t => ({ v: t, l: 'a ' + t }))];
+
+// ------------------------------------------------------------- CLASSIFICA
+async function viewClassifica(v) {
+  const u = S.ui;
+  v.innerHTML = `<div class="section-title"><h2>Classifica</h2><div class="spacer"></div>${segHtml('stType', typeOpts, u.statType)}</div>
+    <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="Cerca giocatore…" value="${esc(u.statSearch)}" style="max-width:260px">
+      <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> solo chi ha giocato</label>
+      ${segHtml('stRole', [{ v: 'all', l: 'Tutti' }, { v: 'gk', l: 'Portieri' }, { v: 'mov', l: 'Movimento' }], u.statRole)}
+      <label class="small row" style="gap:6px" for="stMin">PG almeno <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"></label></div>
+    <div id="stTable"><div class="loader">Caricamento…</div></div>
+    <div class="legend">PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.</div>`;
+  let data = null, box = null;
+  bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
+  bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
+  $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
+  $('#stHide').onchange = e => { u.hideZero = e.target.checked; draw(); };
+  $('#stMin').oninput = e => { const n = Math.max(0, Math.floor(Number(e.target.value) || 0)); u.minPg = Math.min(n, Number(e.target.max) || n); draw(); };
+  const key = S.season + '|' + u.statType;
+  if (!S.stats || S.stats.key !== key) {
+    try { S.stats = { key, rows: await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: u.statType === 'all' ? null : Number(u.statType) }) }; }
+    catch (e) { if ($('#stTable')) $('#stTable').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  }
+  if (S.tab !== 'classifica' || !$('#stTable')) return;
+  const cols = [
+    { k: 'name', label: 'Giocatore', fmt: (r, i) => `<span class="rank">${i + 1}</span>${esc(r.name)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
+    { k: 'pg', label: 'PG', title: 'Partite giocate', cls: 'strong' }, { k: 'v', label: 'V', title: 'Vittorie' }, { k: 'n', label: 'N', title: 'Pareggi' }, { k: 's', label: 'P', title: 'Sconfitte' },
+    { k: 'pct', label: '%V', title: 'Percentuale vittorie', sv: r => r.pg ? r.v / r.pg : null, fmt: r => r.pg ? Math.round(r.v / r.pg * 100) + '%' : '–' },
+    { k: 'pt', label: 'PT', title: 'Punti: 3 a vittoria, 1 a pareggio, 0 a sconfitta', cls: 'strong', sv: r => 3 * r.v + r.n, fmt: r => 3 * r.v + r.n },
+    { k: 'gf', label: 'GF', title: 'Gol fatti', cls: 'strong' }, { k: 'rig', label: 'Rig', title: 'Gol su rigore' }, { k: 'ag', label: 'AG', title: 'Autogol' },
+    { k: 'gs', label: 'GS', title: 'Gol subiti' }, { k: 'rp', label: 'RP', title: 'Rigori parati' }, { k: 'rs', label: 'RS', title: 'Rigori sbagliati' },
+    { k: 'mv', label: 'Voto', title: 'Media voto pulita', cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
+    { k: 'vplus', label: 'V+', title: 'Media fantavoto (voto + bonus/malus)', cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
+  ];
+  data = S.stats; box = $('#stTable');
+  const maxPg = Math.max(1, ...data.rows.map(r => r.pg || 0));
+  if ($('#stMin')) { $('#stMin').max = maxPg; $('#stMin').title = `Da 0 a ${maxPg} (massimo di partite giocate in questa selezione)`; if (u.minPg > maxPg) { u.minPg = maxPg; $('#stMin').value = maxPg; } }
+  function draw() {
+    if (!data || !document.body.contains(box)) return;
+    let rows = data.rows;
+    if (u.hideZero) rows = rows.filter(r => r.pg > 0);
+    if (u.minPg) rows = rows.filter(r => r.pg >= u.minPg);
+    if (u.statRole === 'gk') rows = rows.filter(r => r.is_gk); else if (u.statRole === 'mov') rows = rows.filter(r => !r.is_gk);
+    if (u.statSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.statSearch.toLowerCase()));
+    rows = sortRows(rows, u.statSort, cols);
+    box.innerHTML = tableHtml(cols, rows, u.statSort, { rowCls: r => r.id === me().id ? 'me' : '', empty: u.minPg ? `Nessun giocatore con almeno ${u.minPg} partite in questa selezione.` : 'Nessuna partita in questa selezione.' });
+    bindSort(box, u.statSort, draw);
+  }
+  draw();
+}
+
+// ------------------------------------------------------------- PARTITE
+async function loadMatches(force) {
+  if (force || !S.matches || S.matches.season !== S.season) S.matches = { season: S.season, list: await rpc('get_matches', { p_token: T(), p_season: S.season }) };
+  return S.matches.list;
+}
+const seasonInfo = () => S.boot.seasons.find(s => s.id === S.season);
+const canEditSeason = () => isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended;
+function scorersText(m, team) {
+  const out = [];
+  m.players.filter(p => p.team === team && p.goals > 0).forEach(p => out.push(`${esc(pname(p.id))}${p.goals > 1 ? ' ×' + p.goals : ''}${p.pen_goals ? ` <span class="tiny">(${p.pen_goals} rig)</span>` : ''}`));
+  m.players.filter(p => p.team !== team && p.own_goals > 0).forEach(p => out.push(`${esc(pname(p.id))} <span class="tiny">(aut${p.own_goals > 1 ? ' ×' + p.own_goals : ''})</span>`));
+  return out.join(', ');
+}
+// ------------------------------------------------------------- ICONE TABELLINO
+const BALL = (fill = '#fff', ink = '#1a1a1a') => `<circle cx="12" cy="12" r="10.3" fill="${fill}" stroke="${ink}" stroke-width="1.6"/><path d="M12 7.3l3.5 2.5-1.3 4.1H9.8L8.5 9.8z" fill="${ink}"/><path d="M12 7.3V2.4M15.5 9.8l4.5-1.5M14.2 13.9l2.8 3.9M9.8 13.9L7 17.8M8.5 9.8L4 8.3" stroke="${ink}" stroke-width="1.3" fill="none"/>`;
+const ICONS = {
+  goal: { t: 'Gol', svg: BALL() },
+  pen: { t: 'Gol su rigore', svg: BALL() + '<circle cx="18.5" cy="18.5" r="5.3" fill="#1d6b4f" stroke="#fff" stroke-width="1.2"/><text x="18.5" y="21.2" font-size="7.6" font-weight="800" text-anchor="middle" fill="#fff" font-family="Arial">R</text>' },
+  own: { t: 'Autogol', svg: BALL('#e5383b', '#5a0d10') },
+  saved: { t: 'Rigore parato', svg: '<path d="M7.2 21.5v-6.3L4.4 12.3a1.7 1.7 0 0 1 2.4-2.4l1.4 1.4V5a1.55 1.55 0 0 1 3.1 0v5.2V3.5a1.55 1.55 0 0 1 3.1 0v6.7V4.6a1.55 1.55 0 0 1 3.1 0v6.2V7.3a1.5 1.5 0 0 1 3 0v8.2c0 3.4-2.5 6-5.8 6z" fill="#2fb36d" stroke="#14532d" stroke-width="1.2" stroke-linejoin="round"/><rect x="7.2" y="18.6" width="10.6" height="2.9" rx=".6" fill="#14532d"/>' },
+  missed: { t: 'Rigore sbagliato', svg: BALL('#d9dde2', '#5b6470') + '<path d="M4 4l16 16M20 4L4 20" stroke="#e5383b" stroke-width="2.6" stroke-linecap="round"/>' },
+  conceded: { t: 'Gol subiti', svg: '<path d="M2.5 19.5V6h19v13.5" fill="none" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/><path d="M5 8.8h14M5 11.8h14M5 14.8h14M8.5 6.8v12.7M12 6.8v12.7M15.5 6.8v12.7" stroke="#9aa3ad" stroke-width=".9"/><circle cx="16.8" cy="16" r="3.7" fill="#fff" stroke="#e5383b" stroke-width="1.7"/>' },
+};
+const icon = (k, size = 15) => `<svg class="ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="${ICONS[k].t}" role="img"><title>${ICONS[k].t}</title>${ICONS[k].svg}</svg>`;
+// 1 evento: icona; da 2 in su (e sempre per i gol subiti): icona + numero
+const MAGLIE = { W: 'maglia-chiari-2.webp', D: 'maglia-scuri-2.webp' };   // le versioni precedenti: maglia-chiari.webp / maglia-scuri.webp
+const iconN = (k, n, size) => !n ? '' : (n === 1 && k !== 'conceded') ? icon(k, size) : `<span class="icn">${icon(k, size)}<b>${n}</b></span>`;
+function evIcons(p, size) {
+  const g = (p.goals || 0) - (p.pen_goals || 0);
+  return iconN('goal', g, size) + iconN('pen', p.pen_goals, size) + iconN('own', p.own_goals, size) + iconN('saved', p.pen_saved, size) + iconN('missed', p.pen_missed, size) + iconN('conceded', p.conceded, size);
+}
+const isGkId = id => !!S.boot.players.find(x => x.id === id)?.is_gk;
+const sortLineup = ps => [...ps].sort((a, b) => (isGkId(b.id) - isGkId(a.id)) || pname(a.id).localeCompare(pname(b.id), 'it'));
+const iconLegend = () => `<div class="ico-legend">${Object.keys(ICONS).map(k => `<span>${icon(k, 14)} ${ICONS[k].t}</span>`).join('')}<span><i class="pd"></i> giocatore</span><span><i class="pd gk"></i> portiere</span></div>`;
+
+function matchStatusPills(m) {
+  const p = [];
+  if (m.status === 'programmata') p.push('<span class="pill warn">Da giocare</span>');
+  if (m.votes_open) p.push(`<span class="pill live">Voti aperti fino a ${fmtDateTime(m.votes_close_at)}</span>`);
+  if (m.fanta_state === 'bloccato') p.push(`<span class="pill">${m.status === 'giocata' ? 'FantaNunnaree' : 'Fanta: formazioni bloccate'}</span>`);
+  return p.join(' ');
+}
+async function viewPartite(v) {
+  const u = S.ui;
+  const plOpts = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  v.innerHTML = `<div class="section-title"><h2>Partite</h2><div class="spacer"></div>
+    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}</div>
+    <div class="row" style="margin-bottom:12px">${segHtml('mFilType', typeOpts, u.matchType)}
+      <select id="mFilPl" aria-label="Filtra per giocatore" style="max-width:240px"><option value="">Tutti i giocatori</option>${plOpts.map(p => `<option value="${p.id}" ${p.id === u.matchPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+      <span class="small muted" id="mCount"></span></div>
+    <div id="pBanner"></div>
+    <div id="mlist"><div class="loader">Caricamento…</div></div>`;
+  if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); $('#importMatch').onclick = openImport; }
+  let list = null;
+  const draw = () => {
+    const box = $('#mlist'); if (!list || !box) return;
+    if (!list.length) { box.innerHTML = `<div class="card empty">Nessuna partita in questa stagione${canEditSeason() ? '. Crea la prima con “Nuova partita”.' : '.'}</div>`; $('#mCount').textContent = ''; return; }
+    const pid = u.matchPlayer;
+    const rows = list.filter(m => (u.matchType === 'all' || String(m.type) === String(u.matchType)) && (!pid || m.players.some(p => p.id === pid)));
+    let summary = `${rows.length} partit${rows.length === 1 ? 'a' : 'e'}`;
+    if (pid) {
+      const pl = rows.filter(m => m.status === 'giocata').map(m => { const me = m.players.find(p => p.id === pid); const o = m.score_w === m.score_d ? 'N' : ((me.team === 'W') === (m.score_w > m.score_d) ? 'V' : 'P'); return { o, g: me.goals }; });
+      const c = k => pl.filter(x => x.o === k).length;
+      if (pl.length) summary += ` · ${c('V')} V · ${c('N')} N · ${c('P')} P · ${pl.reduce((a, x) => a + x.g, 0)} gol`;
+    }
+    $('#mCount').textContent = summary;
+    box.innerHTML = rows.length ? rows.map(m => {
+      const nw = m.players.filter(p => p.team === 'W').length, nd = m.players.filter(p => p.team === 'D').length;
+      const played = m.status === 'giocata';
+      const me = pid && m.players.find(p => p.id === pid);
+      return `<div class="card match" data-id="${m.id}">
+      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">apri per i dettagli ›</span><div class="spacer"></div>${matchStatusPills(m)}</div>
+      ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
+      ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} con i ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? 'pareggio' : (me.team === 'W') === (m.score_w > m.score_d) ? 'vittoria' : 'sconfitta'}</b>` : ''}${me.goals ? ` · ${me.goals} gol` : ''}</div>` : ''}
+      <div class="score">
+        <div class="side"><span class="team"><span class="dot W"></span>${esc(TW)}</span><span class="tiny muted">${nw} giocatori</span></div>
+        <div class="num">${played ? `${m.score_w} – ${m.score_d}` : '<span class="muted" style="font-size:24px">vs</span>'}</div>
+        <div class="side r"><span class="team">${esc(TD)}<span class="dot D"></span></span><span class="tiny muted">${nd} giocatori</span></div>
+      </div>
+      ${played ? `<div class="grid2 scorers"><div>${scorersText(m, 'W') || ''}</div><div style="text-align:right">${scorersText(m, 'D') || ''}</div></div>` : ''}
+    </div>`;
+    }).join('') : `<div class="card empty">Nessuna partita con questi filtri.</div>`;
+  };
+  bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
+  $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
+  if (isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended) loadFanta().then(F => { const b = $('#pBanner'); if (b && S.tab === 'partite') { b.innerHTML = fantaLockBanner(F.lock, F); b.onclick = fantaBannerClick; } }).catch(() => {});
+  try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'partite' || !$('#mlist')) return;
+  draw();
+  $('#mlist').onclick = e => { const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+}
+function openMatch(id) {
+  const m = S.matches.list.find(x => x.id === id); if (!m) return;
+  const played = m.status === 'giocata';
+  const minV = settings('min_votes');
+  const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
+      const v = p.avg != null ? `<span class="vt ${p.n_votes < minV ? 'few' : ''}" title="${p.n_votes} voti${p.n_votes < minV ? ` (meno di ${minV}: voto d'ufficio nel fanta)` : ''}">${fmtVote(p.avg)}</span>` : '<span class="vt none">–</span>';
+      return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
+    }).join('') || '<div class="muted small" style="padding:10px 0">Nessun giocatore</div>'}</div>`;
+  const header = `<div class="mx-head">
+      <div class="mx-top">
+        <div class="mx-team">${esc(TW)}</div>
+        <div class="mx-mid"><div class="mx-score">${played ? `${m.score_w} - ${m.score_d}` : 'vs'}</div><div class="mx-sub">${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</div></div>
+        <div class="mx-team r">${esc(TD)}</div>
+      </div>
+      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="Maglia ${esc(TW)}" onerror="this.style.visibility='hidden'"><img src="${MAGLIE.D}" alt="Maglia ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
+    </div>`;
+  const pres = isPres();
+  const actions = [];
+  if (pres) {
+    actions.push({ label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox('Eliminare definitivamente la partita con statistiche, voti e formazioni fanta?', 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_match', { p_token: T(), p_match: m.id }), 'Partita eliminata'); if (ok) await refreshAll(); return ok; } });
+    actions.push({ label: 'Dati partita', fn: async () => { editMatchMeta(m, false); return true; } });
+    actions.push({ label: 'Squadre', fn: async () => { editTeams(m); return true; } });
+    actions.push({ label: played ? 'Modifica risultato' : 'Inserisci risultato', cls: 'primary', fn: async () => { editResult(m, true); return true; } });
+  }
+  const fantaCtl = pres && S.season === S.boot.active_season && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
+      <div class="small muted" style="margin-bottom:8px">${m.fanta_state === 'bloccato' ? '<b>Giornata valida</b>: questa partita usa le formazioni bloccate con lo STOP.' : 'Nessuna giornata fanta su questa partita. Le formazioni si bloccano con il pulsante STOP in Partite o nel FantaNunnaree, e vanno alla prima partita a 8 o a 11 caricata.'}</div>
+      ${m.fanta_state !== 'chiuso' ? '<div class="row"><button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button></div>' : ''}</div>` : '';
+  const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
+      <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
+      <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
+      <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
+  const mo = modal({
+    title: 'Dettaglio partita', wide: true,
+    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">Lineup manager: <b>${esc(pname(m.lineup_manager))}</b></p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+      <div class="mx-cols">${col('W')}${col('D')}</div>
+      ${played && m.votes_open ? '<p class="tiny muted">I voti compaiono al centro quando si chiudono le votazioni.</p>' : ''}
+      ${iconLegend()}
+      ${fantaCtl}${voteCtl}`,
+    actions
+  });
+  mo.el.addEventListener('click', async e => {
+    const f = e.target.closest('[data-fanta]');
+    if (f) { if (!await confirmBox('Annullare la giornata fanta di questa partita? Le formazioni bloccate per questa partita vengono cancellate.', 'Annulla giornata', true)) return; if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
+    const vv = e.target.closest('[data-votes]');
+    if (vv) { if (await act(() => rpc('admin_set_votes_close', { p_token: T(), p_match: m.id, p_hours: Number(vv.dataset.votes) }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
+    if (e.target.closest('[data-seevotes]')) showVotes(m);
+  });
+}
+async function showVotes(m) {
+  let vs; try { vs = await rpc('admin_get_votes', { p_token: T(), p_match: m.id }); } catch (e) { return toast(e.message, true); }
+  const ps = m.players.map(p => p.id).sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
+  const byVoter = {}; vs.forEach(x => (byVoter[x.voter] ||= {})[x.target] = x.value);
+  const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
+  modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
+}
+function fantaLockWhen(lock) {
+  if (!lock) return '';
+  return lock.played && lock.votes_close_at ? `fino alla chiusura delle votazioni (${esc(fmtDateTime(lock.votes_close_at))})` : 'fino alla chiusura delle votazioni della partita';
+}
+const DOW_IT = ['', 'lunedì', 'martedì', 'mercoledì', 'giovedì', 'venerdì', 'sabato', 'domenica'];
+const fmtStop = d => { if (!d) return ''; const x = new Date(d); return `${x.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'numeric', timeZone: 'Europe/Rome' })} alle ${x.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome' })}`; };
+const weeklyStopText = () => settings('fanta_stop_auto') == 1 ? `${DOW_IT[settings('fanta_stop_dow')] || 'martedì'} alle ${String(settings('fanta_stop_hour') ?? 19).padStart(2, '0')}:${String(settings('fanta_stop_minute') ?? 45).padStart(2, '0')}` : '';
+function fantaLockBanner(lock, F) {
+  const where = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
+  const hasAuto = !!F && 'next_stop' in F;   // backend con chiusura automatica
+  const nxt = !hasAuto ? 'Premi STOP poco prima del calcio d\'inizio.' : F.next_stop ? `Chiusura automatica: <b>${esc(fmtStop(F.next_stop))}</b>${F.stop_override ? ' <span class="pill warn">data cambiata a mano</span>' : ''}.` : 'Chiusura automatica spenta.';
+  if (isPres()) return lock
+    ? `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>bloccate</b> ${where}, ${fantaLockWhen(lock)}.</span><button class="btn sm" data-reopen>Riapri formazioni</button></div>`
+    : `<div class="stopbar card"><span class="small">Formazioni FantaNunnaree <b>aperte</b>. ${nxt}</span><div class="row" style="gap:6px">${hasAuto ? '<button class="btn sm" data-fdead>Cambia chiusura</button>' : ''}<button class="btn stop" data-fstop>■ STOP adesso</button></div></div>`;
+  return lock ? `<div class="card small" style="margin-bottom:14px">🔒 Formazioni bloccate ${where}, ${fantaLockWhen(lock)}.</div>` : '';
+}
+function editDeadline(F) {
+  const cur = F?.next_stop ? new Date(F.next_stop) : null;
+  const loc = d => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 16); };
+  const wk = weeklyStopText();
+  modal({
+    title: 'Chiusura formazioni',
+    body: `<p class="small" style="margin-top:0">${cur ? `Prossima chiusura: <b>${esc(fmtStop(cur))}</b>${F.stop_override ? ' (scelta a mano)' : ''}.` : 'Chiusura automatica spenta.'} ${wk ? `Di norma le formazioni si chiudono da sole ogni <b>${esc(wk)}</b>.` : ''}</p>
+      <p class="small muted">Cambiala solo per questa settimana se la partita si sposta, oppure scegli una data più avanti per saltare una settimana. Dopo questa chiusura si torna a quella settimanale.</p>
+      <label class="f" for="dlAt">Nuova data e ora di chiusura</label><input type="datetime-local" id="dlAt" value="${cur ? loc(cur) : ''}">
+      <div class="err" id="dlErr"></div>`,
+    actions: [
+      ...(F?.stop_override ? [{ label: 'Torna a quella settimanale', fn: async () => { const ok = await act(() => rpc('admin_fanta_set_deadline', { p_token: T(), p_at: null }), 'Chiusura settimanale ripristinata'); if (ok) { S.fanta = null; await refreshAll(); } return ok; } }] : []),
+      { label: 'Salva', cls: 'primary', fn: async el => {
+        const v = $('#dlAt', el).value; if (!v) { $('#dlErr', el).textContent = 'Scegli data e ora.'; return false; }
+        const d = new Date(v); if (!(d > new Date())) { $('#dlErr', el).textContent = 'La nuova chiusura deve essere nel futuro.'; return false; }
+        const ok = await act(() => rpc('admin_fanta_set_deadline', { p_token: T(), p_at: d.toISOString() }), 'Chiusura impostata: ' + fmtStop(d));
+        if (ok) { S.fanta = null; await refreshAll(); } return ok; } }]
+  });
+}
+async function fantaBannerClick(e) {
+  if (e.target.closest('[data-fdead]')) { try { editDeadline(await loadFanta()); } catch (er) { toast(er.message, true); } return; }
+  if (e.target.closest('[data-fstop]')) {
+    if (!await confirmBox(`<b>STOP formazioni FantaNunnaree.</b> Da adesso nessuno può più modificare la formazione: valgono quelle salvate in questo momento, per la prima partita a 8 o a 11 caricata (già creata o che caricherete). Si riaprono da sole quando si chiudono le votazioni della partita (${settings('vote_hours')} ore dopo il tabellino).`, 'STOP', true)) return;
+    const r = await act(() => rpc('admin_fanta_stop', { p_token: T() }));
+    if (r) { toast(`Formazioni bloccate (${r.teams} squadre)${r.match_id ? '' : ': in attesa della partita'}`); S.fanta = null; await refreshAll(); }
+  }
+  if (e.target.closest('[data-reopen]')) {
+    if (!await confirmBox('Riaprire le formazioni? Il blocco attuale viene annullato e ognuno può modificarle di nuovo. Usalo solo se lo STOP è stato premuto per errore.', 'Riapri', true)) return;
+    if (await act(() => rpc('admin_fanta_reopen', { p_token: T() }), 'Formazioni riaperte')) { S.fanta = null; await refreshAll(); }
+  }
+}
+async function refreshAll() {
+  S.stats = S.fanta = S.partners = null;
+  await loadMatches(true).catch(() => {});
+  loadVotesBadge();
+  renderTab();
+}
+function editMatchMeta(m, retro) {
+  const today = new Date().toISOString().slice(0, 10);
+  modal({
+    title: m ? 'Dati partita' : retro ? 'Partita già giocata' : 'Nuova partita',
+    body: `${retro ? '<p class="small muted">Per caricare partite passate: dopo i dati scegli le squadre e poi inserisci risultato e marcatori.</p>' : ''}
+      <label class="f">Tipo</label>${segHtml('mType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), m?.type || 8)}
+      <label class="f">Data</label><input type="date" id="mDate" value="${m?.date || today}">
+      <label class="f">Nota (facoltativa)</label><input type="text" id="mNote" value="${esc(m?.note || '')}" placeholder="Es. campo, recupero…">`,
+    onOpen: el => bindSeg($('#mType', el), val => $$('#mType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === val))),
+    actions: [{ label: m ? 'Salva' : 'Avanti: squadre', cls: 'primary', fn: async el => {
+      const type = Number($('#mType .on', el).dataset.v), date = $('#mDate', el).value, note = $('#mNote', el).value;
+      if (!date) { toast('Inserisci la data', true); return false; }
+      if (m && type !== m.type) {
+        const warn = [];
+        if (![8, 11].includes(type) && m.fanta_state !== 'chiuso') warn.push('la giornata FantaNunnaree verrà annullata e le formazioni cancellate');
+        if (type === 5 && (m.votes_close_at || m.voters)) warn.push('i voti di questa partita verranno cancellati (nel calcio a 5 non si vota)');
+        if (warn.length && !await confirmBox(`Passando a calcio a ${type}: ${warn.join('; ')}. Confermi?`, 'Conferma', true)) return false;
+      }
+      if (m) { const ok = await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: type, p_date: date, p_note: note }), 'Salvato'); if (ok) await refreshAll(); return ok; }
+      const r = await act(() => rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: note }));
+      if (!r) return false;
+      await loadMatches(true);
+      editTeams(S.matches.list.find(x => x.id === r.id), retro);
+      renderTab();
+      return true;
+    } }]
+  });
+}
+function editTeams(m, thenResult) {
+  const sel = {}; m.players.forEach(p => sel[p.id] = p.team);
+  const list = activePlayers();
+  m.players.forEach(p => { if (!list.some(x => x.id === p.id)) list.push(S.boot.players.find(x => x.id === p.id)); });
+  let q = '', lm = m.lineup_manager ?? '';
+  const lmOpts = () => '<option value="">— nessuno —</option>' + [...S.boot.players].filter(p => p.is_active || p.id === m.lineup_manager).sort((a, b) => a.name.localeCompare(b.name, 'it')).map(p => `<option value="${p.id}" ${String(p.id) === String(lm) ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+  const counts = () => { const w = Object.values(sel).filter(x => x === 'W').length, d = Object.values(sel).filter(x => x === 'D').length; return `<span class="team"><span class="dot W"></span>${esc(TW)} ${w}</span> &nbsp; <span class="team"><span class="dot D"></span>${esc(TD)} ${d}</span> <span class="muted small">· obiettivo ${m.type} per squadra</span>`; };
+  const rows = () => list.filter(p => !q || p.name.toLowerCase().includes(q)).map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>
+      <button class="tbtn W ${sel[p.id] === 'W' ? 'on' : ''}" data-p="${p.id}" data-t="W">${esc(TW[0])}</button><button class="tbtn D ${sel[p.id] === 'D' ? 'on' : ''}" data-p="${p.id}" data-t="D">${esc(TD[0])}</button></div>`).join('');
+  modal({
+    title: `Squadre · ${typeLabel(m.type)}`,
+    body: `<label class="f" for="tlm" style="margin-top:0">Lineup manager (chi ha fatto le squadre)</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>
+      <div id="tcount" style="margin-bottom:10px">${counts()}</div>
+      <input type="text" id="tq" placeholder="Cerca…" style="margin-bottom:6px">
+      <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. Tocca di nuovo per togliere.</div>
+      <div id="tlist">${rows()}</div>`,
+    onOpen: el => {
+      $('#tq', el).oninput = e => { q = e.target.value.toLowerCase(); $('#tlist', el).innerHTML = rows(); };
+      $('#tlm', el).onchange = e => lm = e.target.value;
+      $('#tlist', el).onclick = e => { const b = e.target.closest('.tbtn'); if (!b) return; const id = Number(b.dataset.p); sel[id] = sel[id] === b.dataset.t ? undefined : b.dataset.t; if (!sel[id]) delete sel[id];
+        b.parentElement.querySelectorAll('.tbtn').forEach(x => x.classList.toggle('on', sel[id] === x.dataset.t)); $('#tcount', el).innerHTML = counts(); };
+    },
+    actions: [{ label: thenResult ? 'Avanti: risultato' : 'Salva squadre', cls: 'primary', fn: async () => {
+      const w = Object.keys(sel).filter(k => sel[k] === 'W').map(Number), d = Object.keys(sel).filter(k => sel[k] === 'D').map(Number);
+      const ok = await act(() => rpc('admin_set_teams', { p_token: T(), p_match: m.id, p_white: w, p_dark: d }), thenResult ? null : 'Squadre salvate');
+      if (!ok) return false;
+      if (String(lm) !== String(m.lineup_manager ?? '') && !await act(() => rpc('admin_set_lineup_manager', { p_token: T(), p_match: m.id, p_player: lm === '' ? null : Number(lm) }))) return false;
+      await loadMatches(true); renderTab();
+      if (thenResult) editResult(S.matches.list.find(x => x.id === m.id), false);
+      return true;
+    } }]
+  });
+}
+function editResult(m, openVotesDefault) {
+  if (!m.players.length) { toast('Prima inserisci le squadre', true); return editTeams(m, true); }
+  const st = {}; m.players.forEach(p => st[p.id] = { team: p.team, goals: p.goals, pen_goals: p.pen_goals, own_goals: p.own_goals, conceded: p.conceded, pen_saved: p.pen_saved, pen_missed: p.pen_missed || 0 });
+  const played = m.status === 'giocata';
+  const openDefault = played ? false : openVotesDefault;
+  const F = [['goals', 'Gol'], ['pen_goals', 'di cui rigore'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti (portiere)'], ['pen_saved', 'Rigori parati'], ['pen_missed', 'Rigori sbagliati']];
+  const stepper = (id, k) => `<span class="stepper" data-p="${id}" data-k="${k}"><button data-d="-1" aria-label="meno">−</button><span>${st[id][k]}</span><button data-d="1" aria-label="più">+</button></span>`;
+  const rowsFor = team => m.players.filter(p => p.team === team).sort((a, b) => pname(a.id).localeCompare(pname(b.id), 'it')).map(p => {
+    const s = st[p.id], hasExtra = s.pen_goals || s.own_goals || s.conceded || s.pen_saved || s.pen_missed;
+    return `<div class="stat-row"><div class="top"><span style="flex:1;font-weight:600">${esc(pname(p.id))}${S.boot.players.find(x => x.id === p.id)?.is_gk ? ' <span class="pill">GK</span>' : ''}</span><span class="tiny muted">Gol</span>${stepper(p.id, 'goals')}
+      <button class="btn sm" data-more="${p.id}" title="Altre statistiche">${hasExtra ? '▾' : '…'}</button></div>
+      <div class="extra ${hasExtra ? '' : 'hidden'}" id="ex${p.id}">${F.slice(1).map(([k, l]) => `<div>${l}${stepper(p.id, k)}</div>`).join('')}</div></div>`;
+  }).join('');
+  const calc = () => {
+    let w = 0, d = 0;
+    Object.values(st).forEach(s => { if (s.team === 'W') { w += s.goals; d += s.own_goals; } else { d += s.goals; w += s.own_goals; } });
+    return [w, d];
+  };
+  modal({
+    title: `Risultato · ${typeLabel(m.type)} ${fmtDate(m.date)}`, wide: true,
+    body: `<div class="bigscore"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
+        <input type="number" min="0" id="sw" value="${m.score_w ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="sd" value="${m.score_d ?? ''}" inputmode="numeric">
+        <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
+      <div class="small muted" style="text-align:center" id="calcHint"></div>
+      <div class="teams-grid" style="margin-top:10px">
+        <div><div class="team" style="margin:6px 0"><span class="dot W"></span>${esc(TW)}</div>${rowsFor('W')}</div>
+        <div><div class="team" style="margin:6px 0"><span class="dot D"></span>${esc(TD)}</div>${rowsFor('D')}</div>
+      </div>
+      ${m.type === 5 ? '<p class="small muted" style="margin-top:14px">Calcio a 5: nessuna votazione.</p><input type="checkbox" id="openVotes" class="hidden" disabled>' : `<label class="row small" style="margin-top:14px;gap:8px;cursor:pointer"><input type="checkbox" id="openVotes" ${openDefault ? 'checked' : ''} ${played && m.votes_close_at ? 'disabled' : ''}>
+        ${played && m.votes_close_at ? 'Votazioni già aperte in precedenza (gestiscile dalla scheda partita)' : `Apri le votazioni per ${settings('vote_hours')} ore`}</label>`}`,
+    onOpen: el => {
+      const hint = () => { const [w, d] = calc(); $('#calcHint', el).innerHTML = `Dai marcatori risulta <b>${w} – ${d}</b> <button class="btn sm" id="useCalc">usa</button>`; $('#useCalc', el).onclick = () => { $('#sw', el).value = w; $('#sd', el).value = d; }; };
+      hint();
+      el.querySelector('.body').addEventListener('click', e => {
+        const b = e.target.closest('.stepper button');
+        if (b) { const sp = b.parentElement, id = Number(sp.dataset.p), k = sp.dataset.k; st[id][k] = Math.max(0, st[id][k] + Number(b.dataset.d)); sp.querySelector('span').textContent = st[id][k]; hint(); return; }
+        const mo = e.target.closest('[data-more]'); if (mo) $('#ex' + mo.dataset.more, el).classList.toggle('hidden');
+      });
+    },
+    actions: [{ label: 'Salva risultato', cls: 'primary', fn: async el => {
+      const sw = $('#sw', el).value, sd = $('#sd', el).value;
+      if (sw === '' || sd === '') { toast('Inserisci il risultato finale', true); return false; }
+      const [cw, cd] = calc();
+      if ((Number(sw) !== cw || Number(sd) !== cd) && !await confirmBox(`Il risultato ${sw}–${sd} non coincide con i marcatori inseriti (${cw}–${cd}). Salvo lo stesso?`, 'Salva lo stesso')) return false;
+      const stats = Object.entries(st).map(([id, s]) => ({ player_id: Number(id), ...s }));
+      const ok = await act(() => rpc('admin_save_result', { p_token: T(), p_match: m.id, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: $('#openVotes', el).checked && !$('#openVotes', el).disabled }), 'Risultato salvato');
+      if (ok) await refreshAll();
+      return ok;
+    } }]
+  });
+}
+
+// <PARSER> ---------------------------------------------------- IMPORT TABELLINO: parser puro (testabile)
+const normTxt = s => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[​-‏⁠﻿ ]/g, ' ').toLowerCase();
+const MONTHS_IT = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+const WORDNUM = { un: 1, uno: 1, una: 1, due: 2, tre: 3, quattro: 4, cinque: 5, sei: 6 };
+const NUM_RE = '(\\d+|un|uno|una|due|tre|quattro|cinque|sei)';
+const EV_KEYS = ['goals', 'pen_goals', 'own_goals', 'conceded', 'pen_saved', 'pen_missed'];
+const emptyEv = () => ({ goals: 0, pen_goals: 0, own_goals: 0, conceded: 0, pen_saved: 0, pen_missed: 0 });
+
+// "Pargalia 2 gol (1 su rigore)" -> { name:'pargalia', ev:{goals:2,pen_goals:1,...}, gk:false, hasEv:true }
+function parseEntry(raw) {
+  let s = ' ' + normTxt(raw).replace(/[–—]/g, '-').replace(/×/g, 'x') + ' ';
+  const ev = emptyEv();
+  let gk = false, hasEv = false, goalWord = false;
+  const n = x => x == null || x === '' ? 1 : (WORDNUM[x] ?? Number(x));
+  const take = (re, fn) => { s = s.replace(re, (...m) => { fn(m); hasEv = true; return ' '; }); };
+  s = s.replace(/^\s*\d{1,2}\s*[.)]\s+/, ' ');                                   // "6. Nunnari"
+  s = s.replace(/\((?:gk|p|portiere)\)|\bportiere\b|\bgk\b|\bpor\b/g, () => { gk = true; return ' '; });
+  const N = NUM_RE;
+  take(new RegExp(`(?:${N}\\s*(?:x\\s*)?)?(?:rigor[ei]|rig\\.?)\\s+sbagliat[oi]|sbaglia\\s+(?:${N}\\s+)?rigor[ei]`, 'g'), m => ev.pen_missed += n(m[1] || m[2]));
+  take(new RegExp(`(?:${N}\\s*(?:x\\s*)?)?(?:rigor[ei]|rig\\.?)\\s+parat[oi]|para\\s+(?:${N}\\s+)?rigor[ei]`, 'g'), m => ev.pen_saved += n(m[1] || m[2]));
+  take(new RegExp(`\\(?\\s*(?:${N}\\s*(?:x\\s*)?)?(?:autogol\\w*|autoret\\w*|aut\\b\\.?|ag\\b)\\s*\\)?`, 'g'), m => ev.own_goals += n(m[1]));
+  take(new RegExp(`(?:${N}\\s*(?:gol\\s+|reti\\s+)?subit[ie]|subisce\\s+${N}|\\bgs\\s*:?\\s*${N}|(\\d+)\\s*gs\\b)`, 'g'), m => ev.conceded += n(m[1] || m[2] || m[3] || m[4]));
+  take(/(?:^|\s)-\s*(\d+)\s*$/g, m => ev.conceded += Number(m[1]));               // stile "-4" = gol subiti
+  take(new RegExp(`(?:${N}\\s*)?(?:gol|goal|reti|rete)\\s+(?:su\\s+|di\\s+|da\\s+)?rigor[ei]|rigor[ei]\\s+segnat[oi]`, 'g'), m => { const k = n(m[1]); ev.goals += k; ev.pen_goals += k; });
+  take(/\(\s*r\s*\)/g, () => ev.pen_goals += 1);                                  // "Memolla E. (R)"
+  take(new RegExp(`\\(\\s*(?:di\\s+cui\\s+)?(?:${N}\\s*)?(?:su\\s+|di\\s+|da\\s+)?rig\\w*\\.?\\s*\\)`, 'g'), m => ev.pen_goals += n(m[1]));
+  take(new RegExp(`,?\\s*(?:di\\s+cui\\s+)?${N}\\s+(?:su\\s+|di\\s+|da\\s+)rig\\w*`, 'g'), m => ev.pen_goals += n(m[1]));
+  take(new RegExp(`${N}\\s*(?:gol|goal|goals|reti|rete)\\b|(\\d+)g\\b|\\bx\\s*(\\d+)\\b`, 'g'), m => { ev.goals += n(m[1] || m[2] || m[3]); goalWord = true; });
+  take(/\b(doppietta|tripletta|poker|manita|cinquina)\b/g, m => { ev.goals += { doppietta: 2, tripletta: 3, poker: 4, manita: 5, cinquina: 5 }[m[1]]; goalWord = true; });
+  take(/\b(?:gol|goal|rete|segna)\b/g, () => { ev.goals += 1; goalWord = true; });
+  take(/\brigore\b/g, () => { ev.goals += 1; ev.pen_goals += 1; });              // "Nunnari rigore" = gol su rigore
+  take(/(?:^|\s)\+?(\d+)\s*$/g, m => ev.goals += Number(m[1]));                    // "Pargalia 2"
+  if (ev.pen_goals > ev.goals) ev.goals = ev.pen_goals;                            // "(1 su rigore)" senza gol: almeno quel gol
+  const name = s.replace(/[()\[\]:+*#"]/g, ' ').replace(/\d+/g, ' ').replace(/\s+/g, ' ').replace(/^[\s,.\-]+|[\s,\-]+$/g, '').trim();
+  return { name, ev, gk, hasEv, goalWord };
+}
+
+// ---- nomi
+const nameKey = s => normTxt(s).replace(/['’`]/g, '').replace(/\./g, ' ').replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+function splitDbName(name) { // "De Filippo C." -> {sur:['de','filippo'], ini:'c'} ; "Romano Ma." -> ini 'ma'
+  const m = String(name).trim().match(/^(.*?)\s+([A-Za-zÀ-ÿ]{1,3})\.$/);
+  return m ? { sur: nameKey(m[1]).split(' '), ini: nameKey(m[2]) } : { sur: nameKey(name).split(' '), ini: '' };
+}
+function lev(a, b) {
+  const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// ritorna { id|null, status:'ok'|'ambiguo'|'simile'|'nuovo', candidates:[ids], proposed }
+function matchPlayer(raw, players, hintGk) {
+  const t = nameKey(raw).split(' ').filter(Boolean);
+  if (!t.length) return { id: null, status: 'nuovo', candidates: [], proposed: '' };
+  const scored = [];
+  for (const p of players) {
+    const { sur, ini } = splitDbName(p.name); const k = sur.length;
+    const iniOk = x => !ini || !x || x.startsWith(ini) || ini.startsWith(x);
+    if (t.length >= k && sur.every((w, i) => t[i] === w)) { const r = t[k]; if (iniOk(r)) scored.push({ p, sc: r ? (ini && r.startsWith(ini) ? 3 : 2) : 2 }); continue; }
+    if (t.length > k && sur.every((w, i) => t[t.length - k + i] === w) && iniOk(t[0])) scored.push({ p, sc: 2 });   // "Riccardo Pargalia"
+  }
+  if (scored.length) {
+    const best = Math.max(...scored.map(x => x.sc));
+    let c = scored.filter(x => x.sc === best).map(x => x.p);
+    if (c.length > 1 && c.some(p => p.is_active)) c = c.filter(p => p.is_active);
+    if (c.length > 1 && hintGk && c.some(p => p.is_gk)) c = c.filter(p => p.is_gk);
+    return { id: c[0].id, status: c.length === 1 ? 'ok' : 'ambiguo', candidates: c.map(p => p.id), proposed: '' };
+  }
+  // simili (errori di battitura)
+  const near = [];
+  for (const p of players) {
+    const { sur } = splitDbName(p.name); const a = t.slice(0, sur.length).join(' '), b = sur.join(' ');
+    const d = lev(a, b), max = b.length >= 7 ? 2 : b.length >= 4 ? 1 : 0;
+    if (d <= max) near.push({ p, d });
+  }
+  near.sort((x, y) => x.d - y.d);
+  const cap = w => w.charAt(0).toUpperCase() + w.slice(1);
+  const proposed = t.length > 1 && t[t.length - 1].length <= 2 ? t.slice(0, -1).map(cap).join(' ') + ' ' + t[t.length - 1].toUpperCase() + '.' : t.map(cap).join(' ');
+  if (near.length) return { id: near[0].p.id, status: 'simile', candidates: near.map(x => x.p.id), proposed };
+  return { id: null, status: 'nuovo', candidates: [], proposed };
+}
+
+// ---- data / tipo / risultato
+function ymd(d) { const x = new Date(d.getTime() + 12 * 3600e3); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`; }
+function findDate(cell) {
+  if (cell instanceof Date && !isNaN(cell)) return ymd(cell);
+  if (typeof cell !== 'string') return null;
+  const s = normTxt(cell);
+  let m = s.match(/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{2,4})\b/);
+  if (m) { const y = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]); if (m[2] <= 12 && m[1] <= 31) return `${y}-${String(m[2]).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`; }
+  m = s.match(/\b(\d{4})-(\d{2})-(\d{2})\b/); if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  m = s.match(new RegExp(`\\b(\\d{1,2})\\s+(${MONTHS_IT.join('|')})\\s+(\\d{4})`));
+  if (m) return `${m[3]}-${String(MONTHS_IT.indexOf(m[2]) + 1).padStart(2, '0')}-${String(m[1]).padStart(2, '0')}`;
+  return null;
+}
+function findScoreLine(cell) {
+  if (typeof cell !== 'string') return null;
+  const s = normTxt(cell).replace(/[–—]/g, '-');
+  let m = s.match(/(chiari|bianchi)\D{0,4}(\d+)\s*(?:-|:|a)\s*(\d+)\D{0,4}scuri/); if (m) return [Number(m[2]), Number(m[3])];
+  m = s.match(/scuri\D{0,4}(\d+)\s*(?:-|:|a)\s*(\d+)\D{0,4}(chiari|bianchi)/); if (m) return [Number(m[2]), Number(m[1])];
+  m = s.match(/^\s*(?:risultato|finale)?\D{0,4}?(\d+)\s*(?:-|:)\s*(\d+)\s*$/); if (m) return [Number(m[1]), Number(m[2])];
+  m = s.match(/^\s*(?:risultato|finale)\D{0,4}(\d+)\s*a\s*(\d+)\s*$/); if (m) return [Number(m[1]), Number(m[2])];
+  return null;
+}
+const HDR_RE = /^\s*(chiari|bianchi|scuri)\b[\s:.\-]*(\d+)?\s*(?:gol)?\s*$/;
+const STOP_RE = /^\s*(note|lineup|line-up|formazion\w* a cura|campo|centro|stagione)\b/;
+
+function gridFromText(txt, delim) {
+  return String(txt).replace(/\r/g, '').split('\n').map(l => delim ? l.split(delim) : l.includes('\t') ? l.split('\t') : [l]);
+}
+
+// grid: array di righe, celle string|number|Date|null. players: [{id,name,is_gk,is_active}]
+function parseTabellino(grid, players) {
+  const G = grid.map(r => (r || []).map(c => c == null ? '' : c instanceof Date ? c : typeof c === 'number' ? c : String(c).trim()));
+  const warn = [];
+  const hdr = [];
+  G.forEach((row, r) => row.forEach((c, ci) => {
+    if (typeof c !== 'string' || !c) return;
+    const m = normTxt(c).match(HDR_RE);
+    if (m) hdr.push({ team: m[1] === 'scuri' ? 'D' : 'W', r, c: ci, score: m[2] != null ? Number(m[2]) : (typeof row[ci + 1] === 'number' ? Math.abs(row[ci + 1]) : null) });
+  }));
+  const hW = hdr.find(h => h.team === 'W'), hD = hdr.find(h => h.team === 'D');
+  if (!hW || !hD) throw new Error('Non trovo le intestazioni delle squadre: servono le parole CHIARI e SCURI (da sole, su una riga o in una cella).');
+  if (hdr.filter(h => h.team === 'W').length > 1 || hdr.filter(h => h.team === 'D').length > 1) warn.push('Il file sembra contenere più di una partita: leggo solo la prima. Carica una partita per file.');
+  // blocchi
+  const blocks = [];
+  if (hW.r === hD.r) {                        // affiancati (stile foglio master)
+    const [a, b] = hW.c < hD.c ? [hW, hD] : [hD, hW];
+    const w = b.c - a.c;
+    blocks.push({ h: a, r0: a.r + 1, r1: G.length, c0: a.c, c1: b.c });
+    blocks.push({ h: b, r0: b.r + 1, r1: G.length, c0: b.c, c1: b.c + w });
+  } else {                                    // uno sotto l'altro (stile testo / PRIME_5)
+    const [a, b] = hW.r < hD.r ? [hW, hD] : [hD, hW];
+    const right = h => Math.min(h.c + 4, ...hdr.filter(x => x.r === h.r && x.c > h.c).map(x => x.c));
+    blocks.push({ h: a, r0: a.r + 1, r1: b.r, c0: a.c, c1: right(a) });
+    blocks.push({ h: b, r0: b.r + 1, r1: G.length, c0: b.c, c1: right(b) });
+  }
+  const score = { W: hW.score, D: hD.score };
+  const entries = []; let note = '', lmName = '';
+  const LM_RE = /^\s*(?:lineup|line-up|line up)\s*manager\s*:?\s*|^\s*(?:formazion\w*|squadre)\s+(?:a cura di|fatt\w* da)\s*:?\s*/i;
+  const inBlock = new Set();
+  for (const bl of blocks) {
+    const team = bl.h.team; let phase = 'roster';
+    for (let r = bl.r0; r < bl.r1; r++) {
+      const row = G[r] || [];
+      // un'altra intestazione nella stessa colonna chiude il blocco
+      const cells = row.slice(bl.c0, bl.c1);
+      if (cells.some(c => typeof c === 'string' && HDR_RE.test(normTxt(c)))) break;
+      for (let c = bl.c0; c < bl.c1; c++) inBlock.add(r + ':' + c);
+      const texts = cells.filter(c => typeof c === 'string' && c), nums = cells.filter(c => typeof c === 'number');
+      if (!texts.length && !nums.length) continue;
+      const joined = cells.map(c => c instanceof Date ? '' : String(c)).filter(Boolean).join(' ');
+      const low = normTxt(joined);
+      if (/^\s*note\b/.test(low)) { const t = joined.replace(/^\s*note\s*:?\s*/i, '').trim(); if (t) note += (note ? ' · ' : '') + t; if (hW.r === hD.r) break; continue; }
+      if (LM_RE.test(joined)) { const t = joined.replace(LM_RE, '').trim(); if (t && !lmName) lmName = t; continue; }
+      if (findDate(joined) && entries.some(e => e.team === team)) break;   // inizia un'altra partita
+      if (STOP_RE.test(low.replace(/^["'«\s]+/, '')) || findDate(joined) || findScoreLine(joined)) continue;
+      if (/^\s*(marcatori|gol|reti|eventi)\s*:?\s*$/.test(low)) { phase = 'scorers'; continue; }
+      if (!texts.length && nums.length) {      // riga col solo numero = risultato (foglio master)
+        if (phase === 'roster') { if (score[team] == null) score[team] = Math.abs(nums[0]); phase = 'scorers'; }
+        continue;
+      }
+      let body = joined.replace(/^\s*(marcatori|eventi)\s*:\s*/i, () => { phase = 'scorers'; return ''; });
+      const parts = body.split(/[;,](?![^()]*\))/).map(x => x.trim()).filter(Boolean);
+      for (const part of parts) {
+        const e = parseEntry(part);
+        if (!e.name) {                          // "1 su rigore" dopo una virgola: va all'ultimo nome
+          const last = entries[entries.length - 1];
+          if (last && e.hasEv) { EV_KEYS.forEach(k => last.ev[k] += e.ev[k]); last.raw += ', ' + part; }
+          continue;
+        }
+        if (phase === 'scorers' && !e.hasEv) e.ev.goals = 1;   // elenco marcatori: una riga = un gol
+        entries.push({ raw: part, name: e.name, ev: e.ev, gk: e.gk, team, role: phase, row: r });
+      }
+    }
+  }
+  // dati fuori dai blocchi: data, tipo, risultato, note
+  let date = null, type = null;
+  G.forEach((row, r) => row.forEach((c, ci) => {
+    if (!date) date = findDate(c);
+    if (typeof c === 'string') {
+      const s = normTxt(c);
+      const t = s.match(/calcio\s*a\s*(5|7|8|11)\b|\bc\s*(5|7|8|11)\b|\b(5|7|8|11)\s*(?:vs|contro)\s*(5|7|8|11)\b/);
+      if (!type && t) type = Number(t[1] || t[2] || t[3]);
+      const sl = findScoreLine(c); if (sl && score.W == null && score.D == null) { score.W = sl[0]; score.D = sl[1]; }
+      if (!inBlock.has(r + ':' + ci) && LM_RE.test(c) && !lmName) lmName = c.replace(LM_RE, '').trim();
+      if (!inBlock.has(r + ':' + ci) && /^\s*note\s*:/.test(s)) { const t2 = c.replace(/^\s*note\s*:\s*/i, '').trim(); if (t2 && !note.includes(t2)) note += (note ? ' · ' : '') + t2; }
+    }
+  }));
+  // risoluzione nomi + aggregazione per giocatore
+  const byKey = new Map(); const rows = [];
+  for (const e of entries) {
+    const m = matchPlayer(e.name, players, e.gk || e.ev.pen_saved > 0 || e.ev.conceded > 0);
+    const key = m.id != null ? 'id' + m.id : 'new:' + nameKey(m.proposed || e.name);
+    let row = byKey.get(key);
+    if (!row) {
+      row = { key, pid: m.id, status: m.status, candidates: m.candidates, newName: m.id == null ? (m.proposed || e.name) : '', team: null, teamFromScorer: null, ev: emptyEv(), gk: false, raws: [] };
+      byKey.set(key, row); rows.push(row);
+    }
+    if (e.role === 'roster') {
+      if (row.team && row.team !== e.team) {
+        const onlyEv = !e.ev.goals && (e.ev.own_goals || e.ev.pen_missed || e.ev.pen_saved || e.ev.conceded);
+        if (!onlyEv) warn.push(`${e.raw}: compare in entrambe le squadre, lasciato in ${row.team === 'W' ? 'Chiari' : 'Scuri'}. Controlla.`);
+      } else row.team = row.team || e.team;
+    } else row.teamFromScorer = row.teamFromScorer || e.team;
+    EV_KEYS.forEach(k => row.ev[k] += e.ev[k]);
+    row.gk = row.gk || e.gk; row.raws.push(e.raw);
+  }
+  for (const row of rows) if (!row.team) {
+    row.team = row.ev.own_goals ? (row.teamFromScorer === 'W' ? 'D' : 'W') : row.teamFromScorer || 'W';
+    warn.push(`${row.raws[0]}: non è nelle formazioni, messo in ${row.team === 'W' ? 'Chiari' : 'Scuri'}. Controlla.`);
+  }
+  for (const row of rows) { const p = players.find(x => x.id === row.pid); if (p && p.is_gk) row.gk = true; }
+  // eventi scritti nelle note: "rigore parato da Nunnari E. a Caruso L."
+  for (const m of normTxt(note).matchAll(/rigor[ei]\s+parat[oi]\s+da\s+([a-z' .]+?)\s+a\s+([a-z' .]+?)(?:[,;]|\.(?:\s|$)|$)/g)) {
+    const find = nmx => { const mm = matchPlayer(nmx, players); return rows.find(r => r.pid != null && r.pid === mm.id); };
+    const gkRow = find(m[1]), shRow = find(m[2]);
+    if (gkRow && !gkRow.ev.pen_saved) { gkRow.ev.pen_saved = 1; gkRow.raws.push('nota: rigore parato'); }
+    if (shRow && !shRow.ev.pen_missed) { shRow.ev.pen_missed = 1; shRow.raws.push('nota: rigore sbagliato'); }
+    if (gkRow || shRow) warn.push('Rigore parato/sbagliato letto dalle note: verifica.');
+  }
+  // tipo dedotto dal numero di giocatori
+  const nW = rows.filter(r => r.team === 'W').length, nD = rows.filter(r => r.team === 'D').length, nMax = Math.max(nW, nD);
+  const typeGuess = nMax >= 10 ? 11 : nMax >= 8 ? 8 : nMax >= 7 ? 7 : 5;
+  if (!type) type = typeGuess; else if (type !== typeGuess && !(type === 8 && nMax === 7)) warn.push(`Il file dice calcio a ${type} ma le squadre hanno ${nW} e ${nD} giocatori.`);
+  // risultato calcolato
+  const calc = { W: 0, D: 0 };
+  rows.forEach(r => { calc[r.team] += r.ev.goals; calc[r.team === 'W' ? 'D' : 'W'] += r.ev.own_goals; });
+  if (score.W == null || score.D == null) { score.W = score.W ?? calc.W; score.D = score.D ?? calc.D; warn.push('Risultato non indicato nel file: calcolato dai marcatori.'); }
+  else if (score.W !== calc.W || score.D !== calc.D) warn.push(`Il risultato del file (${score.W}–${score.D}) non coincide con i marcatori (${calc.W}–${calc.D}).`);
+  // gol subiti al portiere se non indicati
+  for (const t of ['W', 'D']) {
+    const tr = rows.filter(r => r.team === t);
+    if (tr.some(r => r.ev.conceded)) continue;
+    const gks = tr.filter(r => r.gk);
+    const opp = t === 'W' ? score.D : score.W;
+    if (gks.length === 1) { gks[0].ev.conceded = opp; gks[0].autoConceded = true; }
+    else if (opp > 0) warn.push(`${t === 'W' ? 'Chiari' : 'Scuri'}: ${gks.length ? 'più portieri' : 'nessun portiere (GK)'} indicato, gol subiti non assegnati. Inseriscili a mano se serve.`);
+  }
+  rows.forEach(r => { if (r.ev.pen_goals > r.ev.goals) r.ev.goals = r.ev.pen_goals; });
+  let lineupManager = null;
+  if (lmName) {
+    const lmm = matchPlayer(lmName, players);
+    lineupManager = { name: lmName, pid: lmm.id ?? null };
+    if (lmm.id == null) warn.push(`Lineup manager "${lmName}" non trovato tra i giocatori: sceglilo a mano.`);
+    else if (lmm.status === 'ambiguo' || lmm.status === 'simile') warn.push(`Lineup manager "${lmName}" letto come ${players.find(p => p.id === lmm.id)?.name}: controlla.`);
+  }
+  return { date, type, score, note, rows, warn, lineupManager };
+}
+// </PARSER>
+
+// ------------------------------------------------------------- IMPORT TABELLINO (interfaccia)
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+function loadXlsx() {
+  if (window.XLSX) return Promise.resolve();
+  return loadXlsx._p ||= new Promise((ok, ko) => {
+    const s = document.createElement('script'); s.src = XLSX_URL; s.onload = ok;
+    s.onerror = () => { loadXlsx._p = null; s.remove(); ko(new Error('Non riesco a caricare il lettore Excel: controlla la connessione, oppure salva il file come .csv o incolla il testo.')); };
+    document.head.appendChild(s);
+  });
+}
+async function fileToGrid(file) {
+  const n = file.name.toLowerCase();
+  if (/\.(xlsx|xlsm|xlsb|xls|ods)$/.test(n)) {
+    await loadXlsx();
+    const wb = XLSX.read(await file.arrayBuffer(), { type: 'array', cellDates: true });
+    const sheets = wb.SheetNames.map(sn => XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: true, defval: null, blankrows: true }));
+    const has = g => g.some(r => (r || []).some(c => typeof c === 'string' && /^\s*(chiari|bianchi|scuri)\b/i.test(c)));
+    return sheets.find(has) || sheets[0] || [];
+  }
+  if (/\.(docx?|pdf|pages|numbers)$/.test(n)) throw new Error('Questo formato non si legge: apri il file, copia il testo e incollalo nel riquadro qui sotto.');
+  const txt = await file.text();
+  if (/\.csv$/.test(n)) { const d = (txt.match(/;/g) || []).length >= (txt.match(/,/g) || []).length ? ';' : ','; return gridFromText(txt, d); }
+  return gridFromText(txt);
+}
+function openImport() {
+  modal({
+    title: 'Importa tabellino', wide: true,
+    body: `<p class="small muted" style="margin-top:0">Una partita per file. Sopra le due formazioni servono le parole <b>CHIARI</b> e <b>SCURI</b>. Accanto ai nomi puoi scrivere gli eventi, per esempio
+      <i>Pargalia 2 gol (1 su rigore)</i>, <i>Parisi autogol</i>, <i>Nunnari rigore sbagliato</i>, <i>Felici rigore parato</i>, <i>Serangeli (GK)</i>. Va bene anche il formato del foglio Excel del gruppo (risultato sotto le formazioni e poi un nome per ogni gol, <i>(R)</i> = rigore).
+      Prima di salvare vedi l'anteprima e puoi correggere tutto.</p>
+      <label class="f" for="impFile">File (.xlsx, .xls, .ods, .csv, .txt)</label><input type="file" id="impFile" accept=".xlsx,.xlsm,.xls,.ods,.csv,.txt,text/plain,text/csv">
+      <label class="f" for="impTxt">Oppure incolla il testo (anche da WhatsApp)</label>
+      <textarea id="impTxt" rows="9" placeholder="13/10/2026 calcio a 8&#10;CHIARI&#10;Serangeli (GK)&#10;Pargalia 2 gol (1 su rigore)&#10;Caruso&#10;…&#10;SCURI&#10;Novello (GK)&#10;Parisi autogol&#10;Nunnari rigore sbagliato&#10;…&#10;Risultato 6-2"></textarea>
+      <div class="err" id="impErr"></div>`,
+    actions: [{ label: 'Leggi e mostra anteprima', cls: 'primary', fn: async el => {
+      $('#impErr', el).textContent = '';
+      try {
+        const f = $('#impFile', el).files[0], t = $('#impTxt', el).value;
+        if (!f && !t.trim()) throw new Error('Scegli un file o incolla il testo.');
+        const grid = f ? await fileToGrid(f) : gridFromText(t);
+        const res = parseTabellino(grid, S.boot.players);
+        if (!res.rows.length) throw new Error('Non ho trovato giocatori sotto CHIARI e SCURI.');
+        importPreview(res, f ? f.name : 'testo incollato');
+        return true;
+      } catch (e) { $('#impErr', el).textContent = e.message; return false; }
+    } }]
+  });
+}
+function importPreview(res, src) {
+  const prog = (S.matches?.season === S.season ? S.matches.list : []).filter(m => m.status === 'programmata');
+  const st = { type: res.type, date: res.date || new Date().toISOString().slice(0, 10), note: res.note || '', target: 'new',
+    rows: res.rows.map((r, i) => ({ i, pid: r.pid, newName: r.newName, status: r.status, team: r.team, gk: r.gk && !r.gkGuess, auto: r.autoConceded, guess: r.gkGuess, raw: r.raws.join(' · '), ...r.ev })) };
+  const same = prog.find(m => m.date === st.date); if (same) st.target = String(same.id);
+  st.lm = res.lineupManager?.pid ?? (same?.lineup_manager ?? null);
+  let nextI = st.rows.length;
+  const created = { players: {}, match: null };
+  const NUMF = [['goals', 'Gol'], ['pen_goals', 'di cui rig.'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti'], ['pen_saved', 'Rig. parati'], ['pen_missed', 'Rig. sbagl.']];
+  const plist = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+  const tgt = () => st.target === 'new' ? null : prog.find(m => String(m.id) === st.target);
+  const effType = () => tgt()?.type ?? st.type;
+  const optHtml = r => `<option value="new" ${r.pid == null ? 'selected' : ''}>➕ Nuovo giocatore…</option>` + plist.map(p => `<option value="${p.id}" ${p.id === r.pid ? 'selected' : ''}>${esc(p.name)}${p.is_gk ? ' · GK' : ''}${p.is_active ? '' : ' (disattivato)'}</option>`).join('');
+  const flag = r => r.pid == null ? '<span class="pill warn">nuovo giocatore</span>' : r.status === 'ambiguo' ? '<span class="pill warn">nome ambiguo: controlla</span>' : r.status === 'simile' ? '<span class="pill warn">nome simile: controlla</span>' : '';
+  const rowHtml = r => `<div class="imp-row ${r.pid == null || r.status === 'ambiguo' || r.status === 'simile' ? 'flag' : ''}" data-i="${r.i}">
+      <div class="imp-top"><select data-f="pid" aria-label="Giocatore">${optHtml(r)}</select>
+        <button class="tbtn W ${r.team === 'W' ? 'on' : ''}" data-team="W" title="${esc(TW)}">${esc(TW[0])}</button><button class="tbtn D ${r.team === 'D' ? 'on' : ''}" data-team="D" title="${esc(TD)}">${esc(TD[0])}</button>
+        <button class="btn sm danger" data-del title="Togli dalla partita" aria-label="Togli">✕</button></div>
+      <input type="text" data-f="newName" class="${r.pid == null ? '' : 'hidden'}" value="${esc(r.newName || '')}" placeholder="Nome del nuovo giocatore (es. Rossi M.)" style="margin-top:6px">
+      <div class="tiny muted" style="margin-top:4px">${flag(r)} ${r.raw ? 'dal file: <i>' + esc(r.raw) + '</i>' : 'aggiunto a mano'}${r.auto ? ` · gol subiti dati al portiere${r.guess ? ' (presunto)' : ''} in automatico` : ''}</div>
+      <div class="imp-nums">${NUMF.map(([k, l]) => `<label><span>${l}</span><input type="number" min="0" inputmode="numeric" data-f="${k}" value="${r[k] || 0}"></label>`).join('')}</div></div>`;
+  const calc = () => { let w = 0, d = 0; st.rows.forEach(r => { if (r.team === 'W') { w += +r.goals || 0; d += +r.own_goals || 0; } else { d += +r.goals || 0; w += +r.own_goals || 0; } }); return [w, d]; };
+  const mo = modal({
+    title: 'Anteprima tabellino', wide: true,
+    body: `${res.warn.length ? `<div class="card imp-warn"><b>Da controllare</b><ul>${res.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+      <div class="tiny muted">Letto da: ${esc(src)}. Niente è stato ancora salvato.</div>
+      <label class="f" for="impTarget">Dove salvare</label>
+      <select id="impTarget"><option value="new">Nuova partita</option>${prog.map(m => `<option value="${m.id}" ${String(m.id) === st.target ? 'selected' : ''}>Partita già creata: ${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</option>`).join('')}</select>
+      <div id="impMeta"></div>
+      <label class="f" for="impLm">Lineup manager</label><select id="impLm"><option value="">— nessuno —</option>${plist.filter(p => p.is_active || p.id === st.lm).map(p => `<option value="${p.id}" ${p.id === st.lm ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>${res.lineupManager ? `<div class="tiny muted">dal file: <i>${esc(res.lineupManager.name)}</i></div>` : ''}
+      <div class="bigscore" style="margin-top:14px"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
+        <input type="number" min="0" id="isw" value="${res.score.W ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="isd" value="${res.score.D ?? ''}" inputmode="numeric">
+        <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
+      <div class="small muted" style="text-align:center" id="impCalc"></div>
+      <div class="teams-grid" style="margin-top:10px">
+        ${['W', 'D'].map(t => `<div><div class="team" style="margin:6px 0"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)} <span class="muted small" id="impCnt${t}"></span></div><div id="impList${t}"></div><button class="btn sm" data-add="${t}">+ aggiungi giocatore</button></div>`).join('')}
+      </div>
+      <div id="impVotes" style="margin-top:14px"></div>`,
+    actions: [{ label: 'Salva partita', cls: 'primary', fn: el => saveImport(el) }],
+    onOpen: el => {
+      const drawMeta = () => {
+        const m = tgt();
+        $('#impMeta', el).innerHTML = m
+          ? `<div class="small muted" style="margin-top:6px">Uso tipo e data della partita già creata. Le squadre già inserite verranno sostituite da quelle del file.</div>`
+          : `<label class="f">Tipo</label>${segHtml('impType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), st.type)}
+             <div class="grid2"><div><label class="f" for="impDate">Data</label><input type="date" id="impDate" value="${st.date}"></div>
+             <div><label class="f" for="impNote">Nota</label><input type="text" id="impNote" value="${esc(st.note)}"></div></div>`;
+        if (!m) {
+          bindSeg($('#impType', el), v => { st.type = Number(v); $$('#impType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === v)); drawVotes(); });
+          $('#impDate', el).onchange = e => st.date = e.target.value;
+          $('#impNote', el).oninput = e => st.note = e.target.value;
+        }
+        drawVotes();
+      };
+      const drawVotes = () => {
+        const prev = $('#impOpenVotes', el)?.checked ?? true;
+        $('#impVotes', el).innerHTML = effType() === 5 ? '<p class="small muted">Calcio a 5: nessuna votazione.</p>'
+          : `<label class="row small" style="gap:8px;cursor:pointer"><input type="checkbox" id="impOpenVotes" ${prev ? 'checked' : ''}> Apri le votazioni per ${settings('vote_hours')} ore</label>`;
+      };
+      const drawHint = () => { const [w, d] = calc(); $('#impCalc', el).innerHTML = `Dai marcatori risulta <b>${w} – ${d}</b> <button class="btn sm" id="impUse">usa</button>`; $('#impUse', el).onclick = () => { $('#isw', el).value = w; $('#isd', el).value = d; }; };
+      const drawLists = () => {
+        for (const t of ['W', 'D']) {
+          const rs = st.rows.filter(r => r.team === t);
+          $('#impList' + t, el).innerHTML = rs.map(rowHtml).join('') || '<div class="muted small">Nessun giocatore</div>';
+          $('#impCnt' + t, el).textContent = `· ${rs.length} giocatori`;
+        }
+        drawHint();
+      };
+      drawMeta(); drawLists();
+      $('#impTarget', el).onchange = e => { st.target = e.target.value; drawMeta(); };
+      $('#impLm', el).onchange = e => st.lm = e.target.value === '' ? null : Number(e.target.value);
+      const body = el.querySelector('.body');
+      body.addEventListener('click', e => {
+        const add = e.target.closest('[data-add]');
+        if (add) { st.rows.push({ i: nextI++, pid: null, newName: '', status: 'manuale', team: add.dataset.add, goals: 0, pen_goals: 0, own_goals: 0, conceded: 0, pen_saved: 0, pen_missed: 0 }); drawLists(); return; }
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i));
+        const tb = e.target.closest('[data-team]');
+        if (tb) { r.team = tb.dataset.team; drawLists(); return; }
+        if (e.target.closest('[data-del]')) { st.rows = st.rows.filter(x => x !== r); drawLists(); }
+      });
+      body.addEventListener('change', e => {
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i)), f = e.target.dataset.f;
+        if (f === 'pid') { r.pid = e.target.value === 'new' ? null : Number(e.target.value); r.status = 'ok'; row.classList.toggle('flag', r.pid == null); $('[data-f=newName]', row).classList.toggle('hidden', r.pid != null); row.querySelector('.pill.warn')?.remove(); }
+      });
+      body.addEventListener('input', e => {
+        const row = e.target.closest('.imp-row'); if (!row) return;
+        const r = st.rows.find(x => x.i === Number(row.dataset.i)), f = e.target.dataset.f;
+        if (f === 'newName') r.newName = e.target.value;
+        else if (f) { r[f] = Math.max(0, Math.floor(Number(e.target.value) || 0)); drawHint(); }
+      });
+    }
+  });
+  async function saveImport(el) {
+    const rows = st.rows, nameOf = r => r.pid != null ? pname(r.pid) : (r.newName || '').trim();
+    if (!rows.length) { toast('Nessun giocatore da salvare', true); return false; }
+    for (const r of rows) {
+      if (r.pid == null && nameOf(r).length < 2) { toast('Scegli il giocatore o scrivi il nome del nuovo', true); return false; }
+      if (r.pen_goals > r.goals) { toast(`${nameOf(r)}: gol su rigore più dei gol`, true); return false; }
+    }
+    const keys = rows.map(r => r.pid != null ? 'id' + r.pid : 'n' + nameOf(r).toLowerCase());
+    const dup = keys.find((k, i) => keys.indexOf(k) !== i);
+    if (dup) { toast(`${nameOf(rows[keys.indexOf(dup)])} compare due volte: togli una riga`, true); return false; }
+    const sw = $('#isw', el).value, sd = $('#isd', el).value;
+    if (sw === '' || sd === '') { toast('Inserisci il risultato finale', true); return false; }
+    const m = tgt(), type = effType(), date = m ? m.date : st.date;
+    if (!date) { toast('Inserisci la data', true); return false; }
+    const [cw, cd] = calc();
+    if ((Number(sw) !== cw || Number(sd) !== cd) && !await confirmBox(`Il risultato ${esc(sw)}–${esc(sd)} non coincide con i marcatori (${cw}–${cd}). Salvo lo stesso?`, 'Salva lo stesso')) return false;
+    const openVotes = type !== 5 && !!$('#impOpenVotes', el)?.checked;
+    const news = rows.filter(r => r.pid == null);
+    const nW = rows.filter(r => r.team === 'W').length, nD = rows.length - nW;
+    if (!await confirmBox(`Salvo <b>${esc(typeLabel(type))}</b> del <b>${esc(fmtDate(date))}</b>: ${esc(TW)} ${esc(sw)} – ${esc(sd)} ${esc(TD)}, ${nW} + ${nD} giocatori${news.length ? `, <b>${news.length} nuovi giocatori</b> da creare (${news.map(r => esc(nameOf(r))).join(', ')})` : ''}${openVotes ? `. Le votazioni si aprono per ${settings('vote_hours')} ore` : ''}.`, 'Salva')) return false;
+    try {
+      for (const r of news) {
+        const nm = nameOf(r);
+        const ex = S.boot.players.find(p => p.name.toLowerCase() === nm.toLowerCase());
+        if (ex) { r.pid = ex.id; continue; }
+        if (!created.players[nm]) created.players[nm] = (await rpc('admin_add_player', { p_token: T(), p_name: nm, p_is_gk: !!r.gk })).id;
+        r.pid = created.players[nm];
+      }
+      if (news.length) S.boot = await rpc('get_bootstrap', { p_token: T() });
+      let mid = m ? m.id : created.match;
+      if (!mid) mid = created.match = (await rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: st.note })).id;
+      const stats = rows.map(r => ({ player_id: r.pid, team: r.team, goals: r.goals, pen_goals: r.pen_goals, own_goals: r.own_goals, conceded: r.conceded, pen_saved: r.pen_saved, pen_missed: r.pen_missed }));
+      await rpc('admin_save_result', { p_token: T(), p_match: mid, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: openVotes });
+      if (st.lm != null || m?.lineup_manager) await rpc('admin_set_lineup_manager', { p_token: T(), p_match: mid, p_player: st.lm });
+      toast('Partita importata e salvata');
+      await refreshAll();
+      if (S.tab === 'partite' && S.matches?.list.some(x => x.id === mid)) openMatch(mid);
+      return true;
+    } catch (e) {
+      toast(e.message + (created.match ? ' (la partita è stata creata: riprova a salvare)' : ''), true);
+      return false;
+    }
+  }
+}
+
+// ------------------------------------------------------------- VOTI
+const VOTE_OPTS = Array.from({ length: 41 }, (_, i) => i / 4);
+async function viewVoti(v) {
+  v.innerHTML = `<div class="section-title"><h2>I miei voti</h2></div><div id="vlist"><div class="loader">Caricamento…</div></div>`;
+  try { S.myVotes = await rpc('get_my_votes', { p_token: T() }); } catch (e) { if ($('#vlist')) $('#vlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'voti' || !$('#vlist')) return;
+  loadVotesBadge();
+  if (!S.myVotes.length) { $('#vlist').innerHTML = `<div class="card empty">Nessuna votazione aperta per te.<br><span class="small">Puoi votare entro ${settings('vote_hours')} ore dall'inserimento del risultato delle partite che hai giocato. Il voto a te stesso non è previsto.</span></div>`; return; }
+  $('#vlist').innerHTML = S.myVotes.map(m => {
+    const done = m.targets.filter(t => t.value != null).length;
+    const side = team => m.targets.filter(t => t.team === team).map(t => `<div class="vote-row ${t.value != null ? 'done' : ''}"><span class="nm"><span class="dot ${t.team}"></span> ${esc(pname(t.id))}</span>
+        <select data-t="${t.id}" aria-label="Voto a ${esc(pname(t.id))}"><option value="">–</option>${VOTE_OPTS.map(o => `<option value="${o}" ${t.value != null && Number(t.value) === o ? 'selected' : ''}>${fmtVote(o)}</option>`).join('')}</select></div>`).join('');
+    return `<div class="card" data-m="${m.match_id}">
+      <div class="row"><h2 style="margin:0">${esc(typeLabel(m.type))}</h2><span class="muted small">${esc(fmtDate(m.date))} · ${esc(TW)} ${m.score_w} – ${m.score_d} ${esc(TD)}</span></div>
+      <div class="small" style="margin:6px 0 10px"><span class="pill live">Chiude ${fmtDateTime(m.votes_close_at)}</span> <span class="pill" data-count>${done}/${m.targets.length} votati</span></div>
+      <div class="teams-grid"><div>${side('W')}</div><div>${side('D')}</div></div>
+      <div class="row" style="margin-top:12px"><span class="tiny muted">Voti da 0 a 10 a passi di 0,25. Puoi modificarli fino alla chiusura.</span><div class="spacer"></div><button class="btn primary" data-save>Salva voti</button></div>
+    </div>`;
+  }).join('');
+  $('#vlist').onchange = e => { const s = e.target.closest('select'); if (!s) return; s.closest('.vote-row').classList.toggle('done', s.value !== ''); const c = s.closest('.card'); c.querySelector('[data-count]').textContent = `${$$('select', c).filter(x => x.value !== '').length}/${$$('select', c).length} votati`; };
+  $('#vlist').onclick = async e => {
+    const b = e.target.closest('[data-save]'); if (!b) return;
+    const c = b.closest('.card');
+    const votes = $$('select', c).map(s => ({ target: Number(s.dataset.t), value: s.value === '' ? null : Number(s.value) }));
+    b.disabled = true;
+    await act(() => rpc('submit_votes', { p_token: T(), p_match: Number(c.dataset.m), p_votes: votes }), 'Voti salvati');
+    b.disabled = false; loadVotesBadge();
+  };
+}
+
+// ------------------------------------------------------------- COPPIE
+async function viewCoppie(v) {
+  const u = S.ui;
+  const opts = activePlayers();
+  v.innerHTML = `<div class="section-title"><h2>Statistiche di coppia</h2></div>
+    <div class="card">
+      <div class="grid2">
+        <div><label class="f">Giocatore</label><select id="pA">${opts.map(p => `<option value="${p.id}" ${p.id === u.pairPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+        <div><label class="f">Confronta con</label><select id="pB"><option value="">— tutti —</option>${opts.map(p => `<option value="${p.id}" ${p.id === u.pairB ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></div>
+      </div>
+      <div class="row" style="margin-top:12px">${segHtml('pType', typeOpts, u.pairType)}${segHtml('pScope', [{ v: 'season', l: 'Stagione' }, { v: 'all', l: 'Tutte le stagioni' }], u.pairScope)}</div>
+    </div>
+    <div id="pHead"></div><div id="pTable"><div class="loader">Caricamento…</div></div>
+    <div class="legend">Insieme = stessa squadra (V/N/P della coppia). Contro = squadre opposte (V/N/P dal punto di vista del giocatore selezionato).</div>`;
+  let data = null, box = null;
+  $('#pA').onchange = e => { u.pairPlayer = Number(e.target.value); if (u.pairB === u.pairPlayer) u.pairB = null; S.partners = null; viewCoppie(v); };
+  $('#pB').onchange = e => { u.pairB = e.target.value ? Number(e.target.value) : null; draw(); };
+  bindSeg($('#pType'), val => { u.pairType = val; S.partners = null; viewCoppie(v); });
+  bindSeg($('#pScope'), val => { u.pairScope = val; S.partners = null; viewCoppie(v); });
+  const key = [u.pairPlayer, u.pairType, u.pairScope, S.season].join('|');
+  if (!S.partners || S.partners.key !== key) {
+    try { S.partners = { key, rows: await rpc('get_partners', { p_token: T(), p_season: u.pairScope === 'all' ? null : S.season, p_type: u.pairType === 'all' ? null : Number(u.pairType), p_player: u.pairPlayer }) }; }
+    catch (e) { if ($('#pTable')) $('#pTable').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  }
+  if (S.tab !== 'coppie' || !$('#pTable')) return;
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+  const cols = [
+    { k: 'name', label: 'Giocatore' },
+    { k: 'with_pg', label: 'Insieme', title: 'Partite nella stessa squadra', cls: 'strong' }, { k: 'with_v', label: 'V' }, { k: 'with_n', label: 'N' }, { k: 'with_s', label: 'P' },
+    { k: 'with_pct', label: '%V', sv: r => r.with_pg ? r.with_v / r.with_pg : null, fmt: r => pct(r.with_v, r.with_pg) },
+    { k: 'vs_pg', label: 'Contro', title: 'Partite da avversari', cls: 'strong' }, { k: 'vs_v', label: 'V' , title: 'Vinte dal giocatore selezionato'}, { k: 'vs_n', label: 'N' }, { k: 'vs_s', label: 'P' },
+  ];
+  data = S.partners; box = $('#pTable');
+  function draw() {
+    if (!data || !document.body.contains(box)) return;
+    const rows = data.rows;
+    const b = u.pairB && rows.find(r => r.id === u.pairB);
+    $('#pHead').innerHTML = u.pairB ? (b ? `<div class="kpis">
+        <div class="kpi"><div class="v">${b.with_pg}</div><div class="l">Partite insieme</div></div>
+        <div class="kpi"><div class="v">${b.with_v}-${b.with_n}-${b.with_s}</div><div class="l">Insieme V-N-P</div></div>
+        <div class="kpi"><div class="v">${pct(b.with_v, b.with_pg)}</div><div class="l">% vittorie insieme</div></div>
+        <div class="kpi"><div class="v">${b.vs_pg}</div><div class="l">Partite contro</div></div>
+        <div class="kpi"><div class="v">${b.vs_v}-${b.vs_n}-${b.vs_s}</div><div class="l">${esc(pname(u.pairPlayer))} V-N-P</div></div>
+      </div>` : `<div class="card empty">${esc(pname(u.pairPlayer))} e ${esc(pname(u.pairB))} non hanno mai giocato nella stessa partita in questa selezione.</div>`) : '';
+    const sorted = sortRows(rows, u.pairSort, cols);
+    $('#pTable').innerHTML = tableHtml(cols, sorted, u.pairSort, { rowCls: r => r.id === u.pairB ? 'me' : '', empty: 'Nessuna partita in questa selezione.' });
+    bindSort($('#pTable'), u.pairSort, draw);
+  }
+  draw();
+}
+
+// ------------------------------------------------------------- FANTANUNNAREE
+async function loadFanta(force) {
+  if (force || !S.fanta || S.fanta.season_id !== S.season) S.fanta = await rpc('fanta_overview', { p_token: T(), p_season: S.season });
+  return S.fanta;
+}
+// Ruolo P: se nessun portiere ha giocato -> voto d'ufficio; se il mio portiere ha giocato -> il suo punteggio;
+// se il mio portiere non ha giocato -> il punteggio peggiore tra i portieri che hanno giocato.
+function giornataScores(g) {
+  const pts = {}; g.points.forEach(p => pts[p.player_id] = p);
+  const played = g.status === 'giocata';
+  const score = p => (p.voto == null ? 0 : Number(p.voto)) + Number(p.bonus);
+  const gks = g.points.filter(p => p.is_gk);
+  return g.lineups.map(l => {
+    let tot = 0, pending = false;
+    const det = l.players.map(pid => {
+      const p = pts[pid];
+      if (!p) return { pid, played: false, v: played ? 0 : null };
+      if (p.pending) pending = true;
+      const v = score(p); tot += v;
+      return { pid, played: true, voto: p.voto, bonus: Number(p.bonus), pending: p.pending, v };
+    });
+    let gk = null;
+    if (l.gk != null) {
+      const own = pts[l.gk];
+      if (!played) gk = { pid: l.gk, mode: 'wait', v: null };
+      else if (own && own.is_gk) { gk = { pid: l.gk, mode: 'own', voto: own.voto, bonus: Number(own.bonus), pending: own.pending, v: score(own) }; if (own.pending) pending = true; }
+      else if (gks.length) {
+        const worst = gks.reduce((a, b) => score(b) < score(a) ? b : a);
+        gk = { pid: l.gk, mode: 'sub', sub: worst.player_id, voto: worst.voto, bonus: Number(worst.bonus), pending: worst.pending, v: score(worst) };
+        if (worst.pending) pending = true;
+      } else gk = { pid: l.gk, mode: 'ufficio', v: settings('fanta_gk_ufficio') };
+      if (gk.v != null) tot += gk.v;
+    } else if (played) gk = { pid: null, mode: 'none', v: 0 };
+    const goals = det.reduce((a, d) => a + (d.played ? Number(pts[d.pid]?.goals || 0) : 0), 0) + (gk && gk.mode === 'own' ? Number(pts[gk.pid]?.goals || 0) : 0);
+    return { owner: l.owner_id, total: Math.round(tot * 100) / 100, det, gk, goals, pending: pending || !played };
+  }).sort((a, b) => b.total - a.total || b.goals - a.goals || pname(a.owner).localeCompare(pname(b.owner), 'it'));
+}
+// ---- Avatar FantaNunnaree: 7 di movimento + 1 portiere, disegnati in SVG (nessuna immagine esterna)
+const AV_LOOKS = [
+  { skin: '#f1c7a1', hair: '#2a1a0e', style: 'quiff', beard: false, n: 10 },
+  { skin: '#8d5524', hair: '#141010', style: 'afro', beard: false, n: 7 },
+  { skin: '#e2ae80', hair: '#c98f2c', style: 'bun', beard: true, n: 8 },
+  { skin: '#5c3a21', hair: '#0e0b09', style: 'buzz', beard: true, n: 4 },
+  { skin: '#f6d3b8', hair: '#8a2c12', style: 'long', beard: false, n: 11 },
+  { skin: '#c68642', hair: '#1c1310', style: 'mohawk', beard: false, n: 9 },
+  { skin: '#e9b48a', hair: '#3a2716', style: 'bald', beard: true, n: 5 },
+];
+const AV_GK = { skin: '#d9a07a', hair: '#24170d', style: 'curly', beard: true, n: 1, gk: true };
+function avatarSvg(a) {
+  const shirt = a.gk ? '#21c7b5' : '#ff3d9a', stripe = a.gk ? '#0d4f48' : '#111', shorts = a.gk ? '#0d4f48' : '#111', sock = a.gk ? '#21c7b5' : '#ff3d9a';
+  const sk = a.skin, hc = a.hair;
+  const hair = {
+    quiff: `<path d="M28 36 C27 18 40 10 54 11 C66 12 74 20 73 34 C69 27 63 24 56 25 C61 20 52 16 46 22 C40 21 33 26 28 36Z" fill="${hc}"/>`,
+    afro: `<g fill="${hc}"><circle cx="34" cy="24" r="10"/><circle cx="46" cy="16" r="11"/><circle cx="58" cy="16" r="11"/><circle cx="68" cy="25" r="10"/><circle cx="29" cy="34" r="6"/><circle cx="72" cy="34" r="6"/></g>`,
+    bun: `<g fill="${hc}"><circle cx="50" cy="9" r="7"/><path d="M28 35 C28 19 39 13 50 13 C62 13 72 19 72 35 C66 26 58 23 50 23 C42 23 34 26 28 35Z"/></g>`,
+    buzz: `<path d="M29 31 C30 19 40 14 50 14 C61 14 70 19 71 31 C64 25 57 23 50 23 C43 23 36 25 29 31Z" fill="${hc}" opacity=".75"/>`,
+    long: `<g fill="${hc}"><path d="M27 38 C24 18 38 11 50 11 C63 11 76 18 73 38 L76 58 C72 60 69 58 68 54 L70 34 C64 27 57 25 50 25 C43 25 36 27 30 34 L32 54 C31 58 28 60 24 58Z"/></g><rect x="28" y="24" width="44" height="4" rx="2" fill="#ff3d9a" transform="rotate(-4 50 26)"/>`,
+    mohawk: `<path d="M44 26 C43 14 46 5 50 3 C54 5 57 14 56 26Z" fill="${hc}"/><path d="M29 32 C31 22 38 17 44 16 L44 24 C38 25 33 28 29 32Z M71 32 C69 22 62 17 56 16 L56 24 C62 25 67 28 71 32Z" fill="${hc}" opacity=".45"/>`,
+    bald: `<ellipse cx="43" cy="20" rx="7" ry="3" fill="#fff" opacity=".28" transform="rotate(-20 43 20)"/>`,
+    curly: `<g fill="${hc}"><circle cx="33" cy="27" r="7"/><circle cx="41" cy="19" r="8"/><circle cx="51" cy="16" r="8"/><circle cx="61" cy="19" r="8"/><circle cx="68" cy="27" r="7"/></g>`,
+  }[a.style];
+  const beard = a.beard ? `<path d="M31 42 C31 58 40 66 50 66 C60 66 69 58 69 42 C66 52 60 55 50 55 C40 55 34 52 31 42Z" fill="${hc}" opacity=".9"/>` : '';
+  const hands = a.gk
+    ? `<g fill="#f4f4f4" stroke="#0d4f48" stroke-width="1.5"><rect x="12" y="84" width="14" height="15" rx="6"/><rect x="74" y="84" width="14" height="15" rx="6"/></g>`
+    : `<circle cx="19" cy="91" r="5" fill="${sk}"/><circle cx="81" cy="91" r="5" fill="${sk}"/>`;
+  return `<svg viewBox="0 0 100 132" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <ellipse cx="50" cy="127" rx="26" ry="4" fill="#000" opacity=".22"/>
+  <rect x="37" y="104" width="10" height="18" rx="3" fill="${sock}"/><rect x="53" y="104" width="10" height="18" rx="3" fill="${sock}"/>
+  <rect x="38" y="99" width="8" height="7" fill="${sk}"/><rect x="54" y="99" width="8" height="7" fill="${sk}"/>
+  <ellipse cx="41" cy="123" rx="8" ry="4" fill="#151515"/><ellipse cx="59" cy="123" rx="8" ry="4" fill="#151515"/>
+  <path d="M33 90 H67 L68 103 H53 L50 97 L47 103 H32Z" fill="${shorts}"/>
+  <path d="M33 66 L16 76 L19 88 L31 82 Z M67 66 L84 76 L81 88 L69 82 Z" fill="${shirt}"/>
+  <rect x="15" y="80" width="7" height="10" rx="3" fill="${sk}" transform="rotate(10 18 85)"/><rect x="78" y="80" width="7" height="10" rx="3" fill="${sk}" transform="rotate(-10 82 85)"/>
+  ${hands}
+  <path d="M32 64 C38 60 62 60 68 64 L69 93 H31Z" fill="${shirt}"/>
+  <rect x="38" y="62" width="5" height="31" fill="${stripe}" opacity=".9"/><rect x="57" y="62" width="5" height="31" fill="${stripe}" opacity=".9"/>
+  <text x="50" y="86" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="900" font-size="15" fill="#fff" stroke="${stripe}" stroke-width=".8">${a.n}</text>
+  <path d="M44 61 L50 67 L56 61Z" fill="${sk}"/><rect x="45" y="55" width="10" height="8" fill="${sk}"/>
+  <ellipse cx="28" cy="41" rx="4" ry="5.5" fill="${sk}"/><ellipse cx="72" cy="41" rx="4" ry="5.5" fill="${sk}"/>
+  <ellipse cx="50" cy="38" rx="22" ry="24" fill="${sk}"/>
+  ${beard}
+  ${hair}
+  <path d="M38 33 Q42 30 46 33 M54 33 Q58 30 62 33" stroke="${hc}" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+  <ellipse cx="42" cy="39" rx="3.4" ry="4" fill="#fff"/><ellipse cx="58" cy="39" rx="3.4" ry="4" fill="#fff"/>
+  <circle cx="42.6" cy="40" r="2" fill="#1b1b1b"/><circle cx="58.6" cy="40" r="2" fill="#1b1b1b"/>
+  <path d="M50 42 Q48 47 51 48" stroke="#000" stroke-opacity=".3" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+  <path d="M43 52 Q50 57 57 52" stroke="#5a1d1d" stroke-width="2.2" fill="${a.beard ? 'none' : '#fff'}" stroke-linecap="round"/>
+  </svg>`;
+}
+const AV_SVG = AV_LOOKS.map(avatarSvg), AV_GK_SVG = avatarSvg(AV_GK);
+function seededPerm(seed, n) { let s = (Math.imul(seed || 1, 0x9E3779B1) >>> 0) || 1; const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { s = (Math.imul(s, 1103515245) + 12345) >>> 0; const j = s % (i + 1); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+// prossima partita della giornata fanta: quella legata allo STOP, altrimenti la prima a 8/11 da giocare
+function fantaNextMatch(lock) {
+  const list = S.matches?.season === S.season ? S.matches.list : [];
+  if (lock?.match_id) return list.find(m => m.id === lock.match_id) || null;
+  const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Rome' });
+  const prog = list.filter(m => m.status === 'programmata' && [8, 11].includes(m.type)).sort((a, b) => String(a.date).localeCompare(String(b.date)) || a.id - b.id);
+  return prog.find(m => String(m.date) >= today) || prog[0] || null;
+}
+// campo: P in alto, poi 3-3-1
+const PITCH_SLOTS = [[50, 12], [17, 36], [50, 36], [83, 36], [17, 61], [50, 61], [83, 61], [50, 86]];
+const PITCH_LINES = `<svg class="lines" viewBox="0 0 100 125" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,.55)" stroke-width=".7">
+  <rect x="4" y="4" width="92" height="117" rx="1"/><line x1="4" y1="62.5" x2="96" y2="62.5"/><circle cx="50" cy="62.5" r="11"/>
+  <rect x="24" y="4" width="52" height="19"/><rect x="38" y="4" width="24" height="7"/><path d="M41 23 Q50 29 59 23"/>
+  <rect x="24" y="102" width="52" height="19"/><rect x="38" y="114" width="24" height="7"/><path d="M41 102 Q50 96 59 102"/></g>
+  <circle cx="50" cy="62.5" r=".9" fill="rgba(255,255,255,.7)"/></svg>`;
+function pitchHtml(st, ro, where, teamsOk, seed) {
+  const order = seededPerm(seed, AV_SVG.length);
+  const tag = pid => !teamsOk ? '' : where[pid] ? '' : '<span class="ptag">non convocato</span>';
+  const dot = pid => teamsOk && where[pid] ? `<span class="dot ${where[pid]}"></span>` : '';
+  return `<div class="pitch">${PITCH_LINES}${PITCH_SLOTS.map(([x, y], i) => {
+    const gk = i === 0, pid = gk ? st.gk : st.mov[i - 1];
+    const pos = `style="left:${x}%;top:${y}%"`;
+    if (pid == null) return `<button type="button" class="ps" ${pos} data-pempty="${gk ? 'gk' : 'mov'}" ${ro ? 'disabled' : ''} aria-label="${gk ? 'Scegli il portiere' : 'Posto libero'}"><span class="av emp"><span>+</span></span><span class="pn">${gk ? 'Portiere' : 'Libero'}</span></button>`;
+    return `<button type="button" class="ps on" ${pos} ${gk ? 'data-pgk' : `data-pmov="${pid}"`} ${ro ? 'disabled' : ''} aria-label="${esc(pname(pid))}${ro ? '' : ': tocca per togliere'}">${gk ? '<span class="pk">P</span>' : ''}<span class="av">${gk ? AV_GK_SVG : AV_SVG[order[i - 1]]}</span><span class="pn">${dot(pid)}<span class="pt">${esc(pname(pid))}</span></span>${tag(pid)}</button>`;
+  }).join('')}</div>`;
+}
+async function viewFanta(v) {
+  const u = S.ui;
+  if (isGuest() && u.fantaTab === 'squadra') u.fantaTab = 'classifica';
+  v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [...(isGuest() ? [] : [{ v: 'squadra', l: 'La mia squadra' }]), { v: 'mercato', l: isGuest() ? 'Quotazioni' : 'Mercato' }, { v: 'giornate', l: 'Giornate' }, { v: 'classifica', l: 'Classifica' }, { v: 'squadre', l: 'Squadre' }, { v: 'regole', l: 'Regole' }], u.fantaTab)}</div><div id="fv"><div class="loader">Caricamento…</div></div>`;
+  bindSeg($('#fTab'), val => { if (val === u.fantaTab) return; u.fantaTab = val; navPush(); viewFanta(v); });
+  let F; try { F = await loadFanta(); } catch (e) { if ($('#fv')) $('#fv').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.season === S.boot.active_season && ['squadra', 'giornate'].includes(u.fantaTab)) await loadMatches().catch(() => {});
+  const fv = $('#fv'); if (S.tab !== 'fanta' || !fv) return;
+  const price = {}; F.prices.forEach(p => price[p.id] = p);
+  const mine = F.owners.find(o => o.owner_id === me().id) || { credits: settings('fanta_budget'), changes_used: 0, roster: [] };
+  const canTrade = S.season === S.boot.active_season && !F.season_ended && !isGuest();
+  const rosterSize = settings('fanta_roster_size'), lineupSize = settings('fanta_lineup_size'), maxCh = settings('fanta_max_changes');
+  const head = isGuest() ? '' : `<div class="kpis">
+      <div class="kpi"><div class="v">${fmtNum(mine.credits)}</div><div class="l">Crediti disponibili</div></div>
+      <div class="kpi"><div class="v">${mine.roster.length}/${rosterSize}</div><div class="l">Giocatori in rosa</div></div>
+      <div class="kpi"><div class="v">${F.free_phase ? 'Libero' : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? 'Mercato fino al 1° STOP' : 'Cambi rimasti'}</div></div>
+    </div>`;
+
+  const lock = F.lock;
+  const lockText = lock ? (lock.match_id ? `per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}` : 'in attesa della prima partita a 8 o a 11 che verrà caricata') : '';
+  const isActiveSeason = S.season === S.boot.active_season && !F.season_ended;
+  if (isActiveSeason) fv.insertAdjacentHTML('beforebegin', `<div id="stopBanner">${fantaLockBanner(lock, F)}</div>`);
+  $('#stopBanner') && ($('#stopBanner').onclick = fantaBannerClick);
+  if (u.fantaTab === 'squadra') {
+    const rosterRows = mine.roster.map(r => ({ ...r, name: pname(r.player_id), now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now);
+    const movSize = lineupSize - 1;
+    const myD = F.drafts.find(d => d.owner_id === me().id) || {};
+    const saved = { mov: [...(myD.players || [])], gk: myD.gk ?? null };
+    const st = { mov: [...saved.mov], gk: saved.gk };
+    const ro = !!lock || !canTrade;
+    const nextM = isActiveSeason ? fantaNextMatch(lock) : null;
+    const teamsOk = !!nextM?.players?.length;
+    const where = {}; if (teamsOk) nextM.players.forEach(p => where[p.id] = p.team);
+    const conv = id => teamsOk && where[id] ? 0 : 1;
+    const badge = id => !teamsOk ? '' : where[id] ? `<span class="tmb ${where[id]}">${esc(where[id] === 'W' ? TW : TD)}</span>` : '<span class="tmb no">non convocato</span>';
+    const gkList = S.boot.players.filter(p => p.is_gk && p.is_active).sort((a, b) => conv(a.id) - conv(b.id) || a.name.localeCompare(b.name, 'it'));
+    const rosterPick = [...rosterRows].sort((a, b) => conv(a.player_id) - conv(b.player_id) || b.now - a.now);
+    const rosterSet = new Set(mine.roster.map(r => r.player_id));
+    const teamsHtml = () => {
+      if (!teamsOk) return `<div class="card"><div><b>Giornata da creare</b>, ma inizia a schierare la tua top ${lineupSize}.</div>${nextM ? `<div class="tiny muted" style="margin-top:4px">${esc(typeLabel(nextM.type))} del ${esc(fmtDate(nextM.date))} in programma: le squadre non sono ancora state fatte.</div>` : ''}</div>`;
+      const lab = id => st.gk === id ? '<span class="pill live">P</span>' : st.mov.includes(id) ? '<span class="pill live">in campo</span>' : rosterSet.has(id) ? '<span class="pill">in rosa</span>' : '';
+      const col = t => `<div><div class="fnext-h"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</div>${sortLineup(nextM.players.filter(p => p.team === t)).map(p => `<div class="fnext-p ${rosterSet.has(p.id) || st.gk === p.id ? 'mine' : ''}"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span>${esc(pname(p.id))}</span>${lab(p.id)}</div>`).join('') || '<div class="muted small" style="padding:6px 0">Nessuno</div>'}</div>`;
+      return `<div class="card"><div class="row"><h2 style="margin:0">Squadre della giornata</h2><div class="spacer"></div><span class="pill">${esc(typeLabel(nextM.type))} · ${esc(fmtDate(nextM.date))}</span></div>
+        <div class="tiny muted" style="margin:4px 0 8px">Chi non gioca prende 0: schiera chi è in squadra. In evidenza i giocatori della tua rosa.</div><div class="fnext-cols">${col('W')}${col('D')}</div></div>`;
+    };
+    const draftHtml = () => {
+      const dirty = !ro && (st.gk !== saved.gk || st.mov.length !== saved.mov.length || st.mov.some((x, i) => x !== saved.mov[i]));
+      return `<div class="row"><h2 style="margin:0">La mia formazione</h2><div class="spacer"></div>${dirty ? '<span class="pill warn">da salvare</span>' : ''}<span class="pill ${lock ? '' : 'live'}">${(st.gk != null ? 1 : 0) + st.mov.length}/${lineupSize}</span></div>
+        <div class="tiny muted" style="margin:4px 0 0">${lock ? `<b>Formazioni bloccate dai presidenti ${lockText}, ${fantaLockWhen(lock)}.</b>` : (F.next_stop ? `Puoi cambiarla fino a <b>${esc(fmtStop(F.next_stop))}</b>: a quell'ora si chiude da sola e vale quella salvata, per la prima partita a 8 o a 11 caricata.` : 'Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.')}
+        1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0; se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo, se non c'è nessun portiere ${settings('fanta_gk_ufficio')} d'ufficio.</div>
+        ${pitchHtml(st, ro, where, teamsOk, me().id)}
+        ${ro ? '' : '<div class="tiny muted" style="text-align:center;margin:-4px 0 10px">Tocca un giocatore in campo per toglierlo. I posti liberi valgono 0.</div>'}
+        <h3 id="gkL" style="font-size:17px;margin:10px 0 2px">Portiere (P) <span class="tiny muted">· sempre disponibili, non si comprano</span></h3>
+        ${gkList.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>${badge(p.id)}<button class="tbtn sel ${st.gk === p.id ? 'on' : ''}" data-gk="${p.id}" ${ro ? 'disabled' : ''}>${st.gk === p.id ? 'In porta' : 'Scegli'}</button></div>`).join('') || '<div class="muted small">Nessun portiere segnato GK.</div>'}
+        <h3 id="luL" style="font-size:17px;margin:14px 0 2px">Movimento <span class="tiny muted">${st.mov.length}/${movSize}</span></h3>
+        ${rosterPick.length ? rosterPick.map(r => `<div class="pick"><span class="nm">${esc(r.name)}</span>${badge(r.player_id)}<button class="tbtn sel ${st.mov.includes(r.player_id) ? 'on' : ''}" data-lu="${r.player_id}" ${ro ? 'disabled' : ''}>${st.mov.includes(r.player_id) ? 'In campo' : 'Schiera'}</button></div>`).join('') : '<div class="muted small">Prima compra i giocatori nel Mercato.</div>'}
+        ${ro ? '' : '<div class="row" style="margin-top:10px"><div class="spacer"></div><button class="btn primary" data-savelu>Salva formazione</button></div>'}`;
+    };
+    fv.innerHTML = head + `<div id="fdraft"></div>` + `<div class="card"><div class="row"><h2 style="margin:0">La mia rosa</h2><div class="spacer"></div>${canTrade ? '<button class="btn accent sm" data-gomarket>Vai al mercato</button>' : ''}</div>
+      ${rosterRows.length ? `<div class="tbl-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>Giocatore</th><th>Pagato</th><th>Ora</th><th></th></tr></thead><tbody>
+        ${rosterRows.map(r => `<tr><td>${esc(r.name)}</td><td>${r.buy_price}</td><td><b>${r.now}</b> ${r.now > r.buy_price ? `<span class="up">▲${r.now - r.buy_price}</span>` : r.now < r.buy_price ? `<span class="down">▼${r.buy_price - r.now}</span>` : ''}</td>
+          <td>${canTrade ? `<button class="btn sm danger" data-sell="${r.player_id}">Cedi</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">Rosa vuota. Hai ' + settings('fanta_budget') + ' crediti per ' + rosterSize + ' giocatori.</div>'}
+      <div class="tiny muted" style="margin-top:8px">${F.free_phase ? 'Fino al primo STOP delle formazioni puoi cedere e ricomprare liberamente con rimborso pieno.' : `Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`}</div></div>`;
+    const drawDraft = () => { const b = $('#fdraft'); if (b) b.innerHTML = (isActiveSeason ? teamsHtml() : '') + (canTrade ? `<div class="card" data-g="draft">${draftHtml()}</div>` : ''); };
+    drawDraft();
+    fv.onclick = async e => {
+      if (e.target.closest('[data-gomarket]')) { u.fantaTab = 'mercato'; navPush(); return viewFanta(v); }
+      if (!ro) {
+        const lu = e.target.closest('[data-lu]');
+        if (lu) { const id = Number(lu.dataset.lu); if (st.mov.includes(id)) st.mov = st.mov.filter(x => x !== id); else { if (st.mov.length >= movSize) return toast(`Massimo ${movSize} giocatori di movimento: togline uno dal campo`, true); st.mov.push(id); } return drawDraft(); }
+        const gb = e.target.closest('[data-gk]');
+        if (gb) { const id = Number(gb.dataset.gk); st.gk = st.gk === id ? null : id; return drawDraft(); }
+        const pm = e.target.closest('[data-pmov]');
+        if (pm) { const id = Number(pm.dataset.pmov); st.mov = st.mov.filter(x => x !== id); return drawDraft(); }
+        if (e.target.closest('[data-pgk]')) { st.gk = null; return drawDraft(); }
+        const pe = e.target.closest('[data-pempty]');
+        if (pe) { $(pe.dataset.pempty === 'gk' ? '#gkL' : '#luL')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+        if (e.target.closest('[data-savelu]')) {
+          if (st.gk == null && !await confirmBox('Non hai scelto il portiere (P): il ruolo varrà 0. Salvo lo stesso?', 'Salva')) return;
+          if (st.mov.length < movSize && !await confirmBox(`Hai schierato ${st.mov.length} giocatori di movimento su ${movSize}. I posti vuoti valgono 0. Salvo?`, 'Salva')) return;
+          if (await act(() => rpc('fanta_save_draft', { p_token: T(), p_players: st.mov, p_gk: st.gk }), 'Formazione salvata')) { await loadFanta(true); viewFanta(v); } return; }
+      }
+      const sl = e.target.closest('[data-sell]');
+      if (sl) { const pid = Number(sl.dataset.sell); const msg = F.free_phase ? `Cedere ${esc(pname(pid))}? Mercato libero: rimborso pieno, nessun cambio usato.` : `Cedere ${esc(pname(pid))} per ${price[pid]?.price} crediti? Userai 1 cambio (te ne restano ${maxCh - mine.changes_used - 1}).`;
+        if (!await confirmBox(msg, 'Cedi', true)) return; if (await act(() => rpc('fanta_sell', { p_token: T(), p_player: pid }), 'Ceduto')) { await loadFanta(true); viewFanta(v); } }
+    };
+  }
+
+  if (u.fantaTab === 'mercato') {
+    const inRoster = new Set(mine.roster.map(r => r.player_id));
+    const cols = [
+      { k: 'name', label: 'Giocatore' },
+      { k: 'price', label: 'Prezzo', cls: 'strong' },
+      { k: 'delta', label: 'Var.', title: 'Variazione rispetto alla quotazione di inizio stagione', fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
+      { k: 'pres', label: 'PG', title: 'Presenze stagione (calcio a 8 e 11)' },
+      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? '<span class="pill ok">In rosa</span>' : r.id === me().id ? '<span class="pill">sei tu</span>' : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>Compra</button>` : '' },
+    ];
+    const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
+    fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="Cerca giocatore…" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.</span></div><div id="mt"></div>`;
+    const draw = () => {
+      let rows = rowsAll; if (u.marketSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.marketSearch.toLowerCase()));
+      $('#mt').innerHTML = tableHtml(cols, sortRows(rows, u.marketSort, cols), u.marketSort, { rowCls: r => inRoster.has(r.id) ? 'me' : '' });
+      bindSort($('#mt'), u.marketSort, draw);
+    };
+    draw();
+    $('#mq').oninput = e => { u.marketSearch = e.target.value; draw(); };
+    fv.onclick = async e => { const b = e.target.closest('[data-buy]'); if (!b) return; const pid = Number(b.dataset.buy);
+      if (await act(() => rpc('fanta_buy', { p_token: T(), p_player: pid }), `${pname(pid)} acquistato`)) { await loadFanta(true); viewFanta(v); } };
+  }
+
+  if (u.fantaTab === 'giornate') {
+    const pend = lock && !lock.match_id ? `<div class="card small">Formazioni bloccate il ${esc(fmtDateTime(lock.frozen_at))}: verranno usate per la prima partita a 8 o a 11 caricata.</div>` : '';
+    if (!F.giornate.length) {
+      const nm = isActiveSeason ? fantaNextMatch(lock) : null;
+      const msg = nm?.players?.length
+        ? `<b>Prossima giornata: ${esc(typeLabel(nm.type))} del ${esc(fmtDate(nm.date))}.</b> Le squadre sono fatte${isGuest() ? '.' : `: schiera la tua formazione ${F.next_stop ? `entro ${esc(fmtStop(F.next_stop))}` : 'prima dello STOP'}.`}`
+        : isActiveSeason ? `<b>Giornata da creare</b>${isGuest() ? '.' : `, ma inizia a schierare la tua top ${lineupSize}.`}` : 'Nessuna giornata FantaNunnaree in questa stagione.';
+      fv.innerHTML = pend || `<div class="card empty">${msg}${isGuest() || !isActiveSeason ? '' : '<div style="margin-top:12px"><button class="btn primary sm" data-gosq>Vai alla mia formazione</button></div>'}</div>`;
+      fv.onclick = e => { if (e.target.closest('[data-gosq]')) { u.fantaTab = 'squadra'; navPush(); viewFanta(v); } }; return; }
+    fv.innerHTML = pend + F.giornate.map(g => {
+      const sc = giornataScores(g);
+      const state = g.status !== 'giocata' ? '<span class="pill warn">In attesa del risultato</span>' : g.final ? '<span class="pill ok">Definitiva</span>' : '<span class="pill warn">Provvisoria: voti in corso</span>';
+      return `<details class="box" ${g === F.giornate[0] ? 'open' : ''}><summary><b>${esc(typeLabel(g.type))}</b><span class="muted small">${esc(fmtDate(g.date))}${g.status === 'giocata' ? ` · ${g.score_w}–${g.score_d}` : ''}</span><div class="spacer"></div>${state}</summary><div>
+        ${sc.length ? '<div class="tiny muted" style="margin-bottom:8px">Classifica della giornata tra le squadre fanta. Tocca una squadra per vedere i punti dei suoi giocatori schierati.</div>' : ''}${sc.length ? sc.map((s, i) => `<details class="box"><summary><span class="rank">${i + 1}</span><span style="flex:1">Squadra di <b>${esc(pname(s.owner))}</b>${s.owner === me().id ? ' <span class="pill live">tu</span>' : ''}</span><b>${fmtNum(s.total)} pt</b></summary><div><ul class="plist">
+          ${s.gk ? `<li><span><span class="pill">P</span> ${s.gk.pid ? esc(pname(s.gk.pid)) : '<span class="muted">nessun portiere scelto</span>'}${s.gk.mode === 'sub' ? `<br><span class="tiny muted">non ha giocato: preso il peggiore in campo, ${esc(pname(s.gk.sub))}</span>` : s.gk.mode === 'ufficio' ? `<br><span class="tiny muted">nessun portiere in campo: ${settings('fanta_gk_ufficio')} d'ufficio</span>` : ''}</span>
+            <span class="small">${s.gk.mode === 'wait' ? '<span class="muted">–</span>' : s.gk.mode === 'ufficio' || s.gk.mode === 'none' ? `<b>${fmtNum(s.gk.v)}</b>` : `voto ${s.gk.pending ? '<span class="muted">in attesa</span>' : fmtVote(s.gk.voto)} ${s.gk.bonus ? (s.gk.bonus > 0 ? '+' : '') + fmtNum(s.gk.bonus) : ''} = <b>${fmtNum(s.gk.v)}</b>`}</span></li>` : ''}
+          ${s.det.map(d => `<li><span>${esc(pname(d.pid))}</span><span class="small">${!d.played ? (g.status === 'giocata' ? '<span class="muted">non ha giocato · 0</span>' : '<span class="muted">–</span>') : `voto ${d.pending ? '<span class="muted">in attesa</span>' : fmtVote(d.voto)} ${d.bonus ? (d.bonus > 0 ? '+' : '') + fmtNum(d.bonus) : ''} = <b>${fmtNum(d.v)}</b>`}</span></li>`).join('')}
+        </ul></div></details>`).join('') : '<div class="muted small">Nessuna formazione schierata.</div>'}
+        ${!g.final && g.status === 'giocata' ? '<div class="tiny muted">I voti contano alla chiusura delle votazioni: fino ad allora vedi solo bonus e malus.</div>' : ''}
+      </div></details>`;
+    }).join('');
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'classifica') {
+    const tot = {};
+    F.owners.forEach(o => tot[o.owner_id] = { id: o.owner_id, name: pname(o.owner_id), pts: 0, g: 0, gol: 0, best: null, prov: false });
+    F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata').forEach(g => giornataScores(g).forEach(s => {
+      const t = tot[s.owner] ||= { id: s.owner, name: pname(s.owner), pts: 0, g: 0, gol: 0, best: null, prov: false };
+      t.pts += s.total; t.g++; t.gol += s.goals; t.best = Math.max(t.best ?? -Infinity, s.total); if (!g.final) t.prov = true;
+    }));
+    const rows = Object.values(tot).sort((a, b) => (Math.round(b.pts * 100) - Math.round(a.pts * 100)) || b.gol - a.gol || a.name.localeCompare(b.name, 'it'));
+    fv.innerHTML = rows.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Squadra</th><th>Punti</th><th>Gol</th><th>Giornate</th><th>Migliore</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}${r.prov ? ' <span class="tiny muted">prov.</span>' : ''}</td><td>${r.gol}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
+      </tbody></table></div><div class="legend">Classifica cumulativa della stagione. A parità di punti vince chi ha più gol segnati dai giocatori schierati; poi ordine alfabetico. “prov.” = una giornata ha ancora le votazioni aperte.</div>` : '<div class="card empty">Ancora nessuna squadra.</div>';
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'squadre') {
+    const owners = [...F.owners].sort((a, b) => pname(a.owner_id).localeCompare(pname(b.owner_id), 'it'));
+    const dr = {}; F.drafts.forEach(d => dr[d.owner_id] = d);
+    fv.innerHTML = owners.length ? owners.map(o => `<details class="box"><summary><span style="flex:1">${esc(pname(o.owner_id))}</span><span class="small muted">${o.roster.length}/${rosterSize} · ${fmtNum(o.credits)} cr</span></summary><div>
+      <div class="small" style="margin-bottom:6px"><b>Formazione attuale:</b> ${dr[o.owner_id] ? `${dr[o.owner_id].gk ? '<span class="pill">P</span> ' + esc(pname(dr[o.owner_id].gk)) + ' · ' : ''}${dr[o.owner_id].players.map(x => esc(pname(x))).join(', ') || '—'}` : '<span class="muted">non ancora inserita</span>'}</div><ul class="plist">
+      ${o.roster.map(r => ({ ...r, now: price[r.player_id]?.price ?? r.buy_price })).sort((a, b) => b.now - a.now).map(r => `<li><span>${esc(pname(r.player_id))}</span><span class="small">pagato ${r.buy_price} · ora <b>${r.now}</b></span></li>`).join('')}
+      </ul></div></details>`).join('') : '<div class="card empty">Ancora nessuna squadra.</div>';
+    fv.onclick = null;
+  }
+
+  if (u.fantaTab === 'regole') {
+    const st = k => fmtNum(settings(k));
+    const gb = settings('fanta_goal_bonus'), cs = settings('fanta_conceded_step'), cm = settings('fanta_conceded_malus'), ps = settings('fanta_pen_saved_bonus'), pm = settings('fanta_pen_missed_malus'), wb = settings('fanta_win_noscore_bonus'), ogm = settings('fanta_own_goal_malus');
+    const ex1 = 6.5 + 2 * gb, ex2 = 6 - Math.floor(7 / cs) * cm + ps, ex3 = 6.25 + wb;
+    fv.innerHTML = `<div class="card rules"><h2>Regolamento FantaNunnaree</h2>
+      <p class="small muted">I numeri in grassetto sono quelli impostati ora dai presidenti (Area presidente → Impostazioni). Se cambiano, cambia anche questo regolamento e i punteggi vengono ricalcolati, anche quelli passati.</p>
+
+      <h3>1. Chi gioca e quando</h3><ul>
+      <li>Può partecipare chiunque abbia accesso all'app, anche chi non scende in campo.</li>
+      <li>Il FantaNunnaree vale solo per le partite di <b>calcio a 8 e calcio a 11</b>. Calcio a 5 e calcio a 7 non hanno giornata fanta (nel calcio a 7 si vota, ma non conta per il fanta).</li>
+      <li>Una partita diventa una <b>giornata</b> quando i presidenti premono <b>STOP</b> sulle formazioni: le formazioni bloccate vanno alla <b>prima partita a 8 o a 11 caricata</b> dal giorno dello STOP in poi, sia che sia già stata creata (da giocare) sia che venga caricata dopo con il tabellino.</li>
+      <li>Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le sue formazioni cancellate.</li></ul>
+
+      <h3>2. La rosa e il mercato</h3><ul>
+      <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare fino a <b>${rosterSize} giocatori di movimento</b>.</li>
+      <li>Lo stesso giocatore può essere nella rosa di più squadre: non ci sono esclusive.</li>
+      <li>I <b>portieri (GK) non si comprano</b>: sono sempre disponibili a tutti per il ruolo P. Chi è GK lo decidono i presidenti.</li>
+      <li>Si paga il prezzo del momento dell'acquisto, che resta fisso come “prezzo pagato”.</li>
+      <li><b>Mercato libero</b>: fino al primo STOP delle formazioni della stagione puoi comprare e cedere quanto vuoi, con rimborso pieno del prezzo pagato e senza usare cambi.</li>
+      <li><b>Dopo</b>: hai <b>${maxCh} cambi</b> per tutta la stagione. Ogni cessione usa 1 cambio e ti restituisce il <b>valore attuale</b> del giocatore (può essere più o meno di quanto l'hai pagato). Gli acquisti non consumano cambi, ma servono crediti e un posto libero in rosa. Finiti i cambi non puoi più cedere.</li>
+      <li>Crediti disponibili = ${st('fanta_budget')} − prezzi pagati + incassi delle cessioni.</li>
+      <li>Se cedi un giocatore schierato in una giornata ancora aperta, viene tolto da quella formazione.</li>
+      <li>A stagione terminata il mercato è chiuso.</li></ul>
+
+      <h3>3. Le quotazioni</h3><ul>
+      <li>Ogni giocatore parte da una <b>quotazione base</b> di inizio stagione, calcolata sulla stagione precedente e approvata dai presidenti (che possono correggerla).</li>
+      <li>Dopo ogni partita a 8 o a 11 il prezzo si aggiorna in base alla stagione in corso: <b>punti attesi</b> = (partite giocate dal giocatore ÷ partite disputate) × media dei suoi punti fanta (voto, o ${st('fanta_voto_ufficio')} d'ufficio, + bonus/malus).</li>
+      <li>Prezzo dalla stagione = 1 + (punti attesi − 1)², arrotondato, minimo 1 e massimo <b>${st('price_max')}</b>.</li>
+      <li>Prezzo attuale = mix tra base e prezzo dalla stagione: il peso della stagione cresce del ${fmtNum(100 / settings('price_blend_matches'))}% a partita; dopo <b>${st('price_blend_matches')} partite</b> conta solo la stagione. Chi non gioca mai scende partita dopo partita verso 1.</li>
+      <li>La <b>prima giornata FantaNunnaree</b> della stagione è di prova: vale per la classifica, ma <b>non muove le quotazioni</b>. Le quotazioni cambiano dalla seconda giornata in poi.</li>
+      <li>Le partite che i presidenti escludono dalle quotazioni (per esempio le prime 5 del 2026-27) non contano.</li></ul>
+
+      <h3>4. La formazione</h3><ul>
+      <li>Ogni squadra ha sempre una <b>formazione attuale</b>: <b>1 portiere (P)</b> scelto tra tutti i GK + <b>${lineupSize - 1} giocatori di movimento</b> della tua rosa. Puoi cambiarla quando vuoi.</li>
+      <li>Le formazioni si <b>chiudono da sole${weeklyStopText() ? ' ogni ' + esc(weeklyStopText()) : ''}</b>: quelle salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
+      <li>Se la partita si sposta, i presidenti possono cambiare l'orario di chiusura per quella settimana, o premere <b>STOP</b> a mano.</li>
+      <li>Dopo il tabellino partono le votazioni (${st('vote_hours')} ore). Le formazioni si <b>riaprono da sole alla chiusura delle votazioni</b>: da lì inserisci la formazione per la partita successiva. La tua formazione resta quella di prima, la cambi solo se vuoi.</li>
+      <li>Anche i presidenti caricano la partita successiva solo dopo la chiusura delle votazioni della precedente (o chiudendole prima a mano).</li>
+      <li>Se non hai mai salvato una formazione, alla giornata prendi 0. I posti lasciati vuoti valgono 0.</li>
+      <li>Le formazioni attuali di tutti sono visibili nella scheda Squadre.</li></ul>
+
+      <h3>5. Il punteggio di ogni giocatore</h3><ul>
+      <li><b>Chi non gioca</b> la partita prende <b>0</b>.</li>
+      <li><b>Voto</b>: media dei voti ricevuti dagli altri giocatori della partita (da 0 a 10, passi di 0,25). Vale solo se ha ricevuto <b>almeno ${st('min_votes')} voti</b>, altrimenti prende <b>${st('fanta_voto_ufficio')} d'ufficio</b>.</li>
+      <li>Il voto entra solo alla chiusura delle votazioni (<b>${st('vote_hours')} ore</b> dopo il risultato). Prima vedi solo bonus e malus e la giornata è “provvisoria”.</li>
+      <li><b>+${fmtNum(gb)}</b> per ogni gol segnato (anche su rigore).</li>
+      <li><b>−${fmtNum(cm)}</b> ogni <b>${fmtNum(cs)}</b> gol subiti, per difetto (0–${cs - 1} subiti: 0; ${cs}–${2 * cs - 1}: −${fmtNum(cm)}; ${2 * cs}–${3 * cs - 1}: −${fmtNum(2 * cm)}…). Vale per chi ha gol subiti assegnati, di norma il portiere.</li>
+      <li><b>+${fmtNum(ps)}</b> per ogni rigore parato · <b>−${fmtNum(pm)}</b> per ogni rigore sbagliato.</li>
+      <li><b>+${fmtNum(wb)}</b> se la sua squadra vince e lui non ha segnato (vale anche per il portiere). Chi segna prende già il bonus gol, quindi non anche questo.</li>
+      <li>Autogol: ${ogm ? `<b>−${fmtNum(ogm)}</b> per ogni autogol` : 'nessun malus (conta solo per il risultato)'}.</li></ul>
+
+      <h3>6. Il ruolo P (portiere)</h3><ul>
+      <li>Se il portiere che hai schierato ha giocato, prendi <b>il suo punteggio</b>.</li>
+      <li>Se non ha giocato, prendi <b>il punteggio peggiore tra i portieri (GK) che hanno giocato</b> quella partita.</li>
+      <li>Se in partita non c'era nessun GK, il ruolo P vale <b>${st('fanta_gk_ufficio')} d'ufficio</b>.</li>
+      <li>Se non scegli nessun portiere, il ruolo P vale 0.</li>
+      <li>“Ha giocato” = è segnato GK ed è in una delle due squadre della partita.</li></ul>
+
+      <h3>7. Esempi</h3><ul>
+      <li>Attaccante: media 6,5, 2 gol, squadra vince → 6,5 + ${fmtNum(2 * gb)} = <b>${fmtNum(ex1)}</b>.</li>
+      <li>Portiere: meno di ${st('min_votes')} voti (${st('fanta_voto_ufficio')} d'ufficio), 7 gol subiti, 1 rigore parato, squadra perde → ${st('fanta_voto_ufficio')} − ${fmtNum(Math.floor(7 / cs) * cm)} + ${fmtNum(ps)} = <b>${fmtNum(ex2)}</b>.</li>
+      <li>Difensore: media 6,25, nessun gol, squadra vince → 6,25 + ${fmtNum(wb)} = <b>${fmtNum(ex3)}</b>.</li></ul>
+
+      <h3>8. Classifica</h3><ul>
+      <li>Punteggio di giornata = somma dei ${lineupSize - 1} di movimento + ruolo P.</li>
+      <li>Classifica <b>cumulativa</b> di stagione: si sommano tutte le giornate chiuse. “prov.” = almeno una giornata ha ancora le votazioni aperte.</li>
+      <li>A parità di punti vince chi ha <b>più gol segnati dai giocatori schierati</b> (somma su tutte le giornate; il portiere conta solo se ha giocato lui). Poi conta l'<b>ordine alfabetico</b>.</li></ul>
+
+      <h3>9. Correzioni dei presidenti</h3><ul>
+      <li>I presidenti possono correggere in ogni momento squadre e tabellino di qualsiasi partita, anche delle stagioni passate: punteggi, classifica e quotazioni si ricalcolano da soli.</li>
+      <li>Se lo STOP è stato premuto per errore possono riaprire le formazioni (il blocco viene annullato).</li>
+      <li>“Annulla giornata fanta” cancella la giornata e tutte le formazioni di quella partita.</li></ul></div>`;
+    fv.onclick = null;
+  }
+}
+
+// ------------------------------------------------------------- ADMIN
+async function viewAdmin(v) {
+  if (!isPres()) return viewClassifica(v);
+  const u = S.ui;
+  v.innerHTML = `<div class="section-title"><h2>Area presidente</h2><div class="spacer"></div>${segHtml('aTab', [{ v: 'giocatori', l: 'Giocatori' }, { v: 'quotazioni', l: 'Quotazioni' }, { v: 'stagione', l: 'Stagione' }, { v: 'impostazioni', l: 'Impostazioni' }], u.adminTab)}</div><div id="av"></div>`;
+  bindSeg($('#aTab'), val => { if (val === u.adminTab) return; u.adminTab = val; navPush(); viewAdmin(v); });
+  const av = $('#av');
+  const reloadBoot = async () => { S.boot = await rpc('get_bootstrap', { p_token: T() }); };
+
+  if (u.adminTab === 'giocatori') {
+    const ps = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+    av.innerHTML = `<div class="card"><div class="row"><input type="text" id="newName" placeholder="Nuovo giocatore (es. Rossi M.)" style="flex:1;min-width:180px"><label class="row small" style="gap:6px"><input type="checkbox" id="newGk"> Portiere (GK)</label><button class="btn primary" id="addP">Aggiungi</button></div>
+      <div class="tiny muted" style="margin-top:6px">Il nuovo giocatore al primo accesso sceglie il suo nome dal menu e crea la password.</div></div>
+      <div class="row" style="margin-bottom:8px"><input type="text" id="pq" placeholder="Cerca…" style="max-width:240px"><span class="small muted">${ps.filter(p => p.is_active).length} attivi · ${ps.filter(p => p.has_pw).length} con password</span></div>
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>Giocatore</th><th>Password</th><th>Stato</th><th></th></tr></thead><tbody id="ptb">
+      ${ps.map(p => `<tr data-n="${esc(p.name.toLowerCase())}"><td>${esc(p.name)}${p.is_gk ? ' <span class="pill">GK</span>' : ''}${p.is_president ? ' <span class="pill live">Presidente</span>' : ''}</td><td>${p.has_pw ? '<span class="pill ok">impostata</span>' : '<span class="pill">primo accesso</span>'}</td>
+        <td>${p.is_active ? 'attivo' : '<span class="muted">disattivato</span>'}</td><td><button class="btn sm" data-edit="${p.id}">Modifica</button></td></tr>`).join('')}</tbody></table></div>`;
+    $('#pq').oninput = e => { const q = e.target.value.toLowerCase(); $$('#ptb tr').forEach(tr => tr.classList.toggle('hidden', !tr.dataset.n.includes(q))); };
+    $('#addP').onclick = async () => { const n = $('#newName').value.trim(); if (!n) return; if (await act(() => rpc('admin_add_player', { p_token: T(), p_name: n, p_is_gk: $('#newGk').checked }), 'Giocatore aggiunto')) { await reloadBoot(); S.fanta = S.stats = null; viewAdmin(v); } };
+    av.onclick = e => { const b = e.target.closest('[data-edit]'); if (!b) return; const p = S.boot.players.find(x => x.id === Number(b.dataset.edit));
+      modal({ title: 'Modifica giocatore', body: `<label class="f">Nome</label><input type="text" id="en" value="${esc(p.name)}">
+          <label class="row small" style="margin-top:12px;gap:8px"><input type="checkbox" id="ea" ${p.is_active ? 'checked' : ''}> Attivo (se disattivato non compare nel login e nelle liste)</label>
+          <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="eg" ${p.is_gk ? 'checked' : ''}> Portiere (GK): non si compra al fanta, schierabile nel ruolo P</label>
+          <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="ep" ${p.is_president ? 'checked' : ''}> Presidente (accesso completo)</label>
+          <p class="small muted" style="margin-top:14px">Password: ${p.has_pw ? 'impostata' : 'non ancora impostata'}. Le password sono cifrate: nessuno può leggerle, si possono solo azzerare.</p>`,
+        actions: [
+          { label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox(`Eliminare ${esc(p.name)}? Possibile solo se non ha mai giocato.`, 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_player', { p_token: T(), p_player: p.id }), 'Eliminato'); if (ok) { await reloadBoot(); viewAdmin(v); } return ok; } },
+          { label: 'Azzera password', fn: async () => { if (!await confirmBox(`Azzerare la password di ${esc(p.name)}? Al prossimo accesso ne sceglierà una nuova.`, 'Azzera')) return false; const ok = await act(() => rpc('admin_reset_password', { p_token: T(), p_player: p.id }), 'Password azzerata'); if (ok) { await reloadBoot(); viewAdmin(v); } return ok; } },
+          { label: 'Salva', cls: 'primary', fn: async el => { const ok = await act(() => rpc('admin_update_player', { p_token: T(), p_player: p.id, p_name: $('#en', el).value, p_active: $('#ea', el).checked, p_president: $('#ep', el).checked, p_is_gk: $('#eg', el).checked }), 'Salvato'); if (ok) { await reloadBoot(); S.stats = S.fanta = null; viewAdmin(v); } return ok; } },
+        ] });
+    };
+  }
+
+  if (u.adminTab === 'quotazioni') {
+    av.innerHTML = '<div class="loader">Caricamento…</div>';
+    const F = await loadFanta(true).catch(e => (av.innerHTML = `<div class="empty">${esc(e.message)}</div>`, null)); if (!F) return;
+    const cols = [
+      { k: 'name', label: 'Giocatore' }, { k: 'price', label: 'Prezzo ora', cls: 'strong' }, { k: 'base', label: 'Base', title: 'Quotazione di inizio stagione (modificabile)' },
+      { k: 'season_price', label: 'Da stagione', title: 'Prezzo calcolato solo sui dati della stagione in corso' }, { k: 'efp', label: 'Punti attesi', title: 'Punti fanta attesi per giornata (stagione in corso)' },
+      { k: 'pres', label: 'PG' }, { k: 'ed', label: '', fmt: r => S.season === S.boot.active_season ? `<button class="btn sm" data-bp="${r.id}">Base</button>` : '' },
+    ];
+    const rows = F.prices.map(p => ({ ...p, name: pname(p.id) }));
+    const w = rows[0]?.w ?? 0;
+    av.innerHTML = `<div class="card small">Prezzo ora = ${Math.round((1 - w) * 100)}% quotazione base + ${Math.round(w * 100)}% prezzo calcolato sulla stagione (il peso della stagione cresce di ${Math.round(100 / settings('price_blend_matches'))}% per ogni partita a 8/11 giocata). Puoi correggere a mano la quotazione base.</div><div id="qt"></div>`;
+    const draw = () => { $('#qt').innerHTML = tableHtml(cols, sortRows(rows, u.pricesSort, cols), u.pricesSort); bindSort($('#qt'), u.pricesSort, draw); };
+    draw();
+    av.onclick = e => { const b = e.target.closest('[data-bp]'); if (!b) return; const r = rows.find(x => x.id === Number(b.dataset.bp));
+      modal({ title: 'Quotazione base · ' + r.name, body: `<label class="f">Prezzo di inizio stagione</label><input type="number" min="1" id="bpv" value="${r.base}">`,
+        actions: [{ label: 'Salva', cls: 'primary', fn: async el => { const ok = await act(() => rpc('admin_set_base_price', { p_token: T(), p_player: r.id, p_price: Number($('#bpv', el).value) }), 'Quotazione aggiornata'); if (ok) { S.fanta = null; viewAdmin(v); } return ok; } }] }); };
+  }
+
+  if (u.adminTab === 'stagione') {
+    const act_s = S.boot.seasons.find(s => s.is_active);
+    av.innerHTML = `<div class="card"><h2>Stagione attiva: ${esc(act_s?.name || 'nessuna')}</h2>
+      <p class="small muted">${act_s?.ended ? 'La stagione è terminata: non si possono creare partite né fare mercato. Puoi riprenderla o avviarne una nuova.' : 'In corso.'}</p>
+      <div class="row">${act_s && !act_s.ended ? '<button class="btn danger" id="endS">Termina stagione</button>' : ''}${act_s?.ended ? '<button class="btn" id="resS">Riprendi stagione</button>' : ''}</div></div>
+      <div class="card"><h2>Avvia nuova stagione</h2><p class="small muted">Classifiche, voti e FantaNunnaree ripartono da zero. Le quotazioni iniziali saranno quelle di fine stagione attuale. Lo storico resta consultabile dal menu stagione in alto.</p>
+      <div class="row"><input type="text" id="sName" placeholder="Es. 2027-28" style="max-width:200px"><button class="btn primary" id="newS">Avvia nuova stagione</button></div></div>`;
+    $('#endS') && ($('#endS').onclick = async () => { if (!await confirmBox('Terminare la stagione? Blocca nuove partite e mercato fanta.', 'Termina', true)) return; if (await act(() => rpc('admin_end_season', { p_token: T() }), 'Stagione terminata')) { await reloadBoot(); renderShell(); } });
+    $('#resS') && ($('#resS').onclick = async () => { if (await act(() => rpc('admin_resume_season', { p_token: T() }), 'Stagione ripresa')) { await reloadBoot(); renderShell(); } });
+    $('#newS').onclick = async () => { const n = $('#sName').value.trim(); if (!n) return toast('Dai un nome alla stagione', true); if (!await confirmBox(`Avviare la stagione ${esc(n)}? La stagione attuale verrà chiusa.`, 'Avvia')) return;
+      if (await act(() => rpc('admin_start_season', { p_token: T(), p_name: n }), 'Nuova stagione avviata')) { S.season = null; S.matches = S.stats = S.fanta = S.partners = null; await start(); } };
+  }
+
+  if (u.adminTab === 'impostazioni') {
+    const keys = Object.keys(S.boot.settings);
+    av.innerHTML = `<div class="card"><p class="small muted">Valori usati da voti, statistiche e FantaNunnaree. Le modifiche valgono anche per i calcoli passati.</p>
+      ${keys.map(k => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px" class="small">${esc(S.boot.settings_labels[k] || k)}</span><input type="number" step="0.25" value="${S.boot.settings[k]}" data-k="${k}" style="width:100px"></div>`).join('')}
+      <div class="row" style="margin-top:12px"><div class="spacer"></div><button class="btn primary" id="saveSet">Salva impostazioni</button></div></div>`;
+    $('#saveSet').onclick = async () => {
+      for (const i of $$('[data-k]', av)) if (Number(i.value) !== Number(S.boot.settings[i.dataset.k])) {
+        if (!await act(() => rpc('admin_update_setting', { p_token: T(), p_key: i.dataset.k, p_value: Number(i.value) }))) return;
+      }
+      await reloadBoot(); S.stats = S.fanta = null; toast('Impostazioni salvate'); viewAdmin(v);
+    };
+  }
+}
+
+// ------------------------------------------------------------- BOOT
+async function guestLogin() {
+  try { const r = await rpc('guest_login', {}); S.token = r.token; store.set('calc_token', r.token); S.tab = 'classifica'; await start(); }
+  catch (e) { const el = $('#lerr'); if (el) el.textContent = e.message; else renderLogin(e.message); }
+}
+if (/[?&]ospite\b/.test(location.search) && !S.token) guestLogin();
+else if (S.token) start(); else renderLogin();
+</script>
+</body>
+</html>
