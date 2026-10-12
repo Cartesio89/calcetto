@@ -762,17 +762,24 @@ const ICONS = {
 const icon = (k, size = 15) => `<svg class="ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="${ICONS[k].t}" role="img"><title>${ICONS[k].t}</title>${ICONS[k].svg}</svg>`;
 // 1 evento: icona; da 2 in su (e sempre per i gol subiti): icona + numero
 const MAGLIE = { W: 'maglia-chiari-2.webp', D: 'maglia-scuri-2.webp' };
-// Highlights video per partita (data + tipo). Per aggiungerne uno: metti il file in video/ e una riga qui.
+// Highlights video per partita (id della partita). Per aggiungerne uno: metti il file in video/ e una riga qui.
+// Il titolo del popup è la nota della partita.
 const HIGHLIGHTS = [
-  { date: '2026-06-23', type: 8, src: 'video/gol-olimpico.mp4', title: { it: 'Gol olimpico di Nunnari E.', en: 'Nunnari E. scores straight from a corner' } },
+  { id: 33, src: 'video/gol-olimpico.mp4' },               // 23/06/2026
+  { id: 29, src: 'video/29_rigore_serangeli.mp4' },        // 12/05/2026
+  { id: 28, src: 'video/28_rigore_nunnari.mp4' },          // 21/04/2026
+  { id: 26, src: 'video/26_stampelle.mp4' },               // 24/03/2026
+  { id: 23, src: 'video/23_punizione.mp4' },               // 03/03/2026
+  { id: 38, src: 'video/38_infortunati.mp4' },             // 16/09/2025
+  { id: 37, src: 'video/37_acqua.mp4' },                   // 09/09/2025
 ];
-const highlightOf = m => HIGHLIGHTS.find(h => String(m.date).slice(0, 10) === h.date && Number(m.type) === h.type) || null;
+const highlightOf = m => HIGHLIGHTS.find(h => h.id === Number(m.id)) || null;
 const hlBtn = (m, cls = '') => highlightOf(m) ? `<button type="button" class="hl-btn ${cls}" data-hl="${m.id}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg>Highlights</button>` : '';
 function openHighlight(m) {
   const h = highlightOf(m); if (!h) return;
   const bg = document.createElement('div');
   bg.className = 'vid-bg';
-  bg.innerHTML = `<div class="vid-box" role="dialog" aria-modal="true" aria-label="Highlights"><div class="vid-t">${esc(EN ? h.title.en : h.title.it)}</div><button type="button" class="vid-x" aria-label="${L('Chiudi', 'Close')}">×</button><video src="${h.src}" controls autoplay muted playsinline preload="auto"></video></div>`;
+  bg.innerHTML = `<div class="vid-box" role="dialog" aria-modal="true" aria-label="Highlights"><div class="vid-t">${esc(m.note || 'Highlights')}</div><button type="button" class="vid-x" aria-label="${L('Chiudi', 'Close')}">×</button><video src="${h.src}" controls autoplay muted playsinline preload="auto"></video></div>`;
   const close = () => { const v = bg.querySelector('video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); } bg.remove(); document.removeEventListener('keydown', onKey, true); };
   const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
   bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('.vid-x')) close(); });
