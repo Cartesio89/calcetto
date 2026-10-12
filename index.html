@@ -207,6 +207,18 @@ details.box > div{padding:0 14px 12px}
 .mx-shirts{display:flex;justify-content:space-between;align-items:flex-end;position:relative;z-index:2;margin-top:-6px}
 .mx-shirts{padding:0 4%}
 .mx-shirts img{height:150px;width:auto;margin-bottom:-12px;filter:drop-shadow(0 8px 12px rgba(0,0,0,.35))}
+/* highlights video */
+.hl-btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;font-weight:800;letter-spacing:.2px;background:var(--accent);color:var(--accent-ink);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);white-space:nowrap}
+.hl-btn:hover{filter:brightness(1.06)}
+.hl-btn svg{width:12px;height:12px;flex:none}
+.match .hl-row{margin:8px 0 2px}
+.mx-shirts .hl-mid{align-self:flex-end;margin-bottom:16px;position:relative;z-index:3}
+.vid-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
+.vid-box{position:relative;width:100%;max-width:960px}
+.vid-box video{display:block;width:100%;height:auto;max-height:80vh;border-radius:14px;background:#000;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.vid-box .vid-t{color:#fff;font-weight:700;font-size:15px;margin:0 44px 10px 2px}
+.vid-x{position:absolute;top:-6px;right:0;width:38px;height:38px;border-radius:50%;border:0;background:rgba(255,255,255,.14);color:#fff;font-size:22px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.vid-x:hover{background:rgba(255,255,255,.26)}
 .mx-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .mx-row{display:flex;align-items:center;gap:7px;padding:7px 0;border-bottom:1px solid var(--line);min-height:44px}
 .mx-row .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600;font-size:15px}
@@ -749,7 +761,24 @@ const ICONS = {
 };
 const icon = (k, size = 15) => `<svg class="ico" viewBox="0 0 24 24" width="${size}" height="${size}" aria-label="${ICONS[k].t}" role="img"><title>${ICONS[k].t}</title>${ICONS[k].svg}</svg>`;
 // 1 evento: icona; da 2 in su (e sempre per i gol subiti): icona + numero
-const MAGLIE = { W: 'maglia-chiari-2.webp', D: 'maglia-scuri-2.webp' };   // le versioni precedenti: maglia-chiari.webp / maglia-scuri.webp
+const MAGLIE = { W: 'maglia-chiari-2.webp', D: 'maglia-scuri-2.webp' };
+// Highlights video per partita (data + tipo). Per aggiungerne uno: metti il file in video/ e una riga qui.
+const HIGHLIGHTS = [
+  { date: '2026-06-23', type: 8, src: 'video/gol-olimpico.mp4', title: { it: 'Gol olimpico di Nunnari E.', en: 'Nunnari E. scores straight from a corner' } },
+];
+const highlightOf = m => HIGHLIGHTS.find(h => String(m.date).slice(0, 10) === h.date && Number(m.type) === h.type) || null;
+const hlBtn = (m, cls = '') => highlightOf(m) ? `<button type="button" class="hl-btn ${cls}" data-hl="${m.id}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg>Highlights</button>` : '';
+function openHighlight(m) {
+  const h = highlightOf(m); if (!h) return;
+  const bg = document.createElement('div');
+  bg.className = 'vid-bg';
+  bg.innerHTML = `<div class="vid-box" role="dialog" aria-modal="true" aria-label="Highlights"><div class="vid-t">${esc(EN ? h.title.en : h.title.it)}</div><button type="button" class="vid-x" aria-label="${L('Chiudi', 'Close')}">×</button><video src="${h.src}" controls autoplay muted playsinline preload="auto"></video></div>`;
+  const close = () => { const v = bg.querySelector('video'); if (v) { v.pause(); v.removeAttribute('src'); v.load(); } bg.remove(); document.removeEventListener('keydown', onKey, true); };
+  const onKey = e => { if (e.key === 'Escape') { e.stopPropagation(); close(); } };
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('.vid-x')) close(); });
+  document.addEventListener('keydown', onKey, true);
+  document.body.appendChild(bg);
+}   // le versioni precedenti: maglia-chiari.webp / maglia-scuri.webp
 const iconN = (k, n, size) => !n ? '' : (n === 1 && k !== 'conceded') ? icon(k, size) : `<span class="icn">${icon(k, size)}<b>${n}</b></span>`;
 function evIcons(p, size) {
   const g = (p.goals || 0) - (p.pen_goals || 0);
@@ -797,6 +826,7 @@ async function viewPartite(v) {
       return `<div class="card match" data-id="${m.id}">
       <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">${L('apri per i dettagli ›', 'tap for details ›')}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
       ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
+      ${highlightOf(m) ? `<div class="hl-row">${hlBtn(m)}</div>` : ''}
       ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} ${L('con i', 'with')} ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? L('pareggio', 'draw') : (me.team === 'W') === (m.score_w > m.score_d) ? L('vittoria', 'win') : L('sconfitta', 'loss')}</b>` : ''}${me.goals ? ` · ${me.goals} ${L('gol', me.goals === 1 ? 'goal' : 'goals')}` : ''}</div>` : ''}
       <div class="score">
         <div class="side"><span class="team"><span class="dot W"></span>${esc(TW)}</span><span class="tiny muted">${nw} ${L('giocatori', 'players')}</span></div>
@@ -813,7 +843,7 @@ async function viewPartite(v) {
   try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   if (S.tab !== 'partite' || !$('#mlist')) return;
   draw();
-  $('#mlist').onclick = e => { const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+  $('#mlist').onclick = e => { const hb = e.target.closest('[data-hl]'); if (hb) { e.stopPropagation(); const hm = S.matches.list.find(x => x.id === Number(hb.dataset.hl)); if (hm) openHighlight(hm); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
 }
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
@@ -829,7 +859,7 @@ function openMatch(id) {
         <div class="mx-mid"><div class="mx-score">${played ? `${m.score_w} - ${m.score_d}` : 'vs'}</div><div class="mx-sub">${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</div></div>
         <div class="mx-team r">${esc(TD)}</div>
       </div>
-      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="${L('Maglia', 'Shirt')} ${esc(TW)}" onerror="this.style.visibility='hidden'"><img src="${MAGLIE.D}" alt="${L('Maglia', 'Shirt')} ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
+      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="${L('Maglia', 'Shirt')} ${esc(TW)}" onerror="this.style.visibility='hidden'">${highlightOf(m) ? `<div class="hl-mid">${hlBtn(m)}</div>` : ''}<img src="${MAGLIE.D}" alt="${L('Maglia', 'Shirt')} ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
     </div>`;
   const pres = isPres();
   const actions = [];
@@ -856,6 +886,7 @@ function openMatch(id) {
     actions
   });
   mo.el.addEventListener('click', async e => {
+    if (e.target.closest('[data-hl]')) { openHighlight(m); return; }
     const f = e.target.closest('[data-fanta]');
     if (f) { if (!await confirmBox('Annullare la giornata fanta di questa partita? Le formazioni bloccate per questa partita vengono cancellate.', 'Annulla giornata', true)) return; if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
     const vv = e.target.closest('[data-votes]');
