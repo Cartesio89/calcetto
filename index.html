@@ -670,8 +670,8 @@ async function viewClassifica(v) {
       ${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"></label></div>
     <div id="stTable"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>
-    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
-      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus). Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
+    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero tra parentesi accanto a PG) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
+      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number in brackets next to MP) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus). Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
   bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
@@ -683,16 +683,20 @@ async function viewClassifica(v) {
     try { S.stats = { key, rows: await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: u.statType === 'all' ? null : Number(u.statType) }) }; }
     catch (e) { if ($('#stTable')) $('#stTable').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   }
+  // partite organizzate (giocate) nella selezione: stagione + tipo
+  let org = null;
+  try { org = (await loadMatches()).filter(m => m.status === 'giocata' && (u.statType === 'all' || String(m.type) === String(u.statType))).length; } catch {}
   if (S.tab !== 'classifica' || !$('#stTable')) return;
   const cols = [
     { k: 'name', label: L('Giocatore', 'Player'), fmt: (r, i) => `<span class="rank">${i + 1}</span>${esc(r.name)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
-    { k: 'pg', label: L('PG', 'MP'), title: L('Partite giocate', 'Matches played'), cls: 'strong' }, { k: 'v', label: L('V', 'W'), title: L('Vittorie', 'Wins') }, { k: 'n', label: L('N', 'D'), title: L('Pareggi', 'Draws') }, { k: 's', label: L('P', 'L'), title: L('Sconfitte', 'Losses') },
+    { k: 'pg', label: L('PG', 'MP') + (org != null ? ` (${org})` : ''), title: L('Partite giocate', 'Matches played') + (org != null ? L(` (su ${org} organizzate)`, ` (out of ${org} organised)`) : ''), cls: 'strong' }, { k: 'v', label: L('V', 'W'), title: L('Vittorie', 'Wins') }, { k: 'n', label: L('N', 'D'), title: L('Pareggi', 'Draws') }, { k: 's', label: L('P', 'L'), title: L('Sconfitte', 'Losses') },
     { k: 'pct', label: L('%V', 'W%'), title: L('Percentuale vittorie', 'Win percentage'), sv: r => r.pg ? r.v / r.pg : null, fmt: r => r.pg ? Math.round(r.v / r.pg * 100) + '%' : '–' },
     { k: 'pt', label: L('PT', 'Pts'), title: L('Punti: 3 a vittoria, 1 a pareggio, 0 a sconfitta', 'Points: 3 per win, 1 per draw, 0 per loss'), cls: 'strong', sv: r => 3 * r.v + r.n, fmt: r => 3 * r.v + r.n },
     { k: 'gf', label: L('GF', 'G'), title: L('Gol fatti', 'Goals'), cls: 'strong' }, { k: 'rig', label: L('Rig', 'Pen'), title: L('Gol su rigore', 'Penalty goals') }, { k: 'ag', label: L('AG', 'OG'), title: L('Autogol', 'Own goals') },
     { k: 'gs', label: L('GS', 'GC'), title: L('Gol subiti', 'Goals conceded') }, { k: 'rp', label: L('RP', 'PS'), title: L('Rigori parati', 'Penalties saved') }, { k: 'rs', label: L('RS', 'PM'), title: L('Rigori sbagliati', 'Penalties missed') },
     { k: 'mv', label: L('Voto', 'Rating'), title: L('Media voto pulita', 'Plain average rating'), cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
     { k: 'vplus', label: L('V+', 'F+'), title: L('Media fantavoto (voto + bonus/malus)', 'Average fanta score (rating + bonus/malus)'), cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
+    { k: 'ppres', label: L('%P', 'App%'), title: L(`Presenze: partite giocate ÷ partite organizzate${org != null ? ` (${org})` : ''}`, `Appearances: matches played ÷ matches organised${org != null ? ` (${org})` : ''}`), sv: r => org ? r.pg / org : null, fmt: r => org ? Math.round(r.pg / org * 100) + '%' : '–' },
   ];
   data = S.stats; box = $('#stTable');
   const maxPg = Math.max(1, ...data.rows.map(r => r.pg || 0));
