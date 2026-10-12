@@ -213,6 +213,20 @@ details.box > div{padding:0 14px 12px}
 .hl-btn svg{width:12px;height:12px;flex:none}
 .match .hl-row{margin:8px 0 2px}
 .mx-shirts .hl-mid{align-self:flex-end;margin-bottom:16px;position:relative;z-index:3}
+.tyrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;max-width:100%}
+.hl-list-btn{flex:none;padding:6px 11px}
+.tyrow .seg{flex:none;flex-wrap:nowrap}
+@media (max-width:420px){.tyrow .seg button{padding:6px 9px}.hl-list-btn{padding:6px 9px;font-size:12px;gap:5px}}
+@media (max-width:360px){.tyrow .seg button{padding:6px 7px}.hl-list-btn .hl-txt{display:none}.hl-list-btn{padding:8px}}
+.hl-items{display:flex;flex-direction:column;gap:8px}
+.hl-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer}
+.hl-item:hover{background:var(--surface-2)}
+.hl-item .hl-main{flex:1;min-width:0}
+.hl-item .hl-top{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hl-item .hl-sc{font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:20px;white-space:nowrap}
+.hl-item .hl-note{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hl-item .hl-play{flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.hl-item .hl-play svg{width:12px;height:12px;margin-left:2px}
 .vid-bg{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.86);display:flex;align-items:center;justify-content:center;padding:16px}
 .vid-box{position:relative;width:100%;max-width:960px}
 .vid-box video{display:block;width:100%;height:auto;max-height:80vh;border-radius:14px;background:#000;box-shadow:0 12px 40px rgba(0,0,0,.5)}
@@ -677,7 +691,7 @@ const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.map(t => ({ v: t,
 // ------------------------------------------------------------- CLASSIFICA
 async function viewClassifica(v) {
   const u = S.ui;
-  v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div>${segHtml('stType', typeOpts, u.statType)}</div>
+  v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div><div class="tyrow">${segHtml('stType', typeOpts, u.statType)}${hlListBtn()}</div></div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.statSearch)}" style="max-width:260px">
       <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> ${L('solo chi ha giocato', 'only players who played')}</label>
       ${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
@@ -686,6 +700,7 @@ async function viewClassifica(v) {
     <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
       `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus). Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
+  v.querySelector('[data-hllist]').onclick = openHighlightList;
   bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
   $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
@@ -772,9 +787,25 @@ const HIGHLIGHTS = [
   { id: 23, src: 'video/23_punizione.mp4' },               // 03/03/2026
   { id: 38, src: 'video/38_infortunati.mp4' },             // 16/09/2025
   { id: 37, src: 'video/37_acqua.mp4' },                   // 09/09/2025
+  { id: 13, src: 'video/13_rigore_fasullo.mp4' },          // 18/11/2025
 ];
 const highlightOf = m => HIGHLIGHTS.find(h => h.id === Number(m.id)) || null;
 const hlBtn = (m, cls = '') => highlightOf(m) ? `<button type="button" class="hl-btn ${cls}" data-hl="${m.id}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg>Highlights</button>` : '';
+const hlListBtn = () => `<button type="button" class="hl-btn hl-list-btn" data-hllist aria-label="Highlights"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg><span class="hl-txt">Highlights</span></button>`;
+async function openHighlightList() {
+  let list;
+  try { list = await loadMatches(); } catch (e) { return toast(e.message, true); }
+  const items = list.filter(m => highlightOf(m)).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const seasonName = seasonInfo()?.name || '';
+  const play = '<span class="hl-play"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg></span>';
+  const body = items.length ? `<div class="hl-items">${items.map(m => `<button type="button" class="hl-item" data-hlid="${m.id}">
+      <div class="hl-main"><div class="hl-top"><b>${esc(fmtDate(m.date))}</b><span class="small muted">${esc(typeLabel(m.type))}</span></div>
+        <div class="hl-sc"><span class="dot W"></span> ${esc(TW)} ${m.status === 'giocata' ? `${m.score_w} – ${m.score_d}` : 'vs'} ${esc(TD)} <span class="dot D"></span></div>
+        ${m.note ? `<div class="hl-note">${esc(m.note)}</div>` : ''}</div>${play}</button>`).join('')}</div>`
+    : `<div class="empty">${L('Nessun highlight in questa stagione.', 'No highlights this season.')}</div>`;
+  const mo = modal({ title: `Highlights ${seasonName}`.trim(), body });
+  mo.el.addEventListener('click', e => { const it = e.target.closest('[data-hlid]'); if (it) { const m = items.find(x => x.id === Number(it.dataset.hlid)); if (m) openHighlight(m); } });
+}
 function openHighlight(m) {
   const h = highlightOf(m); if (!h) return;
   const bg = document.createElement('div');
@@ -807,7 +838,7 @@ async function viewPartite(v) {
   const plOpts = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   v.innerHTML = `<div class="section-title"><h2>${L('Partite', 'Matches')}</h2><div class="spacer"></div>
     ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}</div>
-    <div class="row" style="margin-bottom:12px">${segHtml('mFilType', typeOpts, u.matchType)}
+    <div class="row" style="margin-bottom:12px"><div class="tyrow">${segHtml('mFilType', typeOpts, u.matchType)}${hlListBtn()}</div>
       <select id="mFilPl" aria-label="${L('Filtra per giocatore', 'Filter by player')}" style="max-width:240px"><option value="">${L('Tutti i giocatori', 'All players')}</option>${plOpts.map(p => `<option value="${p.id}" ${p.id === u.matchPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
       <span class="small muted" id="mCount"></span></div>
     <div id="pBanner"></div>
@@ -844,6 +875,7 @@ async function viewPartite(v) {
     </div>`;
     }).join('') : `<div class="card empty">${L('Nessuna partita con questi filtri.', 'No matches with these filters.')}</div>`;
   };
+  v.querySelector('[data-hllist]').onclick = openHighlightList;
   bindSeg($('#mFilType'), val => { u.matchType = val; $$('#mFilType button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   $('#mFilPl').onchange = e => { u.matchPlayer = e.target.value ? Number(e.target.value) : null; draw(); };
   if (isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended) loadFanta().then(F => { const b = $('#pBanner'); if (b && S.tab === 'partite') { b.innerHTML = fantaLockBanner(F.lock, F); b.onclick = fantaBannerClick; } }).catch(() => {});
