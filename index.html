@@ -421,6 +421,7 @@ const typeLabel = t => EN ? t + '-a-side' : 'Calcio a ' + t;
 const ERR_EN = [
   [/^Accesso ospite non attivo/, 'Guest access is turned off.'],
   [/^Crediti insufficienti \(costa (\d+), hai ([\d.]+)\)/, 'Not enough credits (costs $1, you have $2).'],
+  [/^Crediti da tenere per completare la rosa: dopo questo acquisto ti resterebbero (-?[\d.]+) crediti per (\d+) posti liberi .*Puoi spendere al massimo (-?[\d.]+)/, 'You must keep credits to complete your squad: after this purchase you would have $1 credits for $2 empty slots (at least 1 credit per slot is needed). You can spend at most $3.'],
   [/^Formazioni bloccate/, 'Lineups are locked: they reopen when voting on the match closes.'],
   [/^Giocatore non disponibile/, 'Player not available.'],
   [/^Giocatore non presente nella partita/, 'Player not in this match.'],
@@ -1875,11 +1876,21 @@ async function viewFanta(v) {
   const mine = F.owners.find(o => o.owner_id === me().id) || { credits: settings('fanta_budget'), changes_used: 0, roster: [] };
   const canTrade = S.season === S.boot.active_season && !F.season_ended && !isGuest();
   const rosterSize = settings('fanta_roster_size'), lineupSize = settings('fanta_lineup_size'), maxCh = settings('fanta_max_changes');
+  // la rosa va completata: dopo ogni acquisto serve almeno 1 credito per ogni posto ancora libero
+  const freeSlots = Math.max(0, rosterSize - mine.roster.length);
+  const maxSpend = mine.credits - Math.max(0, freeSlots - 1);
+  const budgetAlert = () => {
+    if (!canTrade || !freeSlots || !['squadra', 'mercato'].includes(u.fantaTab)) return '';
+    const bad = mine.credits < freeSlots;
+    return `<div class="card small" style="margin-bottom:14px;${bad ? 'border-color:var(--bad,#d33);background:rgba(220,50,50,.08)' : ''}">${bad ? '⚠️' : 'ℹ️'} ${L(
+      `Devi completare la rosa con <b>${rosterSize} giocatori</b>: te ne mancano <b>${freeSlots}</b>, quindi ti serve almeno <b>1 credito per ogni posto libero</b> (${freeSlots} crediti). Ne hai <b>${fmtNum(mine.credits)}</b>.${bad ? ' <b>Non bastano: cedi un giocatore per liberare crediti.</b>' : ` Per il prossimo acquisto puoi spendere al massimo <b>${fmtNum(maxSpend)}</b>.`}`,
+      `You must complete your squad with <b>${rosterSize} players</b>: you are <b>${freeSlots}</b> short, so you need at least <b>1 credit for each empty slot</b> (${freeSlots} credits). You have <b>${fmtNum(mine.credits)}</b>.${bad ? ' <b>Not enough: sell a player to free up credits.</b>' : ` Your next purchase can cost at most <b>${fmtNum(maxSpend)}</b>.`}`)}</div>`;
+  };
   const head = isGuest() ? '' : `<div class="kpis">
       <div class="kpi"><div class="v">${fmtNum(mine.credits)}</div><div class="l">${L('Crediti disponibili', 'Credits available')}</div></div>
       <div class="kpi"><div class="v">${mine.roster.length}/${rosterSize}</div><div class="l">${L('Giocatori in rosa', 'Players in squad')}</div></div>
       <div class="kpi"><div class="v">${F.free_phase ? L('Libero', 'Free') : (maxCh - mine.changes_used)}</div><div class="l">${F.free_phase ? L('Mercato fino al 1° STOP', 'Market until the first lock') : L('Cambi rimasti', 'Transfers left')}</div></div>
-    </div>`;
+    </div>${budgetAlert()}`;
 
   const lock = F.lock;
   const lockText = lock ? (lock.match_id ? L(`per ${esc(typeLabel(lock.match_type))} del ${esc(fmtDate(lock.match_date))}`, `for the ${esc(typeLabel(lock.match_type))} match on ${esc(fmtDate(lock.match_date))}`) : L('in attesa della prima partita a 8 o a 11 che verrà caricata', 'waiting for the next 8- or 11-a-side match to be added')) : '';
@@ -1958,7 +1969,7 @@ async function viewFanta(v) {
       { k: 'price', label: L('Prezzo', 'Price'), cls: 'strong' },
       { k: 'delta', label: L('Var.', 'Chg.'), title: L('Variazione rispetto alla quotazione di inizio stagione', 'Change from the start-of-season price'), fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
       { k: 'pres', label: L('PG', 'MP'), title: L('Presenze stagione (calcio a 8 e 11)', 'Season appearances (8- and 11-a-side)') },
-      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? `<span class="pill ok">${L('In rosa', 'In squad')}</span>` : r.id === me().id ? `<span class="pill">${L('sei tu', 'you')}</span>` : canTrade ? `<button class="btn sm ${r.price <= mine.credits && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > mine.credits || mine.roster.length >= rosterSize ? 'disabled' : ''}>${L('Compra', 'Buy')}</button>` : '' },
+      { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? `<span class="pill ok">${L('In rosa', 'In squad')}</span>` : r.id === me().id ? `<span class="pill">${L('sei tu', 'you')}</span>` : canTrade ? `<button class="btn sm ${r.price <= maxSpend && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > maxSpend || mine.roster.length >= rosterSize ? `disabled title="${esc(r.price > mine.credits || mine.roster.length >= rosterSize ? '' : L(`Devi tenere almeno ${freeSlots - 1} crediti per completare la rosa`, `You must keep at least ${freeSlots - 1} credits to complete your squad`))}"` : ''}>${L('Compra', 'Buy')}</button>` : '' },
     ];
     const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
     fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">${L('Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.', 'Prices update after every match based on the current season. The first FantaNunnaree matchday is a trial: it does not move prices.')}</span></div><div id="mt"></div>`;
@@ -2037,7 +2048,8 @@ async function viewFanta(v) {
       <li>Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le sue formazioni cancellate.</li></ul>
 
       <h3>2. La rosa e il mercato</h3><ul>
-      <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare fino a <b>${rosterSize} giocatori di movimento</b>.</li>
+      <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare <b>tutti e ${rosterSize} i giocatori di movimento</b> della rosa: la rosa va completata.</li>
+      <li>Per questo, dopo ogni acquisto devi tenere <b>almeno 1 credito per ogni posto ancora libero</b> (es. con 10 giocatori comprati te ne servono almeno 5). L'app blocca gli acquisti che non lo rispettano.</li>
       <li>Lo stesso giocatore può essere nella rosa di più squadre: non ci sono esclusive.</li>
       <li>I <b>portieri (GK) non si comprano</b>: sono sempre disponibili a tutti per il ruolo P. Chi è GK lo decidono i presidenti.</li>
       <li>Si paga il prezzo del momento dell'acquisto, che resta fisso come “prezzo pagato”.</li>
@@ -2112,7 +2124,8 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
       <li>If a match is changed to 5- or 7-a-side, its matchday is cancelled and its lineups are deleted.</li></ul>
 
       <h3>2. Squad and market</h3><ul>
-      <li>Each team has <b>${st('fanta_budget')} credits</b> to buy up to <b>${rosterSize} outfield players</b>.</li>
+      <li>Each team has <b>${st('fanta_budget')} credits</b> to buy <b>all ${rosterSize} outfield players</b> of the squad: the squad must be completed.</li>
+      <li>So after every purchase you must keep <b>at least 1 credit for each empty slot</b> (e.g. with 10 players bought you need at least 5). The app blocks purchases that break this.</li>
       <li>The same player can be in several teams' squads: there are no exclusive picks.</li>
       <li><b>Goalkeepers (GK) are not bought</b>: they are always available to everyone for the GK slot. The presidents decide who is a GK.</li>
       <li>You pay the price at the moment of purchase, which stays fixed as the “price paid”.</li>
