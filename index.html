@@ -876,7 +876,8 @@ async function viewClassifica(v) {
 
 // ------------------------------------------------------------- PARTITE
 async function loadMatches(force) {
-  if (force || !S.matches || S.matches.season !== S.season) S.matches = { season: S.season, list: await rpc('get_matches', { p_token: T(), p_season: S.season }) };
+  // la lista resta in memoria al massimo 1 minuto: voti, votanti e risultati arrivano aggiornati senza ricaricare la pagina
+  if (force || !S.matches || S.matches.season !== S.season || Date.now() - (S.matches.at || 0) > 60000) S.matches = { season: S.season, at: Date.now(), list: await rpc('get_matches', { p_token: T(), p_season: S.season }) };
   return S.matches.list;
 }
 const seasonInfo = () => S.boot.seasons.find(s => s.id === S.season);
@@ -1009,6 +1010,8 @@ async function viewPartite(v) {
 }
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
+  // votazione aperta: ricarico subito il numero di votanti dal server
+  if (isPres() && m.votes_open) loadMatches(true).then(list => { const f = list.find(x => x.id === id); const el = $('[data-voters]'); if (f && el) el.textContent = f.voters; }).catch(() => {});
   const played = m.status === 'giocata';
   const minV = settings('min_votes');
   const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
@@ -1035,7 +1038,7 @@ function openMatch(id) {
       <div class="small muted" style="margin-bottom:8px">${m.fanta_state === 'bloccato' ? '<b>Giornata valida</b>: questa partita usa le formazioni bloccate con lo STOP.' : 'Nessuna giornata fanta su questa partita. Le formazioni si bloccano con il pulsante STOP in Partite o nel FantaNunnaree, e vanno alla prima partita a 8 o a 11 caricata.'}</div>
       ${m.fanta_state !== 'chiuso' ? '<div class="row"><button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button></div>' : ''}</div>` : '';
   const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
-      <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · ${m.voters} votanti</div>
+      <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · <span data-voters>${m.voters}</span> votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
       <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
   const mo = modal({
