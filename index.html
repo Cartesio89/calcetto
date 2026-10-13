@@ -350,6 +350,41 @@ html.fanta .topbar .langsw button.on{background:#ff3d9a;color:#fff}
 /* spazio per IT|EN nella barra in alto */
 @media (max-width:375px){ .topbar .wrap{gap:6px} .topbar select{max-width:74px;font-size:12px;padding:4px 2px} .iconbtn{padding:4px} .logo h1{font-size:17px} }
 @media (max-width:330px){ .topbar .wrap{gap:5px} .logo{gap:6px} .logo h1{font-size:15px} .logo .ball{width:20px;height:20px} .topbar select{max-width:76px;font-size:11.5px;padding:4px 1px} .iconbtn{padding:2px} }
+/* premi stagionali */
+.aw-wrap{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;max-width:100%;width:100%}
+.aw-col{display:flex;flex-direction:column;gap:10px;align-items:flex-start;flex:none;max-width:100%}
+.aw-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:104px;padding:8px 12px;border:0;border-radius:14px;background:linear-gradient(150deg,#f9e08a 0%,#e0b22c 48%,#b8860b 100%);color:#1d1503;font:inherit;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.55);text-align:center;line-height:1.05}
+.aw-btn:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+.aw-col .seg{flex-wrap:nowrap}
+.aw-wrap .aw-btn{flex:1 1 96px;min-width:96px;max-width:200px}
+@media (max-width:420px){ .aw-col .seg button{padding:6px 9px} .aw-btn{min-width:86px;padding:8px 8px} .aw-btn b{font-size:14.5px} .aw-btn .aw-ico{font-size:19px} }
+@media (max-width:380px){ .aw-btn b{font-size:13.5px} }
+@media (max-width:340px){ .aw-col .seg button{padding:6px 7px;font-size:13px} .aw-btn b{font-size:13px} }
+.aw-btn .aw-ico{font-size:22px;line-height:1}
+.aw-btn b{font-family:'Barlow Condensed',Inter,sans-serif;font-size:17px;font-weight:800;letter-spacing:.3px;text-transform:uppercase}
+.aw-btn small{font-size:11px;font-weight:700;opacity:.75}
+.aw-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:760px){ .aw-grid{grid-template-columns:minmax(0,1fr)} }
+.aw-box{border:1px solid #c9a23a;border-radius:16px;overflow:hidden;background:var(--surface);box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.aw-head{background:linear-gradient(150deg,#f9e08a 0%,#e0b22c 50%,#b8860b 100%);color:#1d1503;text-align:center;padding:9px 10px 7px;font-family:'Barlow Condensed',Inter,sans-serif;font-size:24px;font-weight:800;letter-spacing:1px;text-transform:uppercase;line-height:1}
+.aw-body{display:grid;grid-template-columns:minmax(0,42%) minmax(0,1fr);gap:12px;padding:12px}
+.aw-card{border:0;padding:0;background:#111;border-radius:10px;aspect-ratio:2/3;overflow:hidden;cursor:zoom-in;display:block;width:100%}
+.aw-card img{width:100%;height:100%;object-fit:cover;display:block}
+.aw-card.ld{background:linear-gradient(110deg,#2a2a2a 30%,#3a3a3a 50%,#2a2a2a 70%);background-size:200% 100%;animation:awsh 1.2s linear infinite}
+@keyframes awsh{to{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){ .aw-card.ld{animation:none} }
+.aw-stats{display:flex;flex-direction:column;gap:6px;min-width:0}
+.aw-name{font-weight:800;font-size:16px;line-height:1.15}
+.aw-big{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding:4px 0 6px;border-bottom:1px solid var(--line)}
+.aw-big b{font-family:'Barlow Condensed',Inter,sans-serif;font-size:44px;font-weight:800;line-height:.95;color:#c99a1e}
+.aw-big span{font-size:13px;font-weight:700;color:var(--muted)}
+.aw-rank{display:inline-block;font-size:11px;font-weight:800;padding:2px 7px;border-radius:999px;background:#e0b22c;color:#1d1503;margin-top:2px}
+.aw-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-size:13.5px;border-bottom:1px dashed var(--line);padding:2px 0 4px;min-width:0}
+.aw-row span{color:var(--muted);min-width:0}
+.aw-row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.aw-foot{font-size:11.5px;color:var(--muted);margin-top:2px}
+@media (max-width:380px){ .aw-head{font-size:21px} .aw-big b{font-size:38px} .aw-row{font-size:12.5px} .aw-body{gap:10px;padding:10px} }
+.aw-zoom{max-width:100%;max-height:78vh;display:block;margin:0 auto;border-radius:12px}
 </style>
 </head>
 <body>
@@ -539,6 +574,7 @@ async function start() {
   S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
   if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
   if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest())) S.tab = 'classifica';
+  await loadAwards();
   renderShell();
   navInit();
   if (!isGuest()) loadVotesBadge();
@@ -688,19 +724,105 @@ function segHtml(id, opts, val) { return `<div class="seg" id="${id}">${opts.map
 function bindSeg(el, fn) { el.onclick = e => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); }; }
 const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.map(t => ({ v: t, l: EN ? t + 's' : 'a ' + t }))];
 
+// ------------------------------------------------------------- PREMI STAGIONALI
+// Il database dice da quando sono visibili (orario del server, non del telefono): prima di allora non arriva nulla.
+async function loadAwards() {
+  clearTimeout(loadAwards._t);
+  let r; try { r = await rpc('get_awards', { p_token: T() }); } catch { S.awards = null; return; }
+  S.awards = r; S.awardsOff = Date.parse(r.now) - Date.now();
+  if (!r.items?.length && r.reveal_at) {
+    const ms = Date.parse(r.reveal_at) - Date.parse(r.now);
+    if (ms > 0 && ms < 2147483000) loadAwards._t = setTimeout(awardsCheck, ms + 1500);
+  }
+}
+async function awardsCheck() {
+  const was = !!S.awards?.items?.length;
+  await loadAwards();
+  if (!was && S.awards?.items?.length && S.tab === 'classifica' && !$('.modal-bg')) renderTab();
+}
+// telefono in pausa: i timer si fermano, quindi ricontrollo quando l'app torna visibile
+document.addEventListener('visibilitychange', () => {
+  const A = S.awards;
+  if (!document.hidden && S.boot && A && !A.items?.length && A.reveal_at && Date.now() + (S.awardsOff || 0) >= Date.parse(A.reveal_at)) awardsCheck();
+});
+const awardsReady = () => !!S.awards?.items?.length;
+const awSeasonShort = n => String(n || '').replace(/^20(\d\d)-(\d\d)$/, '$1/$2');
+const awardsBtn = () => `<button type="button" class="aw-btn" id="awBtn"><span class="aw-ico" aria-hidden="true">🏆</span><b>${L('Premi stagionali', 'Season awards')}</b><small>${esc(awSeasonShort(S.awards.items[0].season))}</small></button>`;
+async function awardImg(path, keyB64) {
+  awardImg.c ||= {};
+  if (!awardImg.c[path]) awardImg.c[path] = (async () => {
+    const raw = Uint8Array.from(atob(keyB64), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['decrypt']);
+    const res = await fetch(path, { cache: 'force-cache' }); if (!res.ok) throw new Error('img');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(0, 12) }, key, buf.slice(12));
+    return URL.createObjectURL(new Blob([plain], { type: 'image/webp' }));
+  })().catch(e => { delete awardImg.c[path]; throw e; });
+  return awardImg.c[path];
+}
+// statistiche del solo calcio a 8 della stagione del premio
+function awardStats(pid, statRows, matches) {
+  const ms = matches.filter(m => m.type === 8 && m.status === 'giocata').sort((a, b) => String(a.date).localeCompare(String(b.date)) || a.id - b.id);
+  const r = statRows.find(x => x.id === pid) || { pg: 0, v: 0, n: 0, s: 0, gf: 0 };
+  const mine = ms.map(m => ({ m, p: m.players.find(p => p.id === pid) })).filter(x => x.p);
+  let diff = 0, scored = 0, hat = 0, rec = 0, run = 0, best = 0;
+  mine.forEach(({ m, p }) => { const f = p.team === 'W' ? m.score_w : m.score_d, a = p.team === 'W' ? m.score_d : m.score_w; diff += f - a; if (p.goals > 0) scored++; if (p.goals >= 3) hat++; rec = Math.max(rec, p.goals || 0); });
+  ms.forEach(m => { if (m.players.some(p => p.id === pid)) { run++; best = Math.max(best, run); } else run = 0; });
+  const goalsAll = ms.reduce((a, m) => a + m.score_w + m.score_d, 0);
+  const rank = (val, f) => 1 + statRows.filter(x => f(x) > val).length;
+  return { org: ms.length, pg: r.pg, v: r.v, n: r.n, s: r.s, gf: r.gf, pts: 3 * r.v + r.n, diff, scored, hat, rec, best, goalsAll,
+    rGol: rank(r.gf, x => x.gf), rPg: rank(r.pg, x => x.pg), rV: rank(r.v, x => x.v), rPts: rank(3 * r.v + r.n, x => 3 * x.v + x.n) };
+}
+function awardBox(a, st) {
+  const pct = (x, y) => y ? Math.round(x / y * 100) + '%' : '–';
+  const num = x => fmtNum(x);
+  const row = (l, v) => `<div class="aw-row"><span>${l}</span><b>${v}</b></div>`;
+  const rk = (n, it, en) => n === 1 ? `<span class="aw-rank">${L('1° ' + it, '#1 ' + en)}</span>` : '';
+  let big = '', rows = '', foot = '';
+  if (a.kind === 'gol') {
+    big = `<b>${st.gf}</b><span>${L('gol', 'goals')}</span>${rk(st.rGol, 'per gol', 'scorer')}`;
+    rows = row(L('Partite giocate', 'Matches played'), st.pg) + row(L('Media gol', 'Goals per match'), num(st.pg ? st.gf / st.pg : 0)) + row(L('Partite a segno', 'Matches scored in'), `${st.scored} ${L('su', 'of')} ${st.pg}`) + row(L('Partite con 3+ gol', 'Hat-tricks or more'), st.hat) + row(L('Record in una partita', 'Most in one match'), st.rec);
+    foot = L(`${pct(st.gf, st.goalsAll)} di tutti i gol della stagione`, `${pct(st.gf, st.goalsAll)} of all goals this season`);
+  } else if (a.kind === 'presenze') {
+    big = `<b>${st.pg}</b><span>${L('su', 'of')} ${st.org} ${L('partite', 'matches')}</span>${rk(st.rPg, 'per presenze', 'appearances')}`;
+    rows = row(L('Presenze', 'Appearance rate'), pct(st.pg, st.org)) + row(L('Serie più lunga', 'Longest run'), L(`${st.best} di fila`, `${st.best} in a row`)) + row(L('Vittorie', 'Wins'), st.v) + row(L('Punti', 'Points'), st.pts) + row(L('Gol', 'Goals'), st.gf);
+  } else {
+    big = `<b>${pct(st.v, st.pg)}</b><span>${L('vittorie', 'win rate')}</span>`;
+    rows = row(L('V · N · P', 'W · D · L'), `${st.v} · ${st.n} · ${st.s}`) + row(L('Partite giocate', 'Matches played'), st.pg) + row(L('Punti', 'Points'), `${st.pts} (${num(st.pg ? st.pts / st.pg : 0)} ${L('a partita', 'per match')})`) + row(L('Differenza reti', 'Goal difference'), (st.diff > 0 ? '+' : '') + st.diff) + (st.gf ? row(L('Gol', 'Goals'), st.gf) : '');
+  }
+  return `<div class="aw-stats"><div class="aw-name">${esc(pname(a.player_id))}</div><div class="aw-big">${big}</div>${rows}${foot ? `<div class="aw-foot">${foot}</div>` : ''}</div>`;
+}
+async function openAwards() {
+  const A = S.awards; if (!A?.items?.length) return;
+  const it = A.items, sn = awSeasonShort(it[0].season);
+  const title = a => EN && a.title_en ? a.title_en : a.title;
+  const mo = modal({ title: `${L('Premi stagionali', 'Season awards')} ${sn}`, wide: true,
+    body: `<p class="tiny muted" style="margin:0 0 10px">${L('Statistiche del solo calcio a 8.', '8-a-side stats only.')}</p><div class="aw-grid">${it.map((a, i) => `<div class="aw-box"><div class="aw-head">${esc(title(a))}</div><div class="aw-body"><button type="button" class="aw-card ld" data-awz="${i}" aria-label="${esc(pname(a.player_id))}"></button><div data-aws="${i}"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div></div></div>`).join('')}</div>` });
+  const imgs = {};
+  it.forEach((a, i) => awardImg(a.image, A.key).then(url => { imgs[i] = url; const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b) { b.classList.remove('ld'); b.innerHTML = `<img src="${url}" alt="${esc(pname(a.player_id))} – ${esc(title(a))}">`; } }).catch(() => { const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b) b.classList.remove('ld'); }));
+  mo.el.addEventListener('click', e => { const z = e.target.closest('[data-awz]'); if (!z || !imgs[z.dataset.awz]) return; const a = it[z.dataset.awz]; modal({ title: `${title(a)} · ${pname(a.player_id)}`, body: `<img class="aw-zoom" src="${imgs[z.dataset.awz]}" alt="">` }); });
+  const sid = S.boot.seasons.find(s => s.name === it[0].season)?.id;
+  try {
+    const [rows, ms] = await Promise.all([rpc('get_stats', { p_token: T(), p_season: sid, p_type: 8 }), rpc('get_matches', { p_token: T(), p_season: sid })]);
+    it.forEach((a, i) => { const b = mo.el.querySelector(`[data-aws="${i}"]`); if (b) b.outerHTML = awardBox(a, awardStats(a.player_id, rows, ms)); });
+  } catch (e) { $$('[data-aws]', mo.el).forEach(b => b.innerHTML = `<div class="small muted">${esc(e.message)}</div>`); }
+}
+
 // ------------------------------------------------------------- CLASSIFICA
 async function viewClassifica(v) {
   const u = S.ui;
   v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div><div class="tyrow">${segHtml('stType', typeOpts, u.statType)}${hlListBtn()}</div></div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.statSearch)}" style="max-width:260px">
       <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> ${L('solo chi ha giocato', 'only players who played')}</label>
-      ${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
-      <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"> <span id="stOrg"></span></label></div>
+      ${awardsReady() ? '<div class="aw-wrap"><div class="aw-col">' : ''}${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
+      <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"> <span id="stOrg"></span></label>${awardsReady() ? `</div>${awardsBtn()}</div>` : ''}</div>
     <div id="stTable"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>
     <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
       `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus). Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
   v.querySelector('[data-hllist]').onclick = openHighlightList;
+  if ($('#awBtn')) $('#awBtn').onclick = openAwards;
+  if (S.awards && !awardsReady() && S.awards.reveal_at && Date.now() + (S.awardsOff || 0) >= Date.parse(S.awards.reveal_at)) awardsCheck();
   bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
   $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
