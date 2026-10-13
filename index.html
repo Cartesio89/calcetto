@@ -731,24 +731,28 @@ async function loadAwards() {
   clearTimeout(loadAwards._t);
   let r; try { r = await rpc('get_awards', { p_token: T() }); } catch { S.awards = null; return; }
   S.awards = r; S.awardsOff = Date.parse(r.now) - Date.now();
-  if (!r.items?.length && r.reveal_at) {
-    const ms = Date.parse(r.reveal_at) - Date.parse(r.now);
+  // prossima premiazione in arrivo (anche se altre stagioni sono già visibili): timer per farla comparire da sola
+  if (r.next_reveal) {
+    const ms = Date.parse(r.next_reveal) - Date.parse(r.now);
     if (ms > 0 && ms < 2147483000) loadAwards._t = setTimeout(awardsCheck, ms + 1500);
   }
 }
+const awSig = () => (S.awards?.items || []).map(a => a.id).join(',') + '|' + Object.keys(S.awards?.keys || {}).join(',');
 async function awardsCheck() {
-  const was = !!S.awards?.items?.length;
+  const was = awSig();
   await loadAwards();
-  if (!was && S.awards?.items?.length && S.tab === 'classifica' && !$('.modal-bg')) renderTab();
+  if (was !== awSig() && S.tab === 'classifica' && !$('.modal-bg')) renderTab();
 }
+const awardsDue = () => { const A = S.awards; return !!(A?.next_reveal && Date.now() + (S.awardsOff || 0) >= Date.parse(A.next_reveal)); };
 // telefono in pausa: i timer si fermano, quindi ricontrollo quando l'app torna visibile
 document.addEventListener('visibilitychange', () => {
-  const A = S.awards;
-  if (!document.hidden && S.boot && A && !A.items?.length && A.reveal_at && Date.now() + (S.awardsOff || 0) >= Date.parse(A.reveal_at)) awardsCheck();
+  if (!document.hidden && S.boot && awardsDue()) awardsCheck();
 });
 const awardsReady = () => !!S.awards?.items?.length;
 const awSeasonShort = n => String(n || '').replace(/^20(\d\d)-(\d\d)$/, '$1/$2');
-const awardsBtn = () => `<button type="button" class="aw-btn" id="awBtn"><span class="aw-ico" aria-hidden="true">🏆</span><b>${L('Premi stagionali', 'Season awards')}</b><small>${esc(awSeasonShort(S.awards.items[0].season))}</small></button>`;
+// stagioni con premi già svelati, dalla più recente
+const awSeasons = () => [...new Set((S.awards?.items || []).map(a => a.season))].sort().reverse();
+const awardsBtn = () => `<button type="button" class="aw-btn" id="awBtn"><span class="aw-ico" aria-hidden="true">🏆</span><b>${L('Premi stagionali', 'Season awards')}</b><small>${esc(awSeasonShort(awSeasons()[0]))}</small></button>`;
 async function awardImg(path, keyB64) {
   awardImg.c ||= {};
   if (!awardImg.c[path]) awardImg.c[path] = (async () => {
@@ -795,18 +799,29 @@ function awardBox(a, st) {
 }
 async function openAwards() {
   const A = S.awards; if (!A?.items?.length) return;
-  const it = A.items, sn = awSeasonShort(it[0].season);
+  const seasons = awSeasons();
   const title = a => EN && a.title_en ? a.title_en : a.title;
-  const mo = modal({ title: `${L('Premi stagionali', 'Season awards')} ${sn}`, wide: true,
-    body: `<p class="tiny muted" style="margin:0 0 10px">${L('Statistiche del solo calcio a 8.', '8-a-side stats only.')}</p><div class="aw-grid">${it.map((a, i) => `<div class="aw-box"><div class="aw-head">${esc(title(a))}</div><div class="aw-body"><button type="button" class="aw-card ld" data-awz="${i}" aria-label="${esc(pname(a.player_id))}"></button><div data-aws="${i}"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div></div></div>`).join('')}</div>` });
-  const imgs = {};
-  it.forEach((a, i) => awardImg(a.image, A.key).then(url => { imgs[i] = url; const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b) { b.classList.remove('ld'); b.innerHTML = `<img src="${url}" alt="${esc(pname(a.player_id))} – ${esc(title(a))}">`; } }).catch(() => { const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b) b.classList.remove('ld'); }));
+  const mo = modal({ title: L('Premi stagionali', 'Season awards'), wide: true,
+    body: `${seasons.length > 1 ? `<div style="margin:0 0 10px">${segHtml('awSeason', seasons.map(n => ({ v: n, l: awSeasonShort(n) })), seasons[0])}</div>` : ''}<p class="tiny muted" style="margin:0 0 10px">${L('Statistiche del solo calcio a 8.', '8-a-side stats only.')}</p><div id="awBody"></div>` });
+  const head = mo.el.querySelector('.modal header h2');
+  let imgs = {}, it = [], cur = null;
+  const show = async season => {
+    cur = season; imgs = {}; it = A.items.filter(a => a.season === season);
+    if (head) head.textContent = `${L('Premi stagionali', 'Season awards')} ${awSeasonShort(season)}`;
+    const box = mo.el.querySelector('#awBody'); if (!box) return;
+    box.innerHTML = `<div class="aw-grid">${it.map((a, i) => `<div class="aw-box"><div class="aw-head">${esc(title(a))}</div><div class="aw-body"><button type="button" class="aw-card ld" data-awz="${i}" aria-label="${esc(pname(a.player_id))}"></button><div data-aws="${i}"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div></div></div>`).join('')}</div>`;
+    const key = A.keys?.[season];
+    it.forEach((a, i) => (key ? awardImg(a.image, key) : Promise.reject()).then(url => { if (cur !== season) return; imgs[i] = url; const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b) { b.classList.remove('ld'); b.innerHTML = `<img src="${url}" alt="${esc(pname(a.player_id))} – ${esc(title(a))}">`; } }).catch(() => { const b = mo.el.querySelector(`[data-awz="${i}"]`); if (b && cur === season) b.classList.remove('ld'); }));
+    const sid = S.boot.seasons.find(x => x.name === season)?.id;
+    try {
+      const [rows, ms] = await Promise.all([rpc('get_stats', { p_token: T(), p_season: sid, p_type: 8 }), rpc('get_matches', { p_token: T(), p_season: sid })]);
+      if (cur !== season) return;
+      it.forEach((a, i) => { const b = mo.el.querySelector(`[data-aws="${i}"]`); if (b) b.outerHTML = awardBox(a, awardStats(a.player_id, rows, ms)); });
+    } catch (e) { if (cur === season) $$('[data-aws]', mo.el).forEach(b => b.innerHTML = `<div class="small muted">${esc(e.message)}</div>`); }
+  };
+  if (mo.el.querySelector('#awSeason')) bindSeg(mo.el.querySelector('#awSeason'), val => { if (val === cur) return; $$('#awSeason button', mo.el).forEach(b => b.classList.toggle('on', b.dataset.v === val)); show(val); });
   mo.el.addEventListener('click', e => { const z = e.target.closest('[data-awz]'); if (!z || !imgs[z.dataset.awz]) return; const a = it[z.dataset.awz]; modal({ title: `${title(a)} · ${pname(a.player_id)}`, body: `<img class="aw-zoom" src="${imgs[z.dataset.awz]}" alt="">` }); });
-  const sid = S.boot.seasons.find(s => s.name === it[0].season)?.id;
-  try {
-    const [rows, ms] = await Promise.all([rpc('get_stats', { p_token: T(), p_season: sid, p_type: 8 }), rpc('get_matches', { p_token: T(), p_season: sid })]);
-    it.forEach((a, i) => { const b = mo.el.querySelector(`[data-aws="${i}"]`); if (b) b.outerHTML = awardBox(a, awardStats(a.player_id, rows, ms)); });
-  } catch (e) { $$('[data-aws]', mo.el).forEach(b => b.innerHTML = `<div class="small muted">${esc(e.message)}</div>`); }
+  show(seasons[0]);
 }
 
 // ------------------------------------------------------------- CLASSIFICA
@@ -823,7 +838,7 @@ async function viewClassifica(v) {
   let data = null, box = null;
   v.querySelector('[data-hllist]').onclick = openHighlightList;
   if ($('#awBtn')) $('#awBtn').onclick = openAwards;
-  if (S.awards && !awardsReady() && S.awards.reveal_at && Date.now() + (S.awardsOff || 0) >= Date.parse(S.awards.reveal_at)) awardsCheck();
+  if (awardsDue()) awardsCheck();
   bindSeg($('#stRole'), val => { u.statRole = val; $$('#stRole button').forEach(b => b.classList.toggle('on', b.dataset.v === val)); draw(); });
   bindSeg($('#stType'), async val => { u.statType = val; S.stats = null; viewClassifica(v); });
   $('#stSearch').oninput = e => { u.statSearch = e.target.value; draw(); };
