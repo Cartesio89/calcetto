@@ -763,7 +763,7 @@ async function openPlayer(id) {
   // calcio a 8: presenze, gol e media voto (voto pulito, solo partite con votazione chiusa e almeno N voti)
   const c8 = d.c8 || {}, row = (lab, x = {}) => `<tr><td>${lab}</td><td><b>${x.pg ?? 0}</b></td><td><b>${x.gol ?? 0}</b></td><td>${x.mv == null ? none : `<b>${fmtVote(x.mv)}</b> <span class="tiny muted">(${x.nmv})</span>`}</td></tr>`;
   const statBox = `<div class="pstat"><h4 style="margin:6px 0 4px;font-size:15px">${L('Calcio a 8', '8-a-side')}</h4><table><thead><tr><th></th><th>${L('Presenze', 'Apps')}</th><th>${L('Gol', 'Goals')}</th><th title="${esc(L(`Media del voto pulito, solo partite con almeno ${settings('min_votes')} voti e votazione chiusa`, `Average plain rating, only matches with at least ${settings('min_votes')} ratings and voting closed`))}">${L('Media voto', 'Avg rating')}</th></tr></thead><tbody>
-      ${row(`${L('Stagione', 'Season')} ${esc(awSeasonShort(d.season_name))}`, c8.season)}${row(L('Totale', 'All time'), c8.all)}</tbody></table></div>`;
+      ${(c8.by_season || []).map(x => row(`${L('Stagione', 'Season')} ${esc(awSeasonShort(x.season))}`, x)).join('')}${row(`<b>${L('Totale', 'All time')}</b>`, c8.all)}</tbody></table></div>`;
   modal({ title: L('Scheda giocatore', 'Player profile'), body: `<div class="pcard">
       <div class="ph">${d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.full_name || d.name)}" onerror="this.remove()">` : `<span class="ini">${esc(ini)}</span>`}</div>
       <div><h3 class="nmb">${esc(d.full_name || d.name)}${d.is_gk ? ' <span class="pill">GK</span>' : ''}</h3>
