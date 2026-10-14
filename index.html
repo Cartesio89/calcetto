@@ -1078,8 +1078,12 @@ async function showVotes(m) {
   let vs; try { vs = await rpc('admin_get_votes', { p_token: T(), p_match: m.id }); } catch (e) { return toast(e.message, true); }
   const ps = m.players.map(p => p.id).sort((a, b) => pname(a).localeCompare(pname(b), 'it'));
   const byVoter = {}; vs.forEach(x => (byVoter[x.voter] ||= {})[x.target] = x.value);
+  // intestazione corta: cognome; se due giocatori hanno la stessa sigla (es. Felici S. / Felici D.) aggiungo l'iniziale
+  const short = id => pname(id).split(' ')[0].slice(0, 6);
+  const dup = {}; ps.forEach(id => dup[short(id)] = (dup[short(id)] || 0) + 1);
+  const head = id => { const n = pname(id).split(' '); return dup[short(id)] > 1 && n[1] ? `${short(id)} ${n[1].replace('.', '')[0]}.` : short(id); };
   const rows = ps.map(voter => `<tr><td>${esc(pname(voter))}</td>${ps.map(t => `<td>${t === voter ? '·' : fmtVote(byVoter[voter]?.[t])}</td>`).join('')}</tr>`).join('');
-  modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(pname(t).split(' ')[0].slice(0, 6))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
+  modal({ title: 'Voti (righe = chi vota)', wide: true, body: vs.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>Votante</th>${ps.map(t => `<th title="${esc(pname(t))}">${esc(head(t))}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table></div>` : '<div class="empty">Nessun voto.</div>' });
 }
 function fantaLockWhen(lock) {
   if (!lock) return '';
@@ -1767,7 +1771,8 @@ async function viewCoppie(v) {
 
 // ------------------------------------------------------------- FANTANUNNAREE
 async function loadFanta(force) {
-  if (force || !S.fanta || S.fanta.season_id !== S.season) S.fanta = await rpc('fanta_overview', { p_token: T(), p_season: S.season });
+  // dati fanta in memoria al massimo 1 minuto: chiusura voti, classifica e prezzi arrivano senza ricaricare la pagina
+  if (force || !S.fanta || S.fanta.season_id !== S.season || Date.now() - (S.fantaAt || 0) > 60000) { S.fanta = await rpc('fanta_overview', { p_token: T(), p_season: S.season }); S.fantaAt = Date.now(); }
   return S.fanta;
 }
 // Ruolo P: se nessun portiere ha giocato -> voto d'ufficio; se il mio portiere ha giocato -> il suo punteggio;
@@ -1888,7 +1893,7 @@ async function viewFanta(v) {
   v.innerHTML = `<div class="section-title"><h2>FantaNunnaree</h2><div class="spacer"></div>${segHtml('fTab', [...(isGuest() ? [] : [{ v: 'squadra', l: L('La mia squadra', 'My team') }]), { v: 'mercato', l: isGuest() ? L('Quotazioni', 'Prices') : L('Mercato', 'Market') }, { v: 'giornate', l: L('Giornate', 'Matchdays') }, { v: 'classifica', l: L('Classifica', 'Table') }, { v: 'squadre', l: L('Squadre', 'Teams') }, { v: 'regole', l: L('Regole', 'Rules') }], u.fantaTab)}</div><div id="fv"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>`;
   bindSeg($('#fTab'), val => { if (val === u.fantaTab) return; u.fantaTab = val; navPush(); viewFanta(v); });
   let F; try { F = await loadFanta(); } catch (e) { if ($('#fv')) $('#fv').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
-  if (S.season === S.boot.active_season && ['squadra', 'giornate'].includes(u.fantaTab)) await loadMatches().catch(() => {});
+  if (S.season === S.boot.active_season && ['squadra', 'giornate', 'classifica'].includes(u.fantaTab)) await loadMatches().catch(() => {});
   const fv = $('#fv'); if (S.tab !== 'fanta' || !fv) return;
   const price = {}; F.prices.forEach(p => price[p.id] = p);
   const mine = F.owners.find(o => o.owner_id === me().id) || { credits: settings('fanta_budget'), changes_used: 0, roster: [] };
@@ -1987,9 +1992,14 @@ async function viewFanta(v) {
       { k: 'price', label: L('Prezzo', 'Price'), cls: 'strong' },
       { k: 'delta', label: L('Var.', 'Chg.'), title: L('Variazione rispetto alla quotazione di inizio stagione', 'Change from the start-of-season price'), fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
       { k: 'pres', label: L('PG', 'MP'), title: L('Presenze stagione (calcio a 8 e 11)', 'Season appearances (8- and 11-a-side)') },
+      { k: 'fv', label: L('FV', 'FS'), title: L(`Media fantavoto della stagione (voto + bonus/malus), solo partite con almeno ${settings('min_votes')} voti e votazione chiusa`, `Season average fanta score (rating + bonus/malus), only matches with at least ${settings('min_votes')} ratings and voting closed`), fmt: r => r.fv == null ? '<span class="muted">–</span>' : fmtVote(r.fv) },
       { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? `<span class="pill ok">${L('In rosa', 'In squad')}</span>` : r.id === me().id ? `<span class="pill">${L('sei tu', 'you')}</span>` : canTrade ? `<button class="btn sm ${r.price <= maxSpend && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > maxSpend || mine.roster.length >= rosterSize ? `disabled title="${esc(r.price > mine.credits || mine.roster.length >= rosterSize ? '' : L(`Devi tenere almeno ${freeSlots - 1} crediti per completare la rosa`, `You must keep at least ${freeSlots - 1} credits to complete your squad`))}"` : ''}>${L('Compra', 'Buy')}</button>` : '' },
     ];
-    const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
+    // media fantavoto stagione (la stessa colonna V+ della classifica)
+    const fvKey = S.season + '|all';
+    if (!S.fvAvg || S.fvAvg.key !== fvKey) { try { const st = await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: null }); S.fvAvg = { key: fvKey, map: Object.fromEntries(st.map(x => [x.id, x.vplus])) }; } catch { S.fvAvg = { key: fvKey, map: {} }; } }
+    if (S.tab !== 'fanta' || u.fantaTab !== 'mercato' || !$('#fv')) return;
+    const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base, fv: S.fvAvg.map[p.id] ?? null }));
     fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">${L('Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.', 'Prices update after every match based on the current season. The first FantaNunnaree matchday is a trial: it does not move prices.')}</span></div><div id="mt"></div>`;
     const draw = () => {
       let rows = rowsAll; if (u.marketSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.marketSearch.toLowerCase()));
@@ -2030,14 +2040,17 @@ async function viewFanta(v) {
   if (u.fantaTab === 'classifica') {
     const tot = {};
     F.owners.forEach(o => tot[o.owner_id] = { id: o.owner_id, name: pname(o.owner_id), pts: 0, g: 0, gol: 0, best: null, prov: false });
-    F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata').forEach(g => giornataScores(g).forEach(s => {
+    // in classifica entrano solo le giornate con le votazioni chiuse: il punteggio è definitivo
+    F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata' && g.final).forEach(g => giornataScores(g).forEach(s => {
       const t = tot[s.owner] ||= { id: s.owner, name: pname(s.owner), pts: 0, g: 0, gol: 0, best: null, prov: false };
-      t.pts += s.total; t.g++; t.gol += s.goals; t.best = Math.max(t.best ?? -Infinity, s.total); if (!g.final) t.prov = true;
+      t.pts += s.total; t.g++; t.gol += s.goals; t.best = Math.max(t.best ?? -Infinity, s.total);
     }));
+    const waiting = F.giornate.filter(g => g.state === 'bloccato' && g.status === 'giocata' && !g.final).map(g => ({ ...g, votes_close_at: S.matches?.list?.find(m => m.id === g.match_id)?.votes_close_at }));
     const rows = Object.values(tot).sort((a, b) => (Math.round(b.pts * 100) - Math.round(a.pts * 100)) || b.gol - a.gol || a.name.localeCompare(b.name, 'it'));
     fv.innerHTML = rows.length ? `<div class="tbl-wrap"><table class="t"><thead><tr><th>${L('Squadra', 'Team')}</th><th>${L('Punti', 'Points')}</th><th>${L('Gol', 'Goals')}</th><th>${L('Giornate', 'Matchdays')}</th><th>${L('Migliore', 'Best')}</th></tr></thead><tbody>
-      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}${r.prov ? ` <span class="tiny muted">${L('prov.', 'prov.')}</span>` : ''}</td><td>${r.gol}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
-      </tbody></table></div><div class="legend">${L('Classifica cumulativa della stagione. A parità di punti vince chi ha più gol segnati dai giocatori schierati; poi ordine alfabetico. “prov.” = una giornata ha ancora le votazioni aperte.', 'Cumulative season table. On equal points, the team whose picked players scored more goals ranks higher; then alphabetical order. “prov.” = a matchday still has voting open.')}</div>` : `<div class="card empty">${L('Ancora nessuna squadra.', 'No teams yet.')}</div>`;
+      ${rows.map((r, i) => `<tr class="${r.id === me().id ? 'me' : ''}"><td><span class="rank">${i + 1}</span>${esc(r.name)}</td><td class="strong">${fmtNum(Math.round(r.pts * 100) / 100)}</td><td>${r.gol}</td><td>${r.g}</td><td>${r.best == null ? '–' : fmtNum(r.best)}</td></tr>`).join('')}
+      </tbody></table></div><div class="legend">${L('Classifica cumulativa della stagione: per ogni giornata si sommano i fantavoti dei giocatori schierati, e la giornata entra in classifica solo alla chiusura delle votazioni. A parità di punti vince chi ha più gol segnati dai giocatori schierati; poi ordine alfabetico.', 'Cumulative season table: each matchday adds up the fanta scores of the picked players, and a matchday enters the table only when voting closes. On equal points, the team whose picked players scored more goals ranks higher; then alphabetical order.')}</div>` : `<div class="card empty">${L('Ancora nessuna squadra.', 'No teams yet.')}</div>`;
+    if (waiting.length) fv.insertAdjacentHTML('afterbegin', `<div class="card small" style="margin-bottom:14px">⏳ ${waiting.map(g => L(`La giornata del <b>${esc(fmtDate(g.date))}</b> entra in classifica alla chiusura delle votazioni${g.votes_close_at ? ` (<b>${esc(fmtDateTime(g.votes_close_at))}</b>)` : ''}. Il parziale è in Giornate.`, `The <b>${esc(fmtDate(g.date))}</b> matchday enters the table when voting closes${g.votes_close_at ? ` (<b>${esc(fmtDateTime(g.votes_close_at))}</b>)` : ''}. The provisional score is in Matchdays.`)).join('<br>')}</div>`);
     fv.onclick = null;
   }
 
