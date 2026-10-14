@@ -212,12 +212,20 @@ details.box > div{padding:0 14px 12px}
 .hl-btn{display:inline-flex;align-items:center;gap:6px;border:0;border-radius:999px;padding:6px 13px;font:inherit;font-size:13px;font-weight:800;letter-spacing:.2px;background:var(--accent);color:var(--accent-ink);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.25);white-space:nowrap}
 .hl-btn:hover{filter:brightness(1.06)}
 .hl-btn svg{width:12px;height:12px;flex:none}
-.match .hl-row{margin:8px 0 2px}
+.match .hl-row{margin:8px 0 2px;display:flex;align-items:center;gap:8px}
+.match .hl-row .yt-btn{margin-left:auto}
+.yt-btn{background:#ff0033;color:#fff;text-decoration:none}
+.yt-btn svg{width:13px;height:13px}
+.mx-shirts .hl-mid{display:flex;flex-direction:column;align-items:center;gap:6px}
+.mx-shirts .hl-mid .hl-btn{padding:4px 10px;font-size:12px;gap:5px}
+.mx-shirts .hl-mid .hl-btn svg{width:10px;height:10px}
+.hl-item .hl-yt{flex:none;width:34px;height:34px;border-radius:50%;background:#ff0033;color:#fff;display:grid;place-items:center;font-weight:900;font-size:12px;letter-spacing:.3px;text-decoration:none}
+.hl-item .hl-acts{display:flex;align-items:center;gap:8px;flex:none}
 .mx-shirts .hl-mid{align-self:flex-end;margin-bottom:16px;position:relative;z-index:3}
 .tyrow{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;max-width:100%}
 .hl-list-btn{flex:none;padding:6px 11px}
 .tyrow .seg{flex:none;flex-wrap:nowrap}
-@media (max-width:420px){.tyrow .seg button{padding:6px 9px}.hl-list-btn{padding:6px 9px;font-size:12px;gap:5px}}
+@media (max-width:420px){.mx-shirts .hl-mid .hl-btn{padding:4px 8px;font-size:11.5px}.tyrow .seg button{padding:6px 9px}.hl-list-btn{padding:6px 9px;font-size:12px;gap:5px}}
 @media (max-width:360px){.tyrow .seg button{padding:6px 7px}.hl-list-btn .hl-txt{display:none}.hl-list-btn{padding:8px}}
 .hl-items{display:flex;flex-direction:column;gap:8px}
 .hl-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;cursor:pointer}
@@ -948,7 +956,11 @@ async function viewClassifica(v) {
 // ------------------------------------------------------------- PARTITE
 async function loadMatches(force) {
   // la lista resta in memoria al massimo 1 minuto: voti, votanti e risultati arrivano aggiornati senza ricaricare la pagina
-  if (force || !S.matches || S.matches.season !== S.season || Date.now() - (S.matches.at || 0) > 60000) S.matches = { season: S.season, at: Date.now(), list: await rpc('get_matches', { p_token: T(), p_season: S.season }) };
+  if (force || !S.matches || S.matches.season !== S.season || Date.now() - (S.matches.at || 0) > 60000) {
+    const [list, vids] = await Promise.all([rpc('get_matches', { p_token: T(), p_season: S.season }), rpc('get_match_videos', { p_token: T(), p_season: S.season }).catch(() => [])]);
+    const yt = Object.fromEntries((vids || []).map(v => [v.id, v.yt])); list.forEach(m => { m.yt = yt[m.id] || null; });
+    S.matches = { season: S.season, at: Date.now(), list };
+  }
   return S.matches.list;
 }
 const seasonInfo = () => S.boot.seasons.find(s => s.id === S.season);
@@ -985,21 +997,31 @@ const HIGHLIGHTS = [
   { id: 13, src: 'video/13_rigore_fasullo.mp4' },          // 18/11/2025
 ];
 const highlightOf = m => HIGHLIGHTS.find(h => h.id === Number(m.id)) || null;
+// video YouTube della partita (link salvato dai presidenti nel database)
+const ytOf = m => m?.yt || null;
+const ytSvg = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M23 7.2a3 3 0 0 0-2.1-2.1C19 4.6 12 4.6 12 4.6s-7 0-8.9.5A3 3 0 0 0 1 7.2 31 31 0 0 0 .6 12a31 31 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.9.5 8.9.5 8.9.5s7 0 8.9-.5a3 3 0 0 0 2.1-2.1 31 31 0 0 0 .4-4.8 31 31 0 0 0-.4-4.8zM9.7 15.1V8.9l5.8 3.1z"/></svg>';
+const ytBtn = m => ytOf(m) ? `<a class="hl-btn yt-btn" data-yt href="${esc(ytOf(m))}" target="_blank" rel="noopener">${ytSvg}YouTube</a>` : '';
+const hasVideo = m => !!(highlightOf(m) || ytOf(m));
 const hlBtn = (m, cls = '') => highlightOf(m) ? `<button type="button" class="hl-btn ${cls}" data-hl="${m.id}"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg>Highlights</button>` : '';
 const hlListBtn = () => `<button type="button" class="hl-btn hl-list-btn" data-hllist aria-label="Highlights"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg><span class="hl-txt">Highlights</span></button>`;
 async function openHighlightList() {
   let list;
   try { list = await loadMatches(); } catch (e) { return toast(e.message, true); }
-  const items = list.filter(m => highlightOf(m)).sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const items = list.filter(m => hasVideo(m)).sort((a, b) => String(b.date).localeCompare(String(a.date)));
   const seasonName = seasonInfo()?.name || '';
   const play = '<span class="hl-play"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 1.2v9.6L10.6 6z" fill="currentColor"/></svg></span>';
-  const body = items.length ? `<div class="hl-items">${items.map(m => `<button type="button" class="hl-item" data-hlid="${m.id}">
+  const body = items.length ? `<div class="hl-items">${items.map(m => `<div class="hl-item" role="button" tabindex="0" data-hlid="${m.id}">
       <div class="hl-main"><div class="hl-top"><b>${esc(fmtDate(m.date))}</b><span class="small muted">${esc(typeLabel(m.type))}</span></div>
         <div class="hl-sc"><span class="dot W"></span> ${esc(TW)} ${m.status === 'giocata' ? `${m.score_w} – ${m.score_d}` : 'vs'} ${esc(TD)} <span class="dot D"></span></div>
-        ${m.note ? `<div class="hl-note">${esc(m.note)}</div>` : ''}</div>${play}</button>`).join('')}</div>`
+        ${m.note ? `<div class="hl-note">${esc(m.note)}</div>` : ''}</div><div class="hl-acts">${ytOf(m) ? `<a class="hl-yt" data-yt href="${esc(ytOf(m))}" target="_blank" rel="noopener" aria-label="YouTube">YT</a>` : ''}${highlightOf(m) ? play : ''}</div></div>`).join('')}</div>`
     : `<div class="empty">${L('Nessun highlight in questa stagione.', 'No highlights this season.')}</div>`;
   const mo = modal({ title: `Highlights ${seasonName}`.trim(), body });
-  mo.el.addEventListener('click', e => { const it = e.target.closest('[data-hlid]'); if (it) { const m = items.find(x => x.id === Number(it.dataset.hlid)); if (m) openHighlight(m); } });
+  mo.el.addEventListener('click', e => {
+    if (e.target.closest('[data-yt]')) return; // il link YT si apre da solo
+    const it = e.target.closest('[data-hlid]'); if (!it) return;
+    const m = items.find(x => x.id === Number(it.dataset.hlid)); if (!m) return;
+    if (highlightOf(m)) openHighlight(m); else if (ytOf(m)) window.open(ytOf(m), '_blank', 'noopener');
+  });
 }
 function openHighlight(m) {
   const h = highlightOf(m); if (!h) return;
@@ -1059,7 +1081,7 @@ async function viewPartite(v) {
       return `<div class="card match" data-id="${m.id}">
       <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">${L('apri per i dettagli ›', 'tap for details ›')}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
       ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
-      ${highlightOf(m) ? `<div class="hl-row">${hlBtn(m)}</div>` : ''}
+      ${hasVideo(m) ? `<div class="hl-row">${hlBtn(m)}${ytBtn(m)}</div>` : ''}
       ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} ${L('con i', 'with')} ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? L('pareggio', 'draw') : (me.team === 'W') === (m.score_w > m.score_d) ? L('vittoria', 'win') : L('sconfitta', 'loss')}</b>` : ''}${me.goals ? ` · ${me.goals} ${L('gol', me.goals === 1 ? 'goal' : 'goals')}` : ''}</div>` : ''}
       <div class="score">
         <div class="side"><span class="team"><span class="dot W"></span>${esc(TW)}</span><span class="tiny muted">${nw} ${L('giocatori', 'players')}</span></div>
@@ -1077,7 +1099,7 @@ async function viewPartite(v) {
   try { list = await loadMatches(); } catch (e) { if ($('#mlist')) $('#mlist').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
   if (S.tab !== 'partite' || !$('#mlist')) return;
   draw();
-  $('#mlist').onclick = e => { const hb = e.target.closest('[data-hl]'); if (hb) { e.stopPropagation(); const hm = S.matches.list.find(x => x.id === Number(hb.dataset.hl)); if (hm) openHighlight(hm); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
+  $('#mlist').onclick = e => { if (e.target.closest('[data-yt]')) return; const hb = e.target.closest('[data-hl]'); if (hb) { e.stopPropagation(); const hm = S.matches.list.find(x => x.id === Number(hb.dataset.hl)); if (hm) openHighlight(hm); return; } const c = e.target.closest('.match'); if (c) openMatch(Number(c.dataset.id)); };
 }
 function openMatch(id) {
   const m = S.matches.list.find(x => x.id === id); if (!m) return;
@@ -1107,7 +1129,7 @@ function openMatch(id) {
         <div class="mx-mid"><div class="mx-score">${played ? `${m.score_w} - ${m.score_d}` : 'vs'}</div><div class="mx-sub">${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</div></div>
         <div class="mx-team r">${esc(TD)}</div>
       </div>
-      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="${L('Maglia', 'Shirt')} ${esc(TW)}" onerror="this.style.visibility='hidden'">${highlightOf(m) ? `<div class="hl-mid">${hlBtn(m)}</div>` : ''}<img src="${MAGLIE.D}" alt="${L('Maglia', 'Shirt')} ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
+      <div class="mx-shirts"><img src="${MAGLIE.W}" alt="${L('Maglia', 'Shirt')} ${esc(TW)}" onerror="this.style.visibility='hidden'">${hasVideo(m) ? `<div class="hl-mid">${ytBtn(m)}${hlBtn(m)}</div>` : ''}<img src="${MAGLIE.D}" alt="${L('Maglia', 'Shirt')} ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
     </div>`;
   const pres = isPres();
   const actions = [];
@@ -1120,6 +1142,9 @@ function openMatch(id) {
   const fantaCtl = pres && S.season === S.boot.active_season && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
       <div class="small muted" style="margin-bottom:8px">${m.fanta_state === 'bloccato' ? '<b>Giornata valida</b>: questa partita usa le formazioni bloccate con lo STOP.' : 'Nessuna giornata fanta su questa partita. Le formazioni si bloccano con il pulsante STOP in Partite o nel FantaNunnaree, e vanno alla prima partita a 8 o a 11 caricata.'}</div>
       ${m.fanta_state !== 'chiuso' ? '<div class="row"><button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button></div>' : ''}</div>` : '';
+  const ytCtl = pres ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">Video YouTube</h2>
+      <div class="small muted" style="margin-bottom:8px">${ytOf(m) ? 'Link attuale: <a href="' + esc(ytOf(m)) + '" target="_blank" rel="noopener">' + esc(ytOf(m)) + '</a>' : 'Nessun video YouTube per questa partita.'}</div>
+      <div class="row"><input type="url" id="ytUrl" placeholder="Aggiungi link YT (es. https://youtu.be/...)" value="${esc(ytOf(m) || '')}" style="flex:1;min-width:200px"><button class="btn sm primary" data-ytsave>Salva</button>${ytOf(m) ? '<button class="btn sm danger" data-ytdel>Rimuovi</button>' : ''}</div></div>` : '';
   const voteCtl = pres && played && m.type !== 5 ? `<div class="card"><h2 style="font-size:19px">Votazioni</h2>
       <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · <span data-voters>${m.voters}</span> votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
@@ -1133,7 +1158,7 @@ function openMatch(id) {
       ${canFv ? `<p class="tiny muted" id="mxNote" style="margin:4px 0">${mode === 'fv' ? fvNote() : ''}</p>` : ''}
       ${played && m.votes_open ? `<p class="tiny muted">${L('I voti compaiono al centro quando si chiudono le votazioni.', 'Ratings appear in the middle when voting closes.')}</p>` : ''}
       ${iconLegend()}
-      ${fantaCtl}${voteCtl}`,
+      ${fantaCtl}${voteCtl}${ytCtl}`,
     actions
   });
   const redraw = () => { const c = mo.el.querySelector('.mx-cols'); if (c) c.innerHTML = col('W') + col('D'); const n = mo.el.querySelector('#mxNote'); if (n) n.innerHTML = mode === 'fv' ? fvNote() : ''; };
@@ -1147,6 +1172,12 @@ function openMatch(id) {
   if (mo.el.querySelector('#mxMode')) { bindSeg(mo.el.querySelector('#mxMode'), setMode); if (mode === 'fv') { mode = 'voto'; setMode('fv'); } }
   mo.el.addEventListener('click', async e => {
     const vt = e.target.closest('.mx-cols .vt[title]'); if (vt && mode === 'fv') { toast(vt.getAttribute('title')); return; }
+    if (e.target.closest('[data-ytsave], [data-ytdel]')) {
+      const url = e.target.closest('[data-ytdel]') ? '' : (mo.el.querySelector('#ytUrl')?.value || '').trim();
+      if (!url && !e.target.closest('[data-ytdel]')) return toast('Incolla prima il link YouTube.', true);
+      if (await act(() => rpc('admin_set_match_yt', { p_token: T(), p_match: m.id, p_url: url }), url ? 'Video YouTube salvato' : 'Video YouTube rimosso')) { mo.close(); await loadMatches(true); if (S.tab === 'partite') renderTab(); openMatch(m.id); }
+      return;
+    }
     if (e.target.closest('[data-hl]')) { openHighlight(m); return; }
     const f = e.target.closest('[data-fanta]');
     if (f) { if (!await confirmBox('Annullare la giornata fanta di questa partita? Le formazioni bloccate per questa partita vengono cancellate.', 'Annulla giornata', true)) return; if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
