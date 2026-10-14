@@ -755,9 +755,10 @@ async function openPlayer(id) {
   const where = d.birth_place ? esc(d.birth_place) : '';
   const ini = String(d.name || '').split(' ').map(x => x[0] || '').join('').slice(0, 2).toUpperCase();
   modal({ title: L('Scheda giocatore', 'Player profile'), body: `<div class="pcard">
-      <div class="ph">${d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.name)}" onerror="this.remove()">` : `<span class="ini">${esc(ini)}</span>`}</div>
-      <div><h3 class="nmb">${esc(d.name)}${d.is_gk ? ' <span class="pill">GK</span>' : ''}</h3>
+      <div class="ph">${d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.full_name || d.name)}" onerror="this.remove()">` : `<span class="ini">${esc(ini)}</span>`}</div>
+      <div><h3 class="nmb">${esc(d.full_name || d.name)}${d.is_gk ? ' <span class="pill">GK</span>' : ''}</h3>
         <dl><dt>${L('Ruolo', 'Role')}</dt><dd>${d.role ? esc(d.role) : none}</dd>
+          <dt>${L('Nazionalità', 'Nationality')}</dt><dd>${d.nationality ? esc(d.nationality) : none}</dd>
           <dt>${L('Nato a', 'Born in')}</dt><dd>${where || none}</dd>
           <dt>${L('Nato il', 'Born on')}</dt><dd>${born || none}</dd>
           <dt class="desc" style="margin-top:8px">${L('Descrizione', 'About')}</dt><dd class="desc">${d.description ? esc(d.description) : none}</dd></dl>
