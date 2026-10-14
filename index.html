@@ -1361,6 +1361,13 @@ function editResult(m, openVotesDefault) {
       if (sw === '' || sd === '') { toast('Inserisci il risultato finale', true); return false; }
       const [cw, cd] = calc();
       if ((Number(sw) !== cw || Number(sd) !== cd) && !await confirmBox(`Il risultato ${sw}–${sd} non coincide con i marcatori inseriti (${cw}–${cd}). Salvo lo stesso?`, 'Salva lo stesso')) return false;
+      // gol subiti: se nessuno della squadra li ha e c'è un solo portiere (GK), vanno a lui
+      for (const t of ['W', 'D']) {
+        const ids = Object.keys(st).filter(id => st[id].team === t);
+        if (ids.some(id => st[id].conceded > 0)) continue;
+        const gks = ids.filter(id => isGkId(Number(id)));
+        if (gks.length === 1) st[gks[0]].conceded = Number(t === 'W' ? sd : sw);
+      }
       const stats = Object.entries(st).map(([id, s]) => ({ player_id: Number(id), ...s }));
       const ok = await act(() => rpc('admin_save_result', { p_token: T(), p_match: m.id, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: $('#openVotes', el).checked && !$('#openVotes', el).disabled }), 'Risultato salvato');
       if (ok) await refreshAll();
@@ -1602,7 +1609,8 @@ function parseTabellino(grid, players) {
   for (const t of ['W', 'D']) {
     const tr = rows.filter(r => r.team === t);
     if (tr.some(r => r.ev.conceded)) continue;
-    const gks = tr.filter(r => r.gk);
+    // portiere: segnato (GK) nel testo oppure GK nell'anagrafica
+    const gks = tr.filter(r => r.gk || (r.pid != null && players.find(p => p.id === r.pid)?.is_gk));
     const opp = t === 'W' ? score.D : score.W;
     if (gks.length === 1) { gks[0].ev.conceded = opp; gks[0].autoConceded = true; }
     else if (opp > 0) warn.push(`${t === 'W' ? 'Chiari' : 'Scuri'}: ${gks.length ? 'più portieri' : 'nessun portiere (GK)'} indicato, gol subiti non assegnati. Inseriscili a mano se serve.`);
