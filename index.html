@@ -834,8 +834,8 @@ async function viewClassifica(v) {
       ${awardsReady() ? '<div class="aw-wrap"><div class="aw-col">' : ''}${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"> <span id="stOrg"></span></label>${awardsReady() ? `</div>${awardsBtn()}</div>` : ''}</div>
     <div id="stTable"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>
-    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree). Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
-      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus). Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
+    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree), solo partite a 8 e a 11 come nel FantaNunnaree. Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
+      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus), only 8- and 11-a-side matches as in FantaNunnaree. Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
   v.querySelector('[data-hllist]').onclick = openHighlightList;
   if ($('#awBtn')) $('#awBtn').onclick = openAwards;
@@ -870,7 +870,7 @@ async function viewClassifica(v) {
       tie: tieExcept(null) }, { k: 'rig', label: L('Rig', 'Pen'), title: L('Gol su rigore', 'Penalty goals') }, { k: 'ag', label: L('AG', 'OG'), title: L('Autogol', 'Own goals') },
     { k: 'gs', label: L('GS', 'GC'), title: L('Gol subiti', 'Goals conceded') }, { k: 'rp', label: L('RP', 'PS'), title: L('Rigori parati', 'Penalties saved') }, { k: 'rs', label: L('RS', 'PM'), title: L('Rigori sbagliati', 'Penalties missed') },
     { k: 'mv', label: L('Voto', 'Rating'), title: L('Media voto pulita', 'Plain average rating'), cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
-    { k: 'vplus', label: L('V+', 'F+'), title: L('Media fantavoto (voto + bonus/malus)', 'Average fanta score (rating + bonus/malus)'), cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
+    { k: 'vplus', label: L('V+', 'F+'), title: L('Media fantavoto (voto + bonus/malus), solo calcio a 8 e 11', 'Average fanta score (rating + bonus/malus), 8- and 11-a-side only'), cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
     { k: 'ppres', label: L('%P', 'App%'), tie: tieExcept('pres'), title: L(`Presenze: partite giocate ÷ partite organizzate${org != null ? ` (${org})` : ''}`, `Appearances: matches played ÷ matches organised${org != null ? ` (${org})` : ''}`), sv: r => org ? r.pg / org : null, fmt: r => org ? Math.round(r.pg / org * 100) + '%' : '–' },
   ];
   data = S.stats; box = $('#stTable');
@@ -1918,12 +1918,8 @@ async function fantaPlayerStats() {
   const key = S.season;
   if (S.fps && S.fps.key === key && Date.now() - S.fps.at < 60000) return S.fps.map;
   const map = {};
-  try { (await loadMatches()).filter(m => m.status === 'giocata' && [8, 11].includes(m.type)).forEach(m => m.players.forEach(p => { (map[p.id] ||= { pg: 0, fv: null, n: 0 }).pg++; })); } catch {}
-  try {
-    const [a, b] = await Promise.all([8, 11].map(t => rpc('get_stats', { p_token: T(), p_season: S.season, p_type: t })));
-    const acc = {}; [...a, ...b].forEach(x => { if (x.vplus == null || !x.nmv) return; const o = acc[x.id] ||= { s: 0, n: 0 }; o.s += Number(x.vplus) * x.nmv; o.n += x.nmv; });
-    Object.entries(acc).forEach(([id, o]) => { (map[id] ||= { pg: 0, fv: null, n: 0 }).fv = Math.round(o.s / o.n * 100) / 100; map[id].n = o.n; });
-  } catch {}
+  // stessa fonte della classifica: pgf = partite a 8 e 11, vplus = media fantavoto a 8 e 11
+  try { (await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: null })).forEach(x => { map[x.id] = { pg: x.pgf ?? 0, fv: x.vplus ?? null, n: x.nfv ?? 0 }; }); } catch {}
   S.fps = { key, at: Date.now(), map };
   return map;
 }
