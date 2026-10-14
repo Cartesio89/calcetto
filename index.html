@@ -1029,8 +1029,20 @@ function openMatch(id) {
   if (isPres() && m.votes_open) loadMatches(true).then(list => { const f = list.find(x => x.id === id); const el = $('[data-voters]'); if (f && el) el.textContent = f.voters; }).catch(() => {});
   const played = m.status === 'giocata';
   const minV = settings('min_votes');
+  // Voto | Fantavoto: il fantavoto (voto + bonus/malus) c'è solo per le partite a 8 e a 11 a votazione chiusa
+  const canFv = played && [8, 11].includes(m.type) && !m.votes_open && m.voters > 0;
+  let mode = canFv && S.ui.mxMode === 'fv' ? 'fv' : 'voto', fvMap = null;
+  const sgn = n => (n > 0 ? '+' : n < 0 ? '−' : '±') + fmtNum(Math.abs(n));
+  const vCell = p => {
+    if (mode === 'fv') {
+      const d = fvMap?.[p.id]; if (!d || d.fv == null) return '<span class="vt none">–</span>';
+      const t = d.valid ? L(`voto ${fmtVote(d.voto)} ${sgn(Number(d.bonus))} bonus/malus`, `rating ${fmtVote(d.voto)} ${sgn(Number(d.bonus))} bonus/malus`) : L(`meno di ${minV} voti: voto d'ufficio ${fmtVote(d.voto)} ${sgn(Number(d.bonus))} bonus/malus`, `fewer than ${minV} ratings: default rating ${fmtVote(d.voto)} ${sgn(Number(d.bonus))} bonus/malus`);
+      return `<span class="vt ${d.valid ? '' : 'few'}" title="${esc(t)}">${fmtVote(d.fv)}</span>`;
+    }
+    return p.avg != null ? `<span class="vt ${p.n_votes < minV ? 'few' : ''}" title="${p.n_votes} ${L('voti', 'ratings')}${p.n_votes < minV ? L(` (meno di ${minV}: voto d'ufficio nel fanta)`, ` (fewer than ${minV}: default rating in the fanta)`) : ''}">${fmtVote(p.avg)}</span>` : '<span class="vt none">–</span>';
+  };
   const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
-      const v = p.avg != null ? `<span class="vt ${p.n_votes < minV ? 'few' : ''}" title="${p.n_votes} ${L('voti', 'ratings')}${p.n_votes < minV ? L(` (meno di ${minV}: voto d'ufficio nel fanta)`, ` (fewer than ${minV}: default rating in the fanta)`) : ''}">${fmtVote(p.avg)}</span>` : '<span class="vt none">–</span>';
+      const v = vCell(p);
       return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
     }).join('') || `<div class="muted small" style="padding:10px 0">${L('Nessun giocatore', 'No players')}</div>`}</div>`;
   const header = `<div class="mx-head">
@@ -1056,16 +1068,29 @@ function openMatch(id) {
       <div class="small muted" style="margin-bottom:8px">${m.votes_close_at ? (m.votes_open ? 'Aperte fino a ' + fmtDateTime(m.votes_close_at) : 'Chiuse il ' + fmtDateTime(m.votes_close_at)) : 'Mai aperte'} · <span data-voters>${m.voters}</span> votanti</div>
       <div class="row">${m.votes_open ? '<button class="btn sm" data-votes="0">Chiudi ora</button>' : `<button class="btn sm" data-votes="${settings('vote_hours')}">${m.votes_close_at ? 'Riapri' : 'Apri'} per ${settings('vote_hours')} ore</button>`}
       <button class="btn sm" data-seevotes>Vedi chi ha votato cosa</button></div></div>` : '';
+  function fvNote() { return L(`Fantavoto = voto + bonus/malus FantaNunnaree. In grigio: meno di ${minV} voti, vale il voto d'ufficio (${fmtVote(settings('fanta_voto_ufficio'))}). Tocca un numero per il dettaglio.`, `Fanta score = rating + FantaNunnaree bonus/malus. Greyed out: fewer than ${minV} ratings, the default rating (${fmtVote(settings('fanta_voto_ufficio'))}) applies. Tap a number for details.`); }
   const mo = modal({
     title: L('Dettaglio partita', 'Match details'), wide: true,
     body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">Lineup manager: <b>${esc(pname(m.lineup_manager))}</b></p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+      ${canFv ? `<div class="row" style="justify-content:center;margin:4px 0 8px">${segHtml('mxMode', [{ v: 'voto', l: L('Voto', 'Rating') }, { v: 'fv', l: L('Fantavoto', 'Fanta score') }], mode)}</div>` : ''}
       <div class="mx-cols">${col('W')}${col('D')}</div>
+      ${canFv ? `<p class="tiny muted" id="mxNote" style="margin:4px 0">${mode === 'fv' ? fvNote() : ''}</p>` : ''}
       ${played && m.votes_open ? `<p class="tiny muted">${L('I voti compaiono al centro quando si chiudono le votazioni.', 'Ratings appear in the middle when voting closes.')}</p>` : ''}
       ${iconLegend()}
       ${fantaCtl}${voteCtl}`,
     actions
   });
+  const redraw = () => { const c = mo.el.querySelector('.mx-cols'); if (c) c.innerHTML = col('W') + col('D'); const n = mo.el.querySelector('#mxNote'); if (n) n.innerHTML = mode === 'fv' ? fvNote() : ''; };
+  const setMode = async val => {
+    if (val === 'fv' && !fvMap) {
+      try { fvMap = Object.fromEntries((await rpc('get_match_fanta', { p_token: T(), p_match: m.id })).map(d => [d.id, d])); }
+      catch (e) { toast(e.message, true); return; }
+    }
+    mode = val; S.ui.mxMode = val; $$('#mxMode button', mo.el).forEach(b => b.classList.toggle('on', b.dataset.v === val)); redraw();
+  };
+  if (mo.el.querySelector('#mxMode')) { bindSeg(mo.el.querySelector('#mxMode'), setMode); if (mode === 'fv') { mode = 'voto'; setMode('fv'); } }
   mo.el.addEventListener('click', async e => {
+    const vt = e.target.closest('.mx-cols .vt[title]'); if (vt && mode === 'fv') { toast(vt.getAttribute('title')); return; }
     if (e.target.closest('[data-hl]')) { openHighlight(m); return; }
     const f = e.target.closest('[data-fanta]');
     if (f) { if (!await confirmBox('Annullare la giornata fanta di questa partita? Le formazioni bloccate per questa partita vengono cancellate.', 'Annulla giornata', true)) return; if (await act(() => rpc('admin_set_fanta', { p_token: T(), p_match: m.id, p_state: f.dataset.fanta }), 'Fatto')) { mo.close(); await refreshAll(); openMatch(m.id); } }
