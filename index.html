@@ -1913,13 +1913,13 @@ function pitchHtml(st, ro, where, teamsOk, seed) {
     return `<button type="button" class="ps on" ${pos} ${gk ? 'data-pgk' : `data-pmov="${pid}"`} ${ro ? 'disabled' : ''} aria-label="${esc(pname(pid))}${ro ? '' : L(': tocca per togliere', ': tap to remove')}">${gk ? `<span class="pk">${L('P', 'GK')}</span>` : ''}<span class="av">${gk ? AV_GK_SVG : AV_SVG[order[i - 1]]}</span><span class="pn">${dot(pid)}<span class="pt">${esc(pname(pid))}</span></span>${tag(pid)}</button>`;
   }).join('')}</div>`;
 }
-// PG e media fantavoto di stagione contando solo calcio a 8 e a 11 (le partite che valgono per il fanta)
+// PG e media fantavoto della sezione fanta: contano solo le giornate FantaNunnaree (partite a 8 e 11 con formazioni bloccate)
 async function fantaPlayerStats() {
   const key = S.season;
   if (S.fps && S.fps.key === key && Date.now() - S.fps.at < 60000) return S.fps.map;
   const map = {};
-  // stessa fonte della classifica: pgf = partite a 8 e 11, vplus = media fantavoto a 8 e 11
-  try { (await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: null })).forEach(x => { map[x.id] = { pg: x.pgf ?? 0, fv: x.vplus ?? null, n: x.nfv ?? 0 }; }); } catch {}
+  // solo giornate FantaNunnaree: pgf = giornate giocate, fvf = media fantavoto nelle giornate
+  try { (await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: null })).forEach(x => { map[x.id] = { pg: x.pgf ?? 0, fv: x.fvf ?? null }; }); } catch {}
   S.fps = { key, at: Date.now(), map };
   return map;
 }
@@ -1996,7 +1996,7 @@ async function viewFanta(v) {
         ${ro ? '' : `<div class="row" style="margin-top:10px"><div class="spacer"></div><button class="btn primary" data-savelu>${L('Salva formazione', 'Save lineup')}</button></div>`}`;
     };
     fv.innerHTML = head + `<div id="fdraft"></div>` + `<div class="card"><div class="row"><h2 style="margin:0">${L('La mia rosa', 'My squad')}</h2><div class="spacer"></div>${canTrade ? `<button class="btn accent sm" data-gomarket>${L('Vai al mercato', 'Go to the market')}</button>` : ''}</div>
-      ${rosterRows.length ? `<div class="tbl-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>${L('Giocatore', 'Player')}</th><th title="${L('Partite giocate a 8 e a 11', '8- and 11-a-side matches played')}">${L('PG', 'MP')}</th><th title="${L('Media fantavoto (calcio a 8 e 11)', 'Average fanta score (8- and 11-a-side)')}">${L('FV', 'FS')}</th><th>${L('Pagato', 'Paid')}</th><th>${L('Ora', 'Now')}</th><th></th></tr></thead><tbody>
+      ${rosterRows.length ? `<div class="tbl-wrap" style="margin-top:10px"><table class="t"><thead><tr><th>${L('Giocatore', 'Player')}</th><th title="${L('Giornate FantaNunnaree giocate', 'FantaNunnaree matchdays played')}">${L('PG', 'MP')}</th><th title="${L('Media fantavoto nelle giornate FantaNunnaree', 'Average fanta score in FantaNunnaree matchdays')}">${L('FV', 'FS')}</th><th>${L('Pagato', 'Paid')}</th><th>${L('Ora', 'Now')}</th><th></th></tr></thead><tbody>
         ${rosterRows.map(r => `<tr><td>${esc(r.name)}</td><td>${fps[r.player_id]?.pg || 0}</td><td>${fps[r.player_id]?.fv == null ? '<span class="muted">–</span>' : fmtVote(fps[r.player_id].fv)}</td><td>${r.buy_price}</td><td><b>${r.now}</b> ${r.now > r.buy_price ? `<span class="up">▲${r.now - r.buy_price}</span>` : r.now < r.buy_price ? `<span class="down">▼${r.buy_price - r.now}</span>` : ''}</td>
           <td>${canTrade ? `<button class="btn sm danger" data-sell="${r.player_id}">${L('Cedi', 'Sell')}</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : `<div class="empty">${L(`Rosa vuota. Hai ${settings('fanta_budget')} crediti per ${rosterSize} giocatori.`, `Empty squad. You have ${settings('fanta_budget')} credits for ${rosterSize} players.`)}</div>`}
       <div class="tiny muted" style="margin-top:8px">${F.free_phase ? L('Fino al primo STOP delle formazioni puoi cedere e ricomprare liberamente con rimborso pieno.', 'Until the first lineup lock you can sell and buy freely with a full refund.') : L(`Ogni cessione usa 1 dei ${maxCh} cambi e ti restituisce il valore attuale del giocatore.`, `Each sale uses 1 of your ${maxCh} transfers and refunds the player's current value.`)}</div></div>`;
@@ -2031,8 +2031,8 @@ async function viewFanta(v) {
       { k: 'name', label: L('Giocatore', 'Player') },
       { k: 'price', label: L('Prezzo', 'Price'), cls: 'strong' },
       { k: 'delta', label: L('Var.', 'Chg.'), title: L('Variazione rispetto alla quotazione di inizio stagione', 'Change from the start-of-season price'), fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
-      { k: 'pres', label: L('PG', 'MP'), title: L('Presenze stagione (calcio a 8 e 11)', 'Season appearances (8- and 11-a-side)') },
-      { k: 'fv', label: L('FV', 'FS'), title: L(`Media fantavoto della stagione (voto + bonus/malus) nel calcio a 8 e 11, solo partite con almeno ${settings('min_votes')} voti e votazione chiusa`, `Season average fanta score (rating + bonus/malus) in 8- and 11-a-side, only matches with at least ${settings('min_votes')} ratings and voting closed`), fmt: r => r.fv == null ? '<span class="muted">–</span>' : fmtVote(r.fv) },
+      { k: 'pres', label: L('PG', 'MP'), title: L('Giornate FantaNunnaree giocate', 'FantaNunnaree matchdays played') },
+      { k: 'fv', label: L('FV', 'FS'), title: L(`Media fantavoto (voto + bonus/malus) nelle giornate FantaNunnaree, solo con almeno ${settings('min_votes')} voti e votazione chiusa`, `Average fanta score (rating + bonus/malus) in FantaNunnaree matchdays, only with at least ${settings('min_votes')} ratings and voting closed`), fmt: r => r.fv == null ? '<span class="muted">–</span>' : fmtVote(r.fv) },
       { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? `<span class="pill ok">${L('In rosa', 'In squad')}</span>` : r.id === me().id ? `<span class="pill">${L('sei tu', 'you')}</span>` : canTrade ? `<button class="btn sm ${r.price <= maxSpend && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > maxSpend || mine.roster.length >= rosterSize ? `disabled title="${esc(r.price > mine.credits || mine.roster.length >= rosterSize ? '' : L(`Devi tenere almeno ${freeSlots - 1} crediti per completare la rosa`, `You must keep at least ${freeSlots - 1} credits to complete your squad`))}"` : ''}>${L('Compra', 'Buy')}</button>` : '' },
     ];
     const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base, pres: fps[p.id]?.pg || 0, fv: fps[p.id]?.fv ?? null }));
