@@ -324,6 +324,19 @@ html.fanta .tbtn.sel.on{color:#fff}
 html.fanta .dot{border-color:#f7f2f5}
 html.fanta .dot.D{border-color:#f7f2f5}
 html.fanta #toast{background:#ff3d9a;color:#fff}
+/* nomi cliccabili e scheda giocatore */
+.plink{cursor:pointer;border-radius:4px}
+.plink:hover,.plink:focus-visible{text-decoration:underline;text-underline-offset:3px;outline:none}
+.pcard{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:16px;align-items:start}
+.pcard .ph{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--surface),var(--line));display:flex;align-items:center;justify-content:center}
+.pcard .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.pcard .ph .ini{font-family:'Barlow Condensed',Inter,sans-serif;font-size:54px;font-weight:800;color:var(--muted)}
+.pcard .nmb{font-family:'Barlow Condensed',Inter,sans-serif;font-size:28px;font-weight:800;line-height:1.05;margin:0 0 10px}
+.pcard dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:14.5px}
+.pcard dt{color:var(--muted);font-weight:600}
+.pcard dd{margin:0}
+.pcard .desc{grid-column:1/-1;margin-top:4px;white-space:pre-wrap;line-height:1.45}
+@media (max-width:520px){ .pcard{grid-template-columns:1fr} .pcard .ph{max-width:240px;width:100%;margin:0 auto} .pcard .nmb{text-align:center} }
 /* scelta lingua IT | EN */
 .langsw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none;background:var(--surface)}
 .langsw button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:5px 10px;cursor:pointer;letter-spacing:.3px}
@@ -490,6 +503,8 @@ const me = () => S.boot?.me;
 const isPres = () => !!S.boot?.me?.is_president;
 const isGuest = () => !!S.boot?.me?.is_guest;
 const pname = id => S.boot?.players.find(p => p.id === id)?.name || ('#' + id);
+// nome cliccabile: apre la scheda giocatore
+const plink = id => `<span class="plink" data-pid="${id}" role="button" tabindex="0">${esc(pname(id))}</span>`;
 const activePlayers = () => S.boot.players.filter(p => p.is_active).sort((a, b) => a.name.localeCompare(b.name, 'it'));
 const settings = k => Number(S.boot?.settings?.[k]);
 
@@ -726,6 +741,31 @@ function segHtml(id, opts, val) { return `<div class="seg" id="${id}">${opts.map
 function bindSeg(el, fn) { el.onclick = e => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); }; }
 const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.map(t => ({ v: t, l: EN ? t + 's' : 'a ' + t }))];
 
+// ------------------------------------------------------------- SCHEDA GIOCATORE
+async function openPlayer(id) {
+  let d; try { d = await rpc('get_player_profile', { p_token: T(), p_player: id }); } catch (e) { return toast(e.message, true); }
+  if (!d) return;
+  const none = '<span class="muted">—</span>';
+  let born = '';
+  if (d.birth_date) {
+    const b = new Date(d.birth_date + 'T12:00:00'), n = new Date();
+    let age = n.getFullYear() - b.getFullYear(); if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) age--;
+    born = `${esc(b.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }))} <span class="muted">(${age} ${L('anni', 'years old')})</span>`;
+  }
+  const where = d.birth_place ? esc(d.birth_place) : '';
+  const ini = String(d.name || '').split(' ').map(x => x[0] || '').join('').slice(0, 2).toUpperCase();
+  modal({ title: L('Scheda giocatore', 'Player profile'), body: `<div class="pcard">
+      <div class="ph">${d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.name)}" onerror="this.remove()">` : `<span class="ini">${esc(ini)}</span>`}</div>
+      <div><h3 class="nmb">${esc(d.name)}${d.is_gk ? ' <span class="pill">GK</span>' : ''}</h3>
+        <dl><dt>${L('Ruolo', 'Role')}</dt><dd>${d.role ? esc(d.role) : none}</dd>
+          <dt>${L('Nato a', 'Born in')}</dt><dd>${where || none}</dd>
+          <dt>${L('Nato il', 'Born on')}</dt><dd>${born || none}</dd>
+          <dt class="desc" style="margin-top:8px">${L('Descrizione', 'About')}</dt><dd class="desc">${d.description ? esc(d.description) : none}</dd></dl>
+      </div></div>` });
+}
+document.addEventListener('click', e => { const t = e.target.closest('.plink'); if (!t) return; e.stopPropagation(); e.preventDefault(); openPlayer(Number(t.dataset.pid)); }, true);
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList?.contains('plink')) { e.preventDefault(); openPlayer(Number(e.target.dataset.pid)); } });
+
 // ------------------------------------------------------------- PREMI STAGIONALI
 // Il database dice da quando sono visibili (orario del server, non del telefono): prima di allora non arriva nulla.
 async function loadAwards() {
@@ -865,7 +905,7 @@ async function viewClassifica(v) {
   const TB = { gpg: (a, b) => q(b.gf, b) - q(a.gf, a), vpg: (a, b) => q(b.v, b) - q(a.v, a), ppg: (a, b) => q(3 * b.v + b.n, b) - q(3 * a.v + a.n, a), pres: (a, b) => b.pg - a.pg };
   const tieExcept = skip => (a, b) => { for (const k of ['gpg', 'vpg', 'ppg', 'pres']) if (k !== skip) { const d = TB[k](a, b); if (d) return d; } return 0; };
   const cols = [
-    { k: 'name', label: L('Giocatore', 'Player'), fmt: (r, i) => `<span class="rank">${i + 1}</span>${esc(r.name)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
+    { k: 'name', label: L('Giocatore', 'Player'), fmt: (r, i) => `<span class="rank">${i + 1}</span>${plink(r.id)}${r.is_gk ? ' <span class="pill">GK</span>' : ''}` },
     { k: 'pg', label: L('PG', 'MP'), title: L('Partite giocate', 'Matches played') + (org != null ? L(` (su ${org} organizzate)`, ` (out of ${org} organised)`) : ''), cls: 'strong', tie: tieExcept('pres') }, { k: 'v', label: L('V', 'W'), title: L('Vittorie', 'Wins') }, { k: 'n', label: L('N', 'D'), title: L('Pareggi', 'Draws') }, { k: 's', label: L('P', 'L'), title: L('Sconfitte', 'Losses') },
     { k: 'pct', label: L('%V', 'W%'), title: L('Percentuale vittorie', 'Win percentage'), tie: tieExcept('vpg'), sv: r => r.pg ? r.v / r.pg : null, fmt: r => r.pg ? Math.round(r.v / r.pg * 100) + '%' : '–' },
     { k: 'pt', label: L('PT', 'Pts'), title: L('Punti: 3 a vittoria, 1 a pareggio, 0 a sconfitta', 'Points: 3 per win, 1 per draw, 0 per loss'), cls: 'strong', sv: r => 3 * r.v + r.n, fmt: r => 3 * r.v + r.n },
@@ -1048,7 +1088,7 @@ function openMatch(id) {
   };
   const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
       const v = vCell(p);
-      return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${esc(pname(p.id))}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
+      return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${plink(p.id)}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
     }).join('') || `<div class="muted small" style="padding:10px 0">${L('Nessun giocatore', 'No players')}</div>`}</div>`;
   const header = `<div class="mx-head">
       <div class="mx-top">
@@ -1775,7 +1815,7 @@ async function viewCoppie(v) {
   if (S.tab !== 'coppie' || !$('#pTable')) return;
   const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
   const cols = [
-    { k: 'name', label: L('Giocatore', 'Player') },
+    { k: 'name', label: L('Giocatore', 'Player'), fmt: r => plink(r.id) },
     { k: 'with_pg', label: L('Insieme', 'With'), title: L('Partite nella stessa squadra', 'Matches on the same team'), cls: 'strong' }, { k: 'with_v', label: L('V', 'W') }, { k: 'with_n', label: L('N', 'D') }, { k: 'with_s', label: L('P', 'L') },
     { k: 'with_pct', label: L('%V', 'W%'), sv: r => r.with_pg ? r.with_v / r.with_pg : null, fmt: r => pct(r.with_v, r.with_pg) },
     { k: 'vs_pg', label: L('Contro', 'Against'), title: L('Partite da avversari', 'Matches as opponents'), cls: 'strong' }, { k: 'vs_v', label: L('V', 'W') , title: L('Vinte dal giocatore selezionato', 'Won by the selected player')}, { k: 'vs_n', label: L('N', 'D') }, { k: 'vs_s', label: L('P', 'L') },
@@ -2032,7 +2072,7 @@ async function viewFanta(v) {
   if (u.fantaTab === 'mercato') {
     const inRoster = new Set(mine.roster.map(r => r.player_id));
     const cols = [
-      { k: 'name', label: L('Giocatore', 'Player') },
+      { k: 'name', label: L('Giocatore', 'Player'), fmt: r => plink(r.id) },
       { k: 'price', label: L('Prezzo', 'Price'), cls: 'strong' },
       { k: 'delta', label: L('Var.', 'Chg.'), title: L('Variazione rispetto alla quotazione di inizio stagione', 'Change from the start-of-season price'), fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' },
       { k: 'pres', label: L('PG', 'MP'), title: L('Giornate FantaNunnaree giocate', 'FantaNunnaree matchdays played') },
