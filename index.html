@@ -482,7 +482,7 @@ const S = {
   token: store.get('calc_token'),
   boot: null, season: null, tab: store.get('calc_tab') || 'classifica',
   matches: null, stats: null, myVotes: null, fanta: null, partners: null,
-  ui: { statType: 'all', statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, statRole: 'all', matchType: 'all', matchPlayer: null,
+  ui: { statType: 8, statSort: { k: 'pg', d: -1 }, statSearch: '', hideZero: true, minPg: 0, statRole: 'all', matchType: 'all', matchPlayer: null,
         pairPlayer: null, pairB: null, pairType: 'all', pairScope: 'season', pairSort: { k: 'with_pg', d: -1 },
         fantaTab: 'squadra', marketSort: { k: 'price', d: -1 }, marketSearch: '', adminTab: 'giocatori', pricesSort: { k: 'price', d: -1 } }
 };
@@ -828,7 +828,11 @@ async function openAwards() {
 // ------------------------------------------------------------- CLASSIFICA
 async function viewClassifica(v) {
   const u = S.ui;
-  v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div><div class="tyrow">${segHtml('stType', typeOpts, u.statType)}${hlListBtn()}</div></div>
+  // si parte dal calcio a 8; la somma "Tutte" la vede solo Cicerani M.
+  const allowAll = !isGuest() && !!me() && pname(me().id) === 'Cicerani M.';
+  const stOpts = allowAll ? typeOpts : typeOpts.filter(o => o.v !== 'all');
+  if (!allowAll && u.statType === 'all') u.statType = 8;
+  v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div><div class="tyrow">${segHtml('stType', stOpts, u.statType)}${hlListBtn()}</div></div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.statSearch)}" style="max-width:260px">
       <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> ${L('solo chi ha giocato', 'only players who played')}</label>
       ${awardsReady() ? '<div class="aw-wrap"><div class="aw-col">' : ''}${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
