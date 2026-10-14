@@ -903,8 +903,8 @@ async function viewClassifica(v) {
       ${awardsReady() ? '<div class="aw-wrap"><div class="aw-col">' : ''}${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"> <span id="stOrg"></span></label>${awardsReady() ? `</div>${awardsBtn()}</div>` : ''}</div>
     <div id="stTable"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>
-    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree), solo partite a 8 e a 11 come nel FantaNunnaree. Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
-      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus), only 8- and 11-a-side matches as in FantaNunnaree. Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
+    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · Med GS media gol subiti a partita in porta (portieri: tutte le partite; giocatori di movimento: solo quelle segnate “In porta”) · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree), solo partite a 8 e a 11 come nel FantaNunnaree. Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa. Tocca un'intestazione per ordinare.`,
+      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · Avg GC average goals conceded per match in goal (goalkeepers: all matches; outfield players: only matches marked “In goal”) · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus), only 8- and 11-a-side matches as in FantaNunnaree. Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
   v.querySelector('[data-hllist]').onclick = openHighlightList;
   if ($('#awBtn')) $('#awBtn').onclick = openAwards;
@@ -937,7 +937,8 @@ async function viewClassifica(v) {
     { k: 'mpt', label: L('Med pt', 'Avg pt'), thCls: 'th-sm', tie: tieExcept('ppg'), title: L('Media punti a partita: PT ÷ PG (3 vittoria, 1 pareggio, 0 sconfitta)', 'Average points per match: Pts ÷ MP (3 win, 1 draw, 0 loss)'), sv: r => r.pg ? (3 * r.v + r.n) / r.pg : null, fmt: r => r.pg ? ((3 * r.v + r.n) / r.pg).toFixed(2).replace('.', DEC) : '–' },
     { k: 'gf', label: L('GF', 'G'), title: L('Gol fatti. A parità: gol/partita, vittorie/partita, punti/partita, presenze (PG/organizzate), nome', 'Goals. Ties: goals per match, wins per match, points per match, appearance rate, name'), cls: 'strong',
       tie: tieExcept(null) }, { k: 'rig', label: L('Rig', 'Pen'), title: L('Gol su rigore', 'Penalty goals') }, { k: 'ag', label: L('AG', 'OG'), title: L('Autogol', 'Own goals') },
-    { k: 'gs', label: L('GS', 'GC'), title: L('Gol subiti', 'Goals conceded') }, { k: 'rp', label: L('RP', 'PS'), title: L('Rigori parati', 'Penalties saved') }, { k: 'rs', label: L('RS', 'PM'), title: L('Rigori sbagliati', 'Penalties missed') },
+    { k: 'gs', label: L('GS', 'GC'), title: L('Gol subiti', 'Goals conceded') },
+    { k: 'mgs', label: L('Med GS', 'Avg GC'), thCls: 'th-sm', title: L('Media gol subiti a partita in porta (portieri: tutte le partite; movimento: solo quelle segnate In porta)', 'Average goals conceded per match in goal (goalkeepers: all matches; outfield players: only matches marked In goal)'), sv: r => r.pgp ? r.gsp / r.pgp : null, fmt: r => r.pgp ? fmtNum(Math.round(r.gsp / r.pgp * 100) / 100) : '<span class="muted">–</span>' }, { k: 'rp', label: L('RP', 'PS'), title: L('Rigori parati', 'Penalties saved') }, { k: 'rs', label: L('RS', 'PM'), title: L('Rigori sbagliati', 'Penalties missed') },
     { k: 'mv', label: L('Voto', 'Rating'), title: L('Media voto pulita', 'Plain average rating'), cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
     { k: 'vplus', label: L('V+', 'F+'), title: L('Media fantavoto (voto + bonus/malus), solo calcio a 8 e 11', 'Average fanta score (rating + bonus/malus), 8- and 11-a-side only'), cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
     { k: 'ppres', label: L('%P', 'App%'), tie: tieExcept('pres'), title: L(`Presenze: partite giocate ÷ partite organizzate${org != null ? ` (${org})` : ''}`, `Appearances: matches played ÷ matches organised${org != null ? ` (${org})` : ''}`), sv: r => org ? r.pg / org : null, fmt: r => org ? Math.round(r.pg / org * 100) + '%' : '–' },
@@ -1046,7 +1047,8 @@ function evIcons(p, size) {
   return iconN('goal', g, size) + iconN('pen', p.pen_goals, size) + iconN('own', p.own_goals, size) + iconN('saved', p.pen_saved, size) + iconN('missed', p.pen_missed, size) + iconN('conceded', p.conceded, size);
 }
 const isGkId = id => !!S.boot.players.find(x => x.id === id)?.is_gk;
-const sortLineup = ps => [...ps].sort((a, b) => (isGkId(b.id) - isGkId(a.id)) || pname(a.id).localeCompare(pname(b.id), 'it'));
+const isGkIn = p => !!(p?.in_goal || isGkId(p?.id));   // portiere in quella partita
+const sortLineup = ps => [...ps].sort((a, b) => (isGkIn(b) - isGkIn(a)) || pname(a.id).localeCompare(pname(b.id), 'it'));
 const iconLegend = () => `<div class="ico-legend">${Object.keys(ICONS).map(k => `<span>${icon(k, 14)} ${ICONS[k].t}</span>`).join('')}<span><i class="pd"></i> ${L('giocatore', 'player')}</span><span><i class="pd gk"></i> ${L('portiere', 'goalkeeper')}</span></div>`;
 
 function matchStatusPills(m) {
@@ -1127,7 +1129,7 @@ function openMatch(id) {
   };
   const col = team => `<div class="mx-col ${team === 'D' ? 'r' : ''}">${sortLineup(m.players.filter(p => p.team === team)).map(p => {
       const v = vCell(p);
-      return `<div class="mx-row"><i class="pd ${isGkId(p.id) ? 'gk' : ''}"></i><span class="nm">${plink(p.id)}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
+      return `<div class="mx-row"><i class="pd ${isGkIn(p) ? 'gk' : ''}" ${p.in_goal && !isGkId(p.id) ? `title="${L('In porta in questa partita', 'In goal in this match')}"` : ''}></i><span class="nm">${plink(p.id)}</span><span class="ev">${evIcons(p, 15)}</span>${m.type === 5 ? '' : v}</div>`;
     }).join('') || `<div class="muted small" style="padding:10px 0">${L('Nessun giocatore', 'No players')}</div>`}</div>`;
   const header = `<div class="mx-head">
       <div class="mx-top">
@@ -1319,16 +1321,16 @@ function editTeams(m, thenResult) {
 }
 function editResult(m, openVotesDefault) {
   if (!m.players.length) { toast('Prima inserisci le squadre', true); return editTeams(m, true); }
-  const st = {}; m.players.forEach(p => st[p.id] = { team: p.team, goals: p.goals, pen_goals: p.pen_goals, own_goals: p.own_goals, conceded: p.conceded, pen_saved: p.pen_saved, pen_missed: p.pen_missed || 0 });
+  const st = {}; m.players.forEach(p => st[p.id] = { team: p.team, goals: p.goals, pen_goals: p.pen_goals, own_goals: p.own_goals, conceded: p.conceded, pen_saved: p.pen_saved, pen_missed: p.pen_missed || 0, in_goal: !!p.in_goal });
   const played = m.status === 'giocata';
   const openDefault = played ? false : openVotesDefault;
-  const F = [['goals', 'Gol'], ['pen_goals', 'di cui rigore'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti (portiere)'], ['pen_saved', 'Rigori parati'], ['pen_missed', 'Rigori sbagliati']];
+  const F = [['goals', 'Gol'], ['pen_goals', 'di cui rigore'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti (in porta)'], ['pen_saved', 'Rigori parati'], ['pen_missed', 'Rigori sbagliati']];
   const stepper = (id, k) => `<span class="stepper" data-p="${id}" data-k="${k}"><button data-d="-1" aria-label="meno">−</button><span>${st[id][k]}</span><button data-d="1" aria-label="più">+</button></span>`;
   const rowsFor = team => m.players.filter(p => p.team === team).sort((a, b) => pname(a.id).localeCompare(pname(b.id), 'it')).map(p => {
-    const s = st[p.id], hasExtra = s.pen_goals || s.own_goals || s.conceded || s.pen_saved || s.pen_missed;
-    return `<div class="stat-row"><div class="top"><span style="flex:1;font-weight:600">${esc(pname(p.id))}${S.boot.players.find(x => x.id === p.id)?.is_gk ? ' <span class="pill">GK</span>' : ''}</span><span class="tiny muted">Gol</span>${stepper(p.id, 'goals')}
+    const s = st[p.id], hasExtra = s.pen_goals || s.own_goals || s.conceded || s.pen_saved || s.pen_missed || s.in_goal, gkReg = isGkId(p.id);
+    return `<div class="stat-row"><div class="top"><span style="flex:1;font-weight:600">${esc(pname(p.id))}${gkReg ? ' <span class="pill">GK</span>' : ''}<span class="pill live ${s.in_goal && !gkReg ? '' : 'hidden'}" data-pbadge="${p.id}">P</span></span><span class="tiny muted">Gol</span>${stepper(p.id, 'goals')}
       <button class="btn sm" data-more="${p.id}" title="Altre statistiche">${hasExtra ? '▾' : '…'}</button></div>
-      <div class="extra ${hasExtra ? '' : 'hidden'}" id="ex${p.id}">${F.slice(1).map(([k, l]) => `<div>${l}${stepper(p.id, k)}</div>`).join('')}</div></div>`;
+      <div class="extra ${hasExtra ? '' : 'hidden'}" id="ex${p.id}">${gkReg ? '' : `<div><label class="row" style="gap:6px;cursor:pointer"><input type="checkbox" data-ingoal="${p.id}" ${s.in_goal ? 'checked' : ''}> In porta (P) in questa partita</label></div>`}${F.slice(1).map(([k, l]) => `<div>${l}${stepper(p.id, k)}</div>`).join('')}</div></div>`;
   }).join('');
   const calc = () => {
     let w = 0, d = 0;
@@ -1355,6 +1357,7 @@ function editResult(m, openVotesDefault) {
         if (b) { const sp = b.parentElement, id = Number(sp.dataset.p), k = sp.dataset.k; st[id][k] = Math.max(0, st[id][k] + Number(b.dataset.d)); sp.querySelector('span').textContent = st[id][k]; hint(); return; }
         const mo = e.target.closest('[data-more]'); if (mo) $('#ex' + mo.dataset.more, el).classList.toggle('hidden');
       });
+      el.querySelector('.body').addEventListener('change', e => { const c = e.target.closest('[data-ingoal]'); if (!c) return; st[c.dataset.ingoal].in_goal = c.checked; $(`[data-pbadge="${c.dataset.ingoal}"]`, el)?.classList.toggle('hidden', !c.checked); });
     },
     actions: [{ label: 'Salva risultato', cls: 'primary', fn: async el => {
       const sw = $('#sw', el).value, sd = $('#sd', el).value;
@@ -1365,7 +1368,7 @@ function editResult(m, openVotesDefault) {
       for (const t of ['W', 'D']) {
         const ids = Object.keys(st).filter(id => st[id].team === t);
         if (ids.some(id => st[id].conceded > 0)) continue;
-        const gks = ids.filter(id => isGkId(Number(id)));
+        const gks = ids.filter(id => st[id].in_goal || isGkId(Number(id)));
         if (gks.length === 1) st[gks[0]].conceded = Number(t === 'W' ? sd : sw);
       }
       const stats = Object.entries(st).map(([id, s]) => ({ player_id: Number(id), ...s }));
@@ -1800,7 +1803,7 @@ function importPreview(res, src) {
       if (news.length) S.boot = await rpc('get_bootstrap', { p_token: T() });
       let mid = m ? m.id : created.match;
       if (!mid) mid = created.match = (await rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: st.note })).id;
-      const stats = rows.map(r => ({ player_id: r.pid, team: r.team, goals: r.goals, pen_goals: r.pen_goals, own_goals: r.own_goals, conceded: r.conceded, pen_saved: r.pen_saved, pen_missed: r.pen_missed }));
+      const stats = rows.map(r => ({ player_id: r.pid, team: r.team, goals: r.goals, pen_goals: r.pen_goals, own_goals: r.own_goals, conceded: r.conceded, pen_saved: r.pen_saved, pen_missed: r.pen_missed, in_goal: !!r.gk }));
       await rpc('admin_save_result', { p_token: T(), p_match: mid, p_score_w: Number(sw), p_score_d: Number(sd), p_stats: stats, p_open_votes: openVotes });
       if (st.lm != null || m?.lineup_manager) await rpc('admin_set_lineup_manager', { p_token: T(), p_match: mid, p_player: st.lm });
       toast('Partita importata e salvata');
@@ -2255,7 +2258,7 @@ async function viewFanta(v) {
 
       <h3>6. Il ruolo P (portiere)</h3><ul>
       <li>Se il portiere che hai schierato ha giocato, prendi <b>il suo punteggio</b>.</li>
-      <li>Se non ha giocato, prendi <b>il punteggio peggiore tra i portieri (GK) che hanno giocato</b> quella partita.</li>
+      <li>Se non ha giocato, prendi <b>il punteggio peggiore tra i portieri (GK) che hanno giocato</b> quella partita. Conta come portiere anche un giocatore di movimento segnato <b>“In porta (P)”</b> in quella partita.</li>
       <li>Se in partita non c'era nessun GK, il ruolo P vale <b>${st('fanta_gk_ufficio')} d'ufficio</b>.</li>
       <li>Se non scegli nessun portiere, il ruolo P vale 0.</li>
       <li>“Ha giocato” = è segnato GK ed è in una delle due squadre della partita.</li></ul>
@@ -2331,7 +2334,7 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 
       <h3>6. The GK slot</h3><ul>
       <li>If the goalkeeper you picked played, you get <b>their score</b>.</li>
-      <li>If they didn't play, you get <b>the lowest score among the goalkeepers (GK) who played</b> that match.</li>
+      <li>If they didn't play, you get <b>the lowest score among the goalkeepers (GK) who played</b> that match. An outfield player marked <b>“In goal (P)”</b> in that match also counts as a goalkeeper.</li>
       <li>If no GK played in the match, the GK slot is worth a <b>default ${st('fanta_gk_ufficio')}</b>.</li>
       <li>If you don't pick a goalkeeper, the GK slot scores 0.</li>
       <li>“Played” = marked as GK and on one of the two teams in the match.</li></ul>
