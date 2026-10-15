@@ -9,7 +9,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%230f3d2e'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%23d8f36a' stroke-width='5'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" sizes="32x32" href="logo/badge-32.png">
+<link rel="icon" type="image/png" sizes="64x64" href="logo/badge-64.png">
+<link rel="icon" type="image/png" sizes="192x192" href="logo/badge-192.png">
+<link rel="apple-touch-icon" href="logo/apple-touch-icon.png">
+<link rel="manifest" href="logo/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Capodanno">
 <script src="config.js"></script>
 <style>
 :root{
@@ -419,6 +424,14 @@ html.fanta .topbar .langsw button.on{background:#ff3d9a;color:#fff}
 .aw-foot{font-size:11.5px;color:var(--muted);margin-top:2px}
 @media (max-width:380px){ .aw-head{font-size:21px} .aw-big b{font-size:38px} .aw-row{font-size:12.5px} .aw-body{gap:10px;padding:10px} }
 .aw-zoom{max-width:100%;max-height:78vh;display:block;margin:0 auto;border-radius:12px}
+/* logo: badge di Nainggolan al posto del cerchio verde */
+.logo .ball,.login .ball,html.fanta .logo .ball{background:url(logo/badge-256.webp) center/contain no-repeat;border-radius:0}
+.logo .ball::after,.login .ball::after{display:none}
+.logo .ball{width:44px;height:44px}
+.login .ball{width:120px;height:120px;margin:0 auto 6px}
+@media (max-width:520px){ .logo .ball{width:40px;height:40px} }
+@media (max-width:350px){ .logo .ball{width:34px;height:34px} }
+@media (max-width:330px){ .logo .ball{width:30px;height:30px} }
 </style>
 </head>
 <body>
