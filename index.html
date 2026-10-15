@@ -790,7 +790,8 @@ async function openPlayer(id) {
           <dt>${L('Nazionalità', 'Nationality')}</dt><dd>${d.nationality ? `${flagImg(d.nationality)}${esc(d.nationality)}` : none}</dd>
           <dt>${L('Nato a', 'Born in')}</dt><dd>${where || none}</dd>
           <dt>${L('Nato il', 'Born on')}</dt><dd>${born || none}</dd>
-          <dt class="desc" style="margin-top:8px">${L('Descrizione', 'About')}</dt><dd class="desc">${d.description ? esc(d.description) : none}</dd></dl>
+          <dt class="desc" style="margin-top:8px">${L("Estratto dall'ultima intervista", 'From his latest interview')}</dt><dd class="desc">${d.interview ? `<i>“${esc(d.interview)}”</i>` : none}</dd>
+          <dt class="desc" style="margin-top:8px">${L('Dicono di lui', 'What they say about him')}</dt><dd class="desc">${d.description ? esc(d.description) : none}</dd></dl>
       </div>${statBox}</div>` });
 }
 document.addEventListener('click', e => { const t = e.target.closest('.plink'); if (!t) return; e.stopPropagation(); e.preventDefault(); openPlayer(Number(t.dataset.pid)); }, true);
