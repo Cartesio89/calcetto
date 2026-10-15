@@ -2230,7 +2230,7 @@ async function viewFanta(v) {
   if (u.fantaTab === 'regole') {
     const st = k => fmtNum(settings(k));
     const gb = settings('fanta_goal_bonus'), cs = settings('fanta_conceded_step'), cm = settings('fanta_conceded_malus'), ps = settings('fanta_pen_saved_bonus'), pm = settings('fanta_pen_missed_malus'), wb = settings('fanta_win_noscore_bonus'), ogm = settings('fanta_own_goal_malus');
-    const ex1 = 6.5 + 2 * gb, ex2 = 6 - Math.floor(7 / cs) * cm + ps, ex3 = 6.25 + wb;
+    const ex1 = 6.5 + 2 * gb + wb, ex2 = 6 - Math.floor(7 / cs) * cm + ps, ex3 = 6.25 + wb;
     if (EN) { fv.innerHTML = rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, lineupSize, maxCh }); fv.onclick = null; return; }
     fv.innerHTML = `<div class="card rules"><h2>Regolamento FantaNunnaree</h2>
       <p class="small muted">I numeri in grassetto sono quelli impostati ora dai presidenti (Area presidente → Impostazioni). Se cambiano, cambia anche questo regolamento e i punteggi vengono ricalcolati, anche quelli passati.</p>
@@ -2277,7 +2277,7 @@ async function viewFanta(v) {
       <li><b>+${fmtNum(gb)}</b> per ogni gol segnato (anche su rigore).</li>
       <li><b>−${fmtNum(cm)}</b> ogni <b>${fmtNum(cs)}</b> gol subiti, per difetto (0–${cs - 1} subiti: 0; ${cs}–${2 * cs - 1}: −${fmtNum(cm)}; ${2 * cs}–${3 * cs - 1}: −${fmtNum(2 * cm)}…). Vale per chi ha gol subiti assegnati, di norma il portiere.</li>
       <li><b>+${fmtNum(ps)}</b> per ogni rigore parato · <b>−${fmtNum(pm)}</b> per ogni rigore sbagliato.</li>
-      <li><b>+${fmtNum(wb)}</b> se la sua squadra vince e lui non ha segnato (vale anche per il portiere). Chi segna prende già il bonus gol, quindi non anche questo.</li>
+      <li><b>+${fmtNum(wb)}</b> a tutti i giocatori della squadra che vince, portiere compreso. Si somma agli altri bonus e malus: chi vince e segna prende sia il bonus gol sia questo.</li>
       <li>Autogol: ${ogm ? `<b>−${fmtNum(ogm)}</b> per ogni autogol` : 'nessun malus (conta solo per il risultato)'}.</li></ul>
 
       <h3>6. Il ruolo P (portiere)</h3><ul>
@@ -2288,7 +2288,7 @@ async function viewFanta(v) {
       <li>“Ha giocato” = è segnato GK ed è in una delle due squadre della partita.</li></ul>
 
       <h3>7. Esempi</h3><ul>
-      <li>Attaccante: media 6,5, 2 gol, squadra vince → 6,5 + ${fmtNum(2 * gb)} = <b>${fmtNum(ex1)}</b>.</li>
+      <li>Attaccante: media 6,5, 2 gol, squadra vince → 6,5 + ${fmtNum(2 * gb)} + ${fmtNum(wb)} = <b>${fmtNum(ex1)}</b>.</li>
       <li>Portiere: meno di ${st('min_votes')} voti (${st('fanta_voto_ufficio')} d'ufficio), 7 gol subiti, 1 rigore parato, squadra perde → ${st('fanta_voto_ufficio')} − ${fmtNum(Math.floor(7 / cs) * cm)} + ${fmtNum(ps)} = <b>${fmtNum(ex2)}</b>.</li>
       <li>Difensore: media 6,25, nessun gol, squadra vince → 6,25 + ${fmtNum(wb)} = <b>${fmtNum(ex3)}</b>.</li></ul>
 
@@ -2353,7 +2353,7 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
       <li><b>+${fmtNum(gb)}</b> for every goal scored (penalties included).</li>
       <li><b>−${fmtNum(cm)}</b> for every <b>${fmtNum(cs)}</b> goals conceded, rounded down (0–${cs - 1} conceded: 0; ${cs}–${2 * cs - 1}: −${fmtNum(cm)}; ${2 * cs}–${3 * cs - 1}: −${fmtNum(2 * cm)}…). It applies to whoever has goals conceded assigned, normally the goalkeeper.</li>
       <li><b>+${fmtNum(ps)}</b> for every penalty saved · <b>−${fmtNum(pm)}</b> for every penalty missed.</li>
-      <li><b>+${fmtNum(wb)}</b> if their team wins and they didn't score (goalkeepers included). A player who scores already gets the goal bonus, so not this one as well.</li>
+      <li><b>+${fmtNum(wb)}</b> to every player on the winning team, goalkeeper included. It adds up with the other bonuses and maluses: a player who wins and scores gets both the goal bonus and this one.</li>
       <li>Own goals: ${ogm ? `<b>−${fmtNum(ogm)}</b> for every own goal` : 'no malus (they only count for the result)'}.</li></ul>
 
       <h3>6. The GK slot</h3><ul>
@@ -2364,7 +2364,7 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
       <li>“Played” = marked as GK and on one of the two teams in the match.</li></ul>
 
       <h3>7. Examples</h3><ul>
-      <li>Striker: average 6.5, 2 goals, team wins → 6.5 + ${fmtNum(2 * gb)} = <b>${fmtNum(ex1)}</b>.</li>
+      <li>Striker: average 6.5, 2 goals, team wins → 6.5 + ${fmtNum(2 * gb)} + ${fmtNum(wb)} = <b>${fmtNum(ex1)}</b>.</li>
       <li>Goalkeeper: fewer than ${st('min_votes')} ratings (default ${st('fanta_voto_ufficio')}), 7 goals conceded, 1 penalty saved, team loses → ${st('fanta_voto_ufficio')} − ${fmtNum(Math.floor(7 / cs) * cm)} + ${fmtNum(ps)} = <b>${fmtNum(ex2)}</b>.</li>
       <li>Defender: average 6.25, no goals, team wins → 6.25 + ${fmtNum(wb)} = <b>${fmtNum(ex3)}</b>.</li></ul>
 
