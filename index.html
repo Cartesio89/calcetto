@@ -354,6 +354,9 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .pstat td:first-child,.pstat th:first-child{text-align:left}
 .pstat td b{font-size:16px}
 @media (max-width:520px){ .pcard{grid-template-columns:1fr} .pcard .ph{max-width:240px;width:100%;margin:0 auto} .pcard .nmb{text-align:center} }
+/* miniatura foto nella pagina voti */
+.vote-row .vav{width:30px;height:30px;border-radius:50%;object-fit:cover;object-position:50% 18%;vertical-align:middle;margin-right:6px;box-shadow:0 0 0 1px var(--line);flex:none}
+.vote-row .vav.ini{display:inline-grid;place-items:center;background:var(--surface-2,#eef1ee);color:var(--muted);font-size:11px;font-weight:800;letter-spacing:.3px}
 /* scelta lingua IT | EN */
 .langsw{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;flex:none;background:var(--surface)}
 .langsw button{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12.5px;font-weight:700;padding:5px 10px;cursor:pointer;letter-spacing:.3px}
@@ -1825,9 +1828,12 @@ async function viewVoti(v) {
   if (S.tab !== 'voti' || !$('#vlist')) return;
   loadVotesBadge();
   if (!S.myVotes.length) { $('#vlist').innerHTML = `<div class="card empty">${L('Nessuna votazione aperta per te.', 'No open voting for you.')}<br><span class="small">${L(`Puoi votare entro ${settings('vote_hours')} ore dall'inserimento del risultato delle partite che hai giocato. Il voto a te stesso non è previsto.`, `You can rate the players of matches you played in, within ${settings('vote_hours')} hours of the result being added. You cannot rate yourself.`)}</span></div>`; return; }
+  // miniature delle foto: toccando foto o nome si apre la scheda giocatore
+  if (!S.photos) { try { S.photos = await rpc('get_profile_photos', { p_token: T() }); } catch { S.photos = {}; } }
+  if (!$('#vlist')) return;
   $('#vlist').innerHTML = S.myVotes.map(m => {
     const done = m.targets.filter(t => t.value != null).length;
-    const side = team => m.targets.filter(t => t.team === team).map(t => `<div class="vote-row ${t.value != null ? 'done' : ''}"><span class="nm"><span class="dot ${t.team}"></span> ${esc(pname(t.id))}</span>
+    const side = team => m.targets.filter(t => t.team === team).map(t => `<div class="vote-row ${t.value != null ? 'done' : ''}"><span class="nm"><span class="dot ${t.team}"></span> ${S.photos?.[t.id] ? `<img class="vav plink" data-pid="${t.id}" src="${esc(S.photos[t.id])}" alt="" loading="lazy">` : `<span class="vav ini plink" data-pid="${t.id}" aria-hidden="true">${esc(pname(t.id).split(' ').map(x => x[0] || '').join('').slice(0, 2).toUpperCase())}</span>`}${plink(t.id)}</span>
         <select data-t="${t.id}" aria-label="${L('Voto a', 'Rating for')} ${esc(pname(t.id))}"><option value="">–</option>${VOTE_OPTS.map(o => `<option value="${o}" ${t.value != null && Number(t.value) === o ? 'selected' : ''}>${fmtVote(o)}</option>`).join('')}</select></div>`).join('');
     return `<div class="card" data-m="${m.match_id}">
       <div class="row"><h2 style="margin:0">${esc(typeLabel(m.type))}</h2><span class="muted small">${esc(fmtDate(m.date))} · ${esc(TW)} ${m.score_w} – ${m.score_d} ${esc(TD)}</span></div>
