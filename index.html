@@ -472,6 +472,7 @@ const ERR_EN = [
   [/^Crediti insufficienti \(costa (\d+), hai ([\d.]+)\)/, 'Not enough credits (costs $1, you have $2).'],
   [/^Crediti da tenere per completare la rosa: dopo questo acquisto ti resterebbero (-?[\d.]+) crediti per (\d+) posti liberi .*Puoi spendere al massimo (-?[\d.]+)/, 'You must keep credits to complete your squad: after this purchase you would have $1 credits for $2 empty slots (at least 1 credit per slot is needed). You can spend at most $3.'],
   [/^Formazioni bloccate/, 'Lineups are locked: they reopen when voting on the match closes.'],
+  [/^Rosa incompleta: per schierare la formazione servono tutti i (\d+) giocatori in rosa \(ne hai (\d+)\)/, 'Incomplete squad: you need all $1 players in your squad to pick a lineup (you have $2).'],
   [/^Giocatore non disponibile/, 'Player not available.'],
   [/^Giocatore non presente nella partita/, 'Player not in this match.'],
   [/^Giocatore non trovato/, 'Player not found.'],
@@ -2093,7 +2094,9 @@ async function viewFanta(v) {
     const myD = F.drafts.find(d => d.owner_id === me().id) || {};
     const saved = { mov: [...(myD.players || [])], gk: myD.gk ?? null };
     const st = { mov: [...saved.mov], gk: saved.gk };
-    const ro = !!lock || !canTrade;
+    // per schierare la formazione (e prendere punti) serve la rosa completa
+    const noRoster = canTrade && mine.roster.length < rosterSize;
+    const ro = !!lock || !canTrade || noRoster;
     const nextM = isActiveSeason ? fantaNextMatch(lock) : null;
     const teamsOk = !!nextM?.players?.length;
     const where = {}; if (teamsOk) nextM.players.forEach(p => where[p.id] = p.team);
@@ -2111,7 +2114,10 @@ async function viewFanta(v) {
     };
     const draftHtml = () => {
       const dirty = !ro && (st.gk !== saved.gk || st.mov.length !== saved.mov.length || st.mov.some((x, i) => x !== saved.mov[i]));
-      return `<div class="row"><h2 style="margin:0">${L('La mia formazione', 'My lineup')}</h2><div class="spacer"></div>${dirty ? `<span class="pill warn">${L('da salvare', 'not saved')}</span>` : ''}<span class="pill ${lock ? '' : 'live'}">${(st.gk != null ? 1 : 0) + st.mov.length}/${lineupSize}</span></div>
+      const rosterAlert = noRoster ? `<div class="card small" style="margin:0 0 12px;border-color:var(--bad,#d33);background:rgba(220,50,50,.08)">⚠️ ${L(
+        `<b>Rosa incompleta (${mine.roster.length}/${rosterSize}).</b> Per schierare la formazione e prendere punti nella giornata servono tutti i ${rosterSize} giocatori in rosa.${saved.mov.length || saved.gk != null ? ' La formazione già salvata <b>non varrà</b> finché non completi la rosa.' : ''} <button class="btn accent sm" data-gomarket>Vai al mercato</button>`,
+        `<b>Incomplete squad (${mine.roster.length}/${rosterSize}).</b> To pick a lineup and score in the matchday you need all ${rosterSize} players in your squad.${saved.mov.length || saved.gk != null ? ' Your saved lineup <b>will not count</b> until your squad is complete.' : ''} <button class="btn accent sm" data-gomarket>Go to the market</button>`)}</div>` : '';
+      return `${rosterAlert}<div class="row"><h2 style="margin:0">${L('La mia formazione', 'My lineup')}</h2><div class="spacer"></div>${dirty ? `<span class="pill warn">${L('da salvare', 'not saved')}</span>` : ''}<span class="pill ${lock ? '' : 'live'}">${(st.gk != null ? 1 : 0) + st.mov.length}/${lineupSize}</span></div>
         <div class="tiny muted" style="margin:4px 0 0">${lock ? `<b>${L('Formazioni bloccate', 'Lineups locked')} ${lockText}, ${fantaLockWhen(lock)}.</b>` : (F.next_stop ? L(`Puoi cambiarla fino a <b>${esc(fmtStop(F.next_stop))}</b>: a quell'ora si chiude da sola e vale quella salvata, per la prima partita a 8 o a 11 caricata.`, `You can change it until <b>${esc(fmtStop(F.next_stop))}</b>: at that time it locks automatically and the saved lineup counts for the next 8- or 11-a-side match.`) : L('Puoi cambiarla quando vuoi: quando i presidenti premono STOP vale quella salvata in quel momento, per la prima partita a 8 o a 11 caricata.', 'You can change it any time: when the presidents press STOP, the lineup saved at that moment counts for the next 8- or 11-a-side match.'))}
         ${L(`1 portiere (P) + ${movSize} di movimento. Chi non gioca prende 0; se il tuo portiere non gioca prendi il punteggio peggiore tra i portieri in campo, se non c'è nessun portiere ${settings('fanta_gk_ufficio')} d'ufficio.`, `1 goalkeeper (GK) + ${movSize} outfield players. Players who don't play score 0; if your goalkeeper doesn't play you get the lowest score among the goalkeepers who played, and if no goalkeeper played, a default ${fmtNum(settings('fanta_gk_ufficio'))}.`)}</div>
         ${pitchHtml(st, ro, where, teamsOk, me().id)}
@@ -2243,6 +2249,7 @@ async function viewFanta(v) {
 
       <h3>2. La rosa e il mercato</h3><ul>
       <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare <b>tutti e ${rosterSize} i giocatori di movimento</b> della rosa: la rosa va completata.</li>
+      <li><b>Senza la rosa completa non si gioca</b>: non puoi schierare la formazione e, se l'hai salvata prima, allo STOP non viene registrata, quindi in quella giornata non prendi punti.</li>
       <li>Per questo, dopo ogni acquisto devi tenere <b>almeno 1 credito per ogni posto ancora libero</b> (es. con 10 giocatori comprati te ne servono almeno 5). L'app blocca gli acquisti che non lo rispettano.</li>
       <li>Lo stesso giocatore può essere nella rosa di più squadre: non ci sono esclusive.</li>
       <li>I <b>portieri (GK) non si comprano</b>: sono sempre disponibili a tutti per il ruolo P. Chi è GK lo decidono i presidenti.</li>
@@ -2319,6 +2326,7 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 
       <h3>2. Squad and market</h3><ul>
       <li>Each team has <b>${st('fanta_budget')} credits</b> to buy <b>all ${rosterSize} outfield players</b> of the squad: the squad must be completed.</li>
+      <li><b>No full squad, no game</b>: you cannot pick a lineup and, if you saved one earlier, it is not recorded at the lock, so you score nothing in that matchday.</li>
       <li>So after every purchase you must keep <b>at least 1 credit for each empty slot</b> (e.g. with 10 players bought you need at least 5). The app blocks purchases that break this.</li>
       <li>The same player can be in several teams' squads: there are no exclusive picks.</li>
       <li><b>Goalkeepers (GK) are not bought</b>: they are always available to everyone for the GK slot. The presidents decide who is a GK.</li>
