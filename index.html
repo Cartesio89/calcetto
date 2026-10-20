@@ -468,6 +468,10 @@ const TW = CFG.TEAM_W || 'Chiari', TD = CFG.TEAM_D || 'Scuri';
 const typeLabel = t => EN ? t + '-a-side' : 'Calcio a ' + t;
 // messaggi di errore del database tradotti per chi usa l'inglese
 const ERR_EN = [
+  [/^Testo troppo lungo/, 'Text too long.'],
+  [/^Intervista e "dicono di lui": massimo (\d+)/, 'Interview and "what they say": $1 characters max.'],
+  [/^Data di nascita non valida/, 'Invalid date of birth.'],
+  [/^Giocatore non trovato/, 'Player not found.'],
   [/^Accesso ospite non attivo/, 'Guest access is turned off.'],
   [/^Crediti insufficienti \(costa (\d+), hai ([\d.]+)\)/, 'Not enough credits (costs $1, you have $2).'],
   [/^Crediti da tenere per completare la rosa: dopo questo acquisto ti resterebbero (-?[\d.]+) crediti per (\d+) posti liberi .*Puoi spendere al massimo (-?[\d.]+)/, 'You must keep credits to complete your squad: after this purchase you would have $1 credits for $2 empty slots (at least 1 credit per slot is needed). You can spend at most $3.'],
@@ -781,6 +785,7 @@ const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.map(t => ({ v: t,
 // bandiera dalla nazionalità scritta in italiano (immagini flagcdn.com, gratuite)
 const NAT_ISO = { italiana: 'it', italiano: 'it', ucraina: 'ua', ucraino: 'ua', spagnola: 'es', spagnolo: 'es', argentina: 'ar', argentino: 'ar', brasiliana: 'br', brasiliano: 'br', francese: 'fr', tedesca: 'de', tedesco: 'de', inglese: 'gb', britannica: 'gb', britannico: 'gb', portoghese: 'pt', rumena: 'ro', rumeno: 'ro', albanese: 'al', polacca: 'pl', polacco: 'pl', russa: 'ru', russo: 'ru', americana: 'us', statunitense: 'us', colombiana: 'co', colombiano: 'co', peruviana: 'pe', peruviano: 'pe', venezuelana: 've', venezuelano: 've', uruguaiana: 'uy', uruguaiano: 'uy', cilena: 'cl', cileno: 'cl', messicana: 'mx', messicano: 'mx', marocchina: 'ma', marocchino: 'ma', egiziana: 'eg', egiziano: 'eg', tunisina: 'tn', tunisino: 'tn', senegalese: 'sn', nigeriana: 'ng', nigeriano: 'ng', bengalese: 'bd', indiana: 'in', indiano: 'in', cinese: 'cn', giapponese: 'jp', greca: 'gr', greco: 'gr', croata: 'hr', croato: 'hr', serba: 'rs', serbo: 'rs', svizzera: 'ch', svizzero: 'ch', belga: 'be', olandese: 'nl', irlandese: 'ie', svedese: 'se', norvegese: 'no', danese: 'dk', austriaca: 'at', austriaco: 'at', moldava: 'md', moldavo: 'md', bulgara: 'bg', bulgaro: 'bg', georgiana: 'ge', georgiano: 'ge', turca: 'tr', turco: 'tr', iraniana: 'ir', iraniano: 'ir', filippina: 'ph', filippino: 'ph', ecuadoriana: 'ec', ecuadoriano: 'ec', cubana: 'cu', cubano: 'cu', dominicana: 'do', dominicano: 'do', camerunense: 'cm', ivoriana: 'ci', ivoriano: 'ci', ghanese: 'gh', algerina: 'dz', algerino: 'dz', sammarinese: 'sm', ungherese: 'hu', ceca: 'cz', ceco: 'cz', slovacca: 'sk', slovacco: 'sk', slovena: 'si', sloveno: 'si', bosniaca: 'ba', bosniaco: 'ba', macedone: 'mk', kosovara: 'xk', kosovaro: 'xk', canadese: 'ca', australiana: 'au', australiano: 'au' };
 // doppia nazionalità: "Italiana/Francese" (anche con virgola o "e") → una bandiera per ciascuna
+Object.assign(NAT_ISO, { italia: 'it', ucraina: 'ua', spagna: 'es', brasile: 'br', francia: 'fr', germania: 'de', inghilterra: 'gb', 'regno unito': 'gb', portogallo: 'pt', romania: 'ro', albania: 'al', polonia: 'pl', russia: 'ru', 'stati uniti': 'us', usa: 'us', colombia: 'co', 'perù': 'pe', peru: 'pe', venezuela: 've', uruguay: 'uy', cile: 'cl', messico: 'mx', marocco: 'ma', egitto: 'eg', tunisia: 'tn', senegal: 'sn', nigeria: 'ng', bangladesh: 'bd', india: 'in', cina: 'cn', giappone: 'jp', grecia: 'gr', croazia: 'hr', serbia: 'rs', svizzera: 'ch', belgio: 'be', olanda: 'nl', irlanda: 'ie', svezia: 'se', norvegia: 'no', danimarca: 'dk', austria: 'at', moldavia: 'md', bulgaria: 'bg', georgia: 'ge', turchia: 'tr', iran: 'ir', filippine: 'ph', ecuador: 'ec', cuba: 'cu', camerun: 'cm', ghana: 'gh', algeria: 'dz', 'san marino': 'sm', ungheria: 'hu', slovacchia: 'sk', slovenia: 'si', bosnia: 'ba', macedonia: 'mk', kosovo: 'xk', canada: 'ca', australia: 'au', scozzese: 'gb-sct', scozia: 'gb-sct', gallese: 'gb-wls', galles: 'gb-wls' });
 const flagImg = nat => String(nat || '').split(/\s*(?:\/|,|\be\b)\s*/i).map(x => NAT_ISO[x.trim().toLowerCase()]).filter(Boolean)
   .map(iso => `<img class="flag" src="https://flagcdn.com/w40/${iso}.png" alt="" onerror="this.remove()">`).join('');
 async function openPlayer(id) {
@@ -808,7 +813,37 @@ async function openPlayer(id) {
           <dt>${L('Nato il', 'Born on')}</dt><dd>${born || none}</dd>
           <dt class="desc" style="margin-top:8px">${L("Estratto dall'ultima intervista", 'From his latest interview')}</dt><dd class="desc">${d.interview ? `<i>“${esc(d.interview)}”</i>` : none}</dd>
           <dt class="desc" style="margin-top:8px">${L('Dicono di lui', 'What they say about him')}</dt><dd class="desc">${d.description ? esc(d.description) : none}</dd></dl>
-      </div>${statBox}</div>` });
+      </div>${statBox}</div>`,
+    actions: isPres() ? [{ label: L('✏️ Modifica scheda', '✏️ Edit profile'), fn: () => { editProfile(d); return true; } }] : [] });
+}
+// presidenti: modifica della parte testuale della scheda (foto e sottotitolo restano come sono)
+function editProfile(d) {
+  const fld = (id, lab, val, ph = '', type = 'text') => `<label class="f" for="${id}">${lab}</label><input type="${type}" id="${id}" value="${esc(val || '')}" placeholder="${esc(ph)}">`;
+  const area = (id, lab, val) => `<label class="f" for="${id}">${lab}</label><textarea id="${id}" rows="3" maxlength="600">${esc(val || '')}</textarea>`;
+  modal({ title: `${L('Modifica scheda', 'Edit profile')} · ${d.name}`, body: `
+      ${fld('pfFull', L('Nome e cognome', 'Full name'), d.full_name, L('Es. Mario Rossi', 'E.g. Mario Rossi'))}
+      ${fld('pfRole', L('Ruolo', 'Role'), d.role, L('Es. DC/B', 'E.g. DC/B'))}
+      ${fld('pfNat', L('Nazionalità', 'Nationality'), d.nationality, L('Es. Italiana, oppure Italiana/Francese', 'E.g. Italiana, or Italiana/Francese'))}
+      <div class="tiny muted" id="pfFlag" style="margin-top:4px;min-height:18px"></div>
+      ${fld('pfPlace', L('Luogo di nascita', 'Place of birth'), d.birth_place, L('Es. Tivoli (RM)', 'E.g. Tivoli (RM)'))}
+      ${fld('pfDate', L('Data di nascita', 'Date of birth'), d.birth_date, '', 'date')}
+      ${area('pfInt', L("Estratto dall'ultima intervista", 'From his latest interview'), d.interview)}
+      ${area('pfDesc', L('Dicono di lui', 'What they say about him'), d.description)}
+      <p class="tiny muted" style="margin-top:8px">${L('Campo vuoto = cancellato. La foto non si cambia da qui.', 'Empty field = cleared. The photo is not changed here.')}</p>`,
+    onOpen: el => {
+      const nat = $('#pfNat', el), out = $('#pfFlag', el);
+      const upd = () => { const v = nat.value.trim(), f = flagImg(v);
+        out.innerHTML = !v ? '' : f ? `${f} ${L('bandiera automatica', 'automatic flag')}` : `⚠️ ${L('bandiera non riconosciuta: scrivila in italiano (es. Italiana, Francese)', 'flag not recognised: write it in Italian (e.g. Italiana, Francese)')}`; };
+      nat.oninput = upd; upd();
+    },
+    actions: [{ label: L('Salva', 'Save'), cls: 'primary', fn: async el => {
+      const v = id => $('#' + id, el).value;
+      try {
+        await rpc('admin_set_player_profile', { p_token: T(), p_player: d.id, p_full_name: v('pfFull'), p_role: v('pfRole'), p_nationality: v('pfNat'),
+          p_birth_place: v('pfPlace'), p_birth_date: v('pfDate') || null, p_interview: v('pfInt'), p_description: v('pfDesc') });
+      } catch (e) { toast(e.message, true); return false; }
+      toast(L('Scheda aggiornata', 'Profile updated')); openPlayer(d.id); return true;
+    } }] });
 }
 document.addEventListener('click', e => { const t = e.target.closest('.plink'); if (!t) return; e.stopPropagation(); e.preventDefault(); openPlayer(Number(t.dataset.pid)); }, true);
 document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList?.contains('plink')) { e.preventDefault(); openPlayer(Number(e.target.dataset.pid)); } });
