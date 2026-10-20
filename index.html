@@ -345,6 +345,11 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .pcard{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:16px;align-items:start}
 .pcard .ph{aspect-ratio:4/5;border-radius:14px;overflow:hidden;background:linear-gradient(160deg,var(--surface),var(--line));display:flex;align-items:center;justify-content:center}
 .pcard .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.pbtns{display:flex;gap:6px;justify-content:flex-end}
+@media (max-width:560px){ .pbtns{flex-direction:column;align-items:stretch} .pbtns .btn{justify-content:center} }
+.pcard .ph.nophoto{background:#000;position:relative}
+.pcard .ph.nophoto svg{width:100%;height:100%;display:block}
+.pcard .ph .patch{position:absolute;left:-25%;right:-25%;top:56%;transform:rotate(-15deg);background:#d0161b;color:#fff;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:12px;line-height:1.15;letter-spacing:.2px;text-transform:uppercase;text-align:center;padding:6px 27%;box-shadow:0 3px 10px rgba(0,0,0,.55);border-top:1px solid rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.35)}
 .pcard .ph .ini{font-family:'Barlow Condensed',Inter,sans-serif;font-size:54px;font-weight:800;color:var(--muted)}
 .pcard .nmb{font-family:'Barlow Condensed',Inter,sans-serif;font-size:28px;font-weight:800;line-height:1.05;margin:0 0 10px}
 .pcard .psub{font-style:italic;font-size:14px;color:var(--muted);margin:-6px 0 10px}
@@ -788,6 +793,9 @@ const NAT_ISO = { italiana: 'it', italiano: 'it', ucraina: 'ua', ucraino: 'ua', 
 Object.assign(NAT_ISO, { italia: 'it', ucraina: 'ua', spagna: 'es', brasile: 'br', francia: 'fr', germania: 'de', inghilterra: 'gb', 'regno unito': 'gb', portogallo: 'pt', romania: 'ro', albania: 'al', polonia: 'pl', russia: 'ru', 'stati uniti': 'us', usa: 'us', colombia: 'co', 'perù': 'pe', peru: 'pe', venezuela: 've', uruguay: 'uy', cile: 'cl', messico: 'mx', marocco: 'ma', egitto: 'eg', tunisia: 'tn', senegal: 'sn', nigeria: 'ng', bangladesh: 'bd', india: 'in', cina: 'cn', giappone: 'jp', grecia: 'gr', croazia: 'hr', serbia: 'rs', svizzera: 'ch', belgio: 'be', olanda: 'nl', irlanda: 'ie', svezia: 'se', norvegia: 'no', danimarca: 'dk', austria: 'at', moldavia: 'md', bulgaria: 'bg', georgia: 'ge', turchia: 'tr', iran: 'ir', filippine: 'ph', ecuador: 'ec', cuba: 'cu', camerun: 'cm', ghana: 'gh', algeria: 'dz', 'san marino': 'sm', ungheria: 'hu', slovacchia: 'sk', slovenia: 'si', bosnia: 'ba', macedonia: 'mk', kosovo: 'xk', canada: 'ca', australia: 'au', scozzese: 'gb-sct', scozia: 'gb-sct', gallese: 'gb-wls', galles: 'gb-wls' });
 const flagImg = nat => String(nat || '').split(/\s*(?:\/|,|\be\b)\s*/i).map(x => NAT_ISO[x.trim().toLowerCase()]).filter(Boolean)
   .map(iso => `<img class="flag" src="https://flagcdn.com/w40/${iso}.png" alt="" onerror="this.remove()">`).join('');
+// giocatore senza foto: sagoma grigia su sfondo nero + patch rossa
+const noPhotoHtml = () => `<div class="ph nophoto"><svg viewBox="0 0 120 150" aria-hidden="true"><circle cx="60" cy="52" r="24" fill="#6e6e6e"/><path d="M14 150c0-34 20-56 46-56s46 22 46 56z" fill="#6e6e6e"/></svg>
+  <div class="patch">${L('La tua foto manca perché o sei troppo pigro o sei troppo brutto', "Your photo is missing because you're either too lazy or too ugly")}</div></div>`;
 async function openPlayer(id) {
   let d; try { d = await rpc('get_player_profile', { p_token: T(), p_player: id }); } catch (e) { return toast(e.message, true); }
   if (!d) return;
@@ -799,13 +807,12 @@ async function openPlayer(id) {
     born = `${esc(b.toLocaleDateString(LOC, { day: 'numeric', month: 'long', year: 'numeric' }))} <span class="muted">(${age} ${L('anni', 'years old')})</span>`;
   }
   const where = d.birth_place ? esc(d.birth_place) : '';
-  const ini = String(d.name || '').split(' ').map(x => x[0] || '').join('').slice(0, 2).toUpperCase();
   // calcio a 8: presenze, gol e media voto (voto pulito, solo partite con votazione chiusa e almeno N voti)
   const c8 = d.c8 || {}, row = (lab, x = {}) => `<tr><td>${lab}</td><td><b>${x.pg ?? 0}</b></td><td><b>${x.gol ?? 0}</b></td>${d.is_gk ? `<td><b>${x.gs ?? 0}</b></td>` : ''}<td>${x.mv == null ? none : `<b>${fmtVote(x.mv)}</b> <span class="tiny muted">(${x.nmv})</span>`}</td></tr>`;
   const statBox = `<div class="pstat"><h4 style="margin:6px 0 4px;font-size:15px">${L('Calcio a 8', '8-a-side')}</h4><table><thead><tr><th></th><th>${L('Presenze', 'Apps')}</th><th>${L('Gol', 'Goals')}</th>${d.is_gk ? `<th>${L('Gol subiti', 'Conceded')}</th>` : ''}<th title="${esc(L(`Media del voto pulito, solo partite con almeno ${settings('min_votes')} voti e votazione chiusa`, `Average plain rating, only matches with at least ${settings('min_votes')} ratings and voting closed`))}">${L('Media voto', 'Avg rating')}</th></tr></thead><tbody>
       ${[...(c8.by_season || [])].sort((a, b) => String(a.season).localeCompare(String(b.season))).map(x => row(`${L('Stagione', 'Season')} ${esc(awSeasonShort(x.season))}`, x)).join('')}${row(`<b>${L('Totale', 'All time')}</b>`, c8.all)}</tbody></table></div>`;
   modal({ title: L('Scheda giocatore', 'Player profile'), body: `<div class="pcard">
-      <div class="ph">${d.photo ? `<img src="${esc(d.photo)}" alt="${esc(d.full_name || d.name)}" onerror="this.remove()">` : `<span class="ini">${esc(ini)}</span>`}</div>
+      ${d.photo ? `<div class="ph"><img src="${esc(d.photo)}" alt="${esc(d.full_name || d.name)}" onerror="this.remove()"></div>` : noPhotoHtml()}
       <div><h3 class="nmb">${esc(d.full_name || d.name)}${d.is_gk ? ' <span class="pill">GK</span>' : ''}</h3>${d.subtitle ? `<div class="psub">${esc(d.subtitle)}</div>` : ''}
         <dl><dt>${L('Ruolo', 'Role')}</dt><dd>${d.role ? esc(d.role) : none}</dd>
           <dt>${L('Nazionalità', 'Nationality')}</dt><dd>${d.nationality ? `${flagImg(d.nationality)}${esc(d.nationality)}` : none}</dd>
@@ -2436,12 +2443,15 @@ async function viewAdmin(v) {
     av.innerHTML = `<div class="card"><div class="row"><input type="text" id="newName" placeholder="Nuovo giocatore (es. Rossi M.)" style="flex:1;min-width:180px"><label class="row small" style="gap:6px"><input type="checkbox" id="newGk"> Portiere (GK)</label><button class="btn primary" id="addP">Aggiungi</button></div>
       <div class="tiny muted" style="margin-top:6px">Il nuovo giocatore al primo accesso sceglie il suo nome dal menu e crea la password.</div></div>
       <div class="row" style="margin-bottom:8px"><input type="text" id="pq" placeholder="Cerca…" style="max-width:240px"><span class="small muted">${ps.filter(p => p.is_active).length} attivi · ${ps.filter(p => p.has_pw).length} con password</span></div>
-      <div class="tbl-wrap"><table class="t"><thead><tr><th>Giocatore</th><th>Password</th><th>Stato</th><th></th></tr></thead><tbody id="ptb">
-      ${ps.map(p => `<tr data-n="${esc(p.name.toLowerCase())}"><td>${esc(p.name)}${p.is_gk ? ' <span class="pill">GK</span>' : ''}${p.is_president ? ' <span class="pill live">Presidente</span>' : ''}</td><td>${p.has_pw ? '<span class="pill ok">impostata</span>' : '<span class="pill">primo accesso</span>'}</td>
-        <td>${p.is_active ? 'attivo' : '<span class="muted">disattivato</span>'}</td><td><button class="btn sm" data-edit="${p.id}">Modifica</button></td></tr>`).join('')}</tbody></table></div>`;
+      <div class="tbl-wrap"><table class="t"><thead><tr><th>Giocatore</th><th>Password</th><th></th></tr></thead><tbody id="ptb">
+      ${ps.map(p => `<tr data-n="${esc(p.name.toLowerCase())}"><td>${esc(p.name)}${p.is_gk ? ' <span class="pill">GK</span>' : ''}${p.is_president ? ' <span class="pill live">Presidente</span>' : ''}${p.is_active ? '' : ' <span class="pill">disattivato</span>'}</td><td>${p.has_pw ? '<span class="pill ok">impostata</span>' : '<span class="pill">1° accesso</span>'}</td>
+        <td><div class="pbtns"><button class="btn sm" data-prof="${p.id}">Scheda</button><button class="btn sm" data-edit="${p.id}">Modifica</button></div></td></tr>`).join('')}</tbody></table></div>`;
     $('#pq').oninput = e => { const q = e.target.value.toLowerCase(); $$('#ptb tr').forEach(tr => tr.classList.toggle('hidden', !tr.dataset.n.includes(q))); };
     $('#addP').onclick = async () => { const n = $('#newName').value.trim(); if (!n) return; if (await act(() => rpc('admin_add_player', { p_token: T(), p_name: n, p_is_gk: $('#newGk').checked }), 'Giocatore aggiunto')) { await reloadBoot(); S.fanta = S.stats = null; viewAdmin(v); } };
-    av.onclick = e => { const b = e.target.closest('[data-edit]'); if (!b) return; const p = S.boot.players.find(x => x.id === Number(b.dataset.edit));
+    av.onclick = async e => {
+      const pf = e.target.closest('[data-prof]');
+      if (pf) { pf.disabled = true; try { const d = await rpc('get_player_profile', { p_token: T(), p_player: Number(pf.dataset.prof) }); if (d) editProfile(d); } catch (er) { toast(er.message, true); } pf.disabled = false; return; }
+      const b = e.target.closest('[data-edit]'); if (!b) return; const p = S.boot.players.find(x => x.id === Number(b.dataset.edit));
       modal({ title: 'Modifica giocatore', body: `<label class="f">Nome</label><input type="text" id="en" value="${esc(p.name)}">
           <label class="row small" style="margin-top:12px;gap:8px"><input type="checkbox" id="ea" ${p.is_active ? 'checked' : ''}> Attivo (se disattivato non compare nel login e nelle liste)</label>
           <label class="row small" style="margin-top:8px;gap:8px"><input type="checkbox" id="eg" ${p.is_gk ? 'checked' : ''}> Portiere (GK): non si compra al fanta, schierabile nel ruolo P</label>
