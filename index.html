@@ -829,7 +829,7 @@ function editProfile(d) {
       ${fld('pfDate', L('Data di nascita', 'Date of birth'), d.birth_date, '', 'date')}
       ${area('pfInt', L("Estratto dall'ultima intervista", 'From his latest interview'), d.interview)}
       ${area('pfDesc', L('Dicono di lui', 'What they say about him'), d.description)}
-      <p class="tiny muted" style="margin-top:8px">${L('Campo vuoto = cancellato. La foto non si cambia da qui.', 'Empty field = cleared. The photo is not changed here.')}</p>`,
+      <p class="tiny muted" style="margin-top:8px">${L('Se lasci un campo vuoto, la voce resta in scheda senza testo (—). La foto non si cambia da qui.', 'If you leave a field empty, the entry stays on the profile with no text (—). The photo is not changed here.')}</p>`,
     onOpen: el => {
       const nat = $('#pfNat', el), out = $('#pfFlag', el);
       const upd = () => { const v = nat.value.trim(), f = flagImg(v);
