@@ -139,6 +139,7 @@ table.t{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeri
 .modal .body{padding:14px 16px;overflow:auto;flex:1}
 .modal footer{padding:12px 16px calc(12px + env(safe-area-inset-bottom));border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end;background:var(--surface);flex-wrap:wrap}
 /* picker rows */
+.grp-h{font-size:11.5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--muted);margin:10px 0 2px}
 .pick{display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid var(--line)}
 .pick .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .pick .nm .pst{display:block;font-size:11.5px;color:var(--muted);font-weight:500;line-height:1.2;margin-top:1px}
@@ -1151,7 +1152,8 @@ async function viewPartite(v) {
       const played = m.status === 'giocata';
       const me = pid && m.players.find(p => p.id === pid);
       return `<div class="card match" data-id="${m.id}">
-      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">${L('apri per i dettagli ›', 'tap for details ›')}</span><div class="spacer"></div>${matchStatusPills(m)}</div>
+      <div class="row"><b>${esc(typeLabel(m.type))}</b><span class="muted small">${esc(fmtDate(m.date))}</span><span class="open-hint">${L('apri per i dettagli ›', 'tap for details ›')}</span><div class="spacer"></div>${canMakeTeams(m) ? `<span class="pill live">${L('Fai tu le squadre', 'You pick the teams')}</span>` : ''}${matchStatusPills(m)}</div>
+      ${!played && m.callups?.length ? `<div class="small muted">${m.callups.length} ${L('convocati', 'called up')}${m.lineup_manager ? ` · ${L('squadre', 'teams')}: ${esc(pname(m.lineup_manager))}` : ''}</div>` : ''}
       ${m.note ? `<div class="small muted">${esc(m.note)}</div>` : ''}
       ${hasVideo(m) ? `<div class="hl-row">${hlBtn(m)}${ytBtn(m)}</div>` : ''}
       ${me ? `<div class="small" style="margin-top:4px"><span class="team"><span class="dot ${me.team}"></span>${esc(pname(pid))} ${L('con i', 'with')} ${esc(me.team === 'W' ? TW : TD)}</span>${played ? ` · <b>${m.score_w === m.score_d ? L('pareggio', 'draw') : (me.team === 'W') === (m.score_w > m.score_d) ? L('vittoria', 'win') : L('sconfitta', 'loss')}</b>` : ''}${me.goals ? ` · ${me.goals} ${L('gol', me.goals === 1 ? 'goal' : 'goals')}` : ''}</div>` : ''}
@@ -1208,9 +1210,14 @@ function openMatch(id) {
   if (pres) {
     actions.push({ label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox('Eliminare definitivamente la partita con statistiche, voti e formazioni fanta?', 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_match', { p_token: T(), p_match: m.id }), 'Partita eliminata'); if (ok) await refreshAll(); return ok; } });
     actions.push({ label: 'Dati partita', fn: async () => { editMatchMeta(m, false); return true; } });
+    if (!played) actions.push({ label: 'Convocati', fn: async () => { editCallups(m); return true; } });
     actions.push({ label: 'Squadre', fn: async () => { editTeams(m); return true; } });
     actions.push({ label: played ? 'Modifica risultato' : 'Inserisci risultato', cls: 'primary', fn: async () => { editResult(m, true); return true; } });
   }
+  if (canMakeTeams(m)) actions.push({ label: L('Fai le squadre', 'Make the teams'), cls: 'primary', fn: async () => { editTeams(m); return true; } });
+  const cu = callupIds(m);
+  const cuHtml = !played && cu.length ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">${L('Convocati', 'Squad')} (${cu.length})</h2>
+      <div data-cu>${S.roles ? groupedRows(cu, id => { const t = m.players.find(p => p.id === id)?.team; return t ? `<span class="team small"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</span>` : `<span class="tiny muted">${L('da assegnare', 'unassigned')}</span>`; }, true) : ''}</div></div>` : '';
   const fantaCtl = pres && S.season === S.boot.active_season && [8, 11].includes(m.type) ? `<div class="card" style="margin-top:14px"><h2 style="font-size:19px">FantaNunnaree</h2>
       <div class="small muted" style="margin-bottom:8px">${m.fanta_state === 'bloccato' ? '<b>Giornata valida</b>: questa partita usa le formazioni bloccate con lo STOP.' : 'Nessuna giornata fanta su questa partita. Le formazioni si bloccano con il pulsante STOP in Partite o nel FantaNunnaree, e vanno alla prima partita a 8 o a 11 caricata.'}</div>
       ${m.fanta_state !== 'chiuso' ? '<div class="row"><button class="btn danger sm" data-fanta="chiuso">Annulla giornata fanta</button></div>' : ''}</div>` : '';
@@ -1224,15 +1231,16 @@ function openMatch(id) {
   function fvNote() { return L(`Fantavoto = voto + bonus/malus FantaNunnaree. In grigio: meno di ${minV} voti, vale il voto d'ufficio (${fmtVote(settings('fanta_voto_ufficio'))}). Tocca un numero per il dettaglio.`, `Fanta score = rating + FantaNunnaree bonus/malus. Greyed out: fewer than ${minV} ratings, the default rating (${fmtVote(settings('fanta_voto_ufficio'))}) applies. Tap a number for details.`); }
   const mo = modal({
     title: L('Dettaglio partita', 'Match details'), wide: true,
-    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">Lineup manager: <b>${esc(pname(m.lineup_manager))}</b></p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">${played ? L('Squadre fatte da', 'Teams picked by') : L('Fa le squadre', 'Picking the teams')}: <b>${esc(pname(m.lineup_manager))}</b>${canMakeTeams(m) ? ` <span class="pill live">${L('tocca a te', 'your turn')}</span>` : ''}</p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
       ${canFv ? `<div class="row" style="justify-content:center;margin:4px 0 8px">${segHtml('mxMode', [{ v: 'voto', l: L('Voto', 'Rating') }, { v: 'fv', l: L('Fantavoto', 'Fanta score') }], mode)}</div>` : ''}
       <div class="mx-cols">${col('W')}${col('D')}</div>
       ${canFv ? `<p class="tiny muted" id="mxNote" style="margin:4px 0">${mode === 'fv' ? fvNote() : ''}</p>` : ''}
       ${played && m.votes_open ? `<p class="tiny muted">${L('I voti compaiono al centro quando si chiudono le votazioni.', 'Ratings appear in the middle when voting closes.')}</p>` : ''}
       ${iconLegend()}
-      ${fantaCtl}${voteCtl}${ytCtl}`,
+      ${cuHtml}${fantaCtl}${voteCtl}${ytCtl}`,
     actions
   });
+  if (cuHtml && !S.roles) loadRoles().then(() => { const b = mo.el.querySelector('[data-cu]'); if (b) b.innerHTML = groupedRows(cu, id => { const t = m.players.find(p => p.id === id)?.team; return t ? `<span class="team small"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</span>` : `<span class="tiny muted">${L('da assegnare', 'unassigned')}</span>`; }, true); });
   const redraw = () => { const c = mo.el.querySelector('.mx-cols'); if (c) c.innerHTML = col('W') + col('D'); const n = mo.el.querySelector('#mxNote'); if (n) n.innerHTML = mode === 'fv' ? fvNote() : ''; };
   const setMode = async val => {
     if (val === 'fv' && !fvMap) {
@@ -1331,7 +1339,7 @@ function editMatchMeta(m, retro) {
       <label class="f">Data</label><input type="date" id="mDate" value="${m?.date || today}">
       <label class="f">Nota (facoltativa)</label><input type="text" id="mNote" value="${esc(m?.note || '')}" placeholder="Es. campo, recupero…">`,
     onOpen: el => bindSeg($('#mType', el), val => $$('#mType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === val))),
-    actions: [{ label: m ? 'Salva' : 'Avanti: squadre', cls: 'primary', fn: async el => {
+    actions: [{ label: m ? 'Salva' : retro ? 'Avanti: squadre' : 'Avanti: convocati', cls: 'primary', fn: async el => {
       const type = Number($('#mType .on', el).dataset.v), date = $('#mDate', el).value, note = $('#mNote', el).value;
       if (!date) { toast('Inserisci la data', true); return false; }
       if (m && type !== m.type) {
@@ -1344,39 +1352,135 @@ function editMatchMeta(m, retro) {
       const r = await act(() => rpc('admin_create_match', { p_token: T(), p_type: type, p_date: date, p_note: note }));
       if (!r) return false;
       await loadMatches(true);
-      editTeams(S.matches.list.find(x => x.id === r.id), retro);
+      const nm = S.matches.list.find(x => x.id === r.id);
+      if (retro) editTeams(nm, true); else editCallups(nm);
       renderTab();
       return true;
     } }]
   });
 }
+// ---- CONVOCATI: ordine per ruolo (primo ruolo indicato nella scheda): portieri, difensori, centrocampisti, attaccanti
+const ROLE_GRP = { P: 0, DC: 1, DD: 1, DS: 1, B: 1, TS: 1, TD: 1, E: 2, M: 2, C: 2, CC: 2, CM: 2, T: 2, W: 3, A: 3, PC: 3, AT: 3 };
+const roleGrp = id => isGkId(id) ? 0 : (ROLE_GRP[String(S.roles?.[id] || '').trim().split(/[\/,\s]+/)[0].toUpperCase()] ?? 4);
+const GRP_LBL = () => [L('Portieri', 'Goalkeepers'), L('Difensori', 'Defenders'), L('Centrocampisti', 'Midfielders'), L('Attaccanti', 'Forwards'), L('Ruolo non indicato', 'No role')];
+const byRole = ids => [...ids].sort((a, b) => roleGrp(a) - roleGrp(b) || pname(a).localeCompare(pname(b), 'it'));
+async function loadRoles(force) {
+  if (S.roles && !force) return S.roles;
+  try { S.roles = await rpc('get_player_roles', { p_token: T() }) || {}; } catch { S.roles = S.roles || {}; }
+  return S.roles;
+}
+const callupIds = m => (m?.callups || []).map(c => c.id);
+const roleTag = id => S.roles?.[id] ? `<span class="pst">${esc(S.roles[id])}</span>` : '';
+// righe raggruppate per ruolo; cell(id) = contenuto a destra del nome
+const groupedRows = (ids, cell, link) => { const out = []; let g = -1;
+  for (const id of byRole(ids)) { const k = roleGrp(id); if (k !== g) { g = k; out.push(`<div class="grp-h">${esc(GRP_LBL()[k])}</div>`); }
+    out.push(`<div class="pick"><span class="nm">${link ? plink(id) : esc(pname(id))}${roleTag(id)}</span>${cell(id)}</div>`); }
+  return out.join(''); };
+const canMakeTeams = m => !!m && m.status === 'programmata' && !isPres() && !isGuest() && !!me() && m.lineup_manager === me().id;
+
+// passo 1 e 2 (presidente): convocati (da elenco o da testo) e chi fa le squadre
+async function editCallups(m, thenTeams) {
+  await loadRoles(true);
+  const pool = S.boot.players.filter(p => !p.is_guest);
+  let chosen = callupIds(m);
+  if (!chosen.length && m.players.length) chosen = m.players.map(p => p.id);   // partita con squadre già fatte: parto da quelle
+  let q = '', lm = m.lineup_manager ?? '', pending = [];
+  const add = id => { if (!chosen.includes(id)) chosen.push(id); };
+  const lmOpts = () => '<option value="">— nessuno (le faccio io) —</option>' + [...pool].filter(p => p.is_active || p.id === m.lineup_manager)
+    .sort((a, b) => (chosen.includes(b.id) - chosen.includes(a.id)) || a.name.localeCompare(b.name, 'it'))
+    .map(p => `<option value="${p.id}" ${String(p.id) === String(lm) ? 'selected' : ''}>${esc(p.name)}${chosen.includes(p.id) ? '' : ' (non convocato)'}</option>`).join('');
+  const chosenHtml = () => chosen.length ? groupedRows(chosen, id => `<button class="btn sm" data-rm="${id}" aria-label="Togli">✕</button>`) : '<div class="muted small" style="padding:8px 0">Nessun convocato.</div>';
+  const pendHtml = () => pending.map((x, i) => `<div class="card small" style="margin:6px 0;padding:8px 10px">«${esc(x.raw)}»: ${x.status === 'nuovo' ? '<span class="muted">non trovato</span> <button class="btn sm" data-pok="' + i + '">Ignora</button>'
+      : `${x.status === 'simile' ? 'forse' : 'quale?'} ${x.candidates.map(id => `<button class="btn sm" data-pick="${i}" data-id="${id}">${esc(pname(id))}</button>`).join(' ')} <button class="btn sm" data-pok="${i}">Nessuno</button>`}</div>`).join('');
+  const allHtml = () => pool.filter(p => (p.is_active || chosen.includes(p.id)) && (!q || p.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name, 'it'))
+    .map(p => `<div class="pick"><span class="nm">${esc(p.name)}${roleTag(p.id)}</span><button class="tbtn ${chosen.includes(p.id) ? 'W on' : ''}" data-tog="${p.id}">${chosen.includes(p.id) ? '✓' : '+'}</button></div>`).join('');
+  modal({
+    title: `Convocati · ${typeLabel(m.type)} del ${fmtDate(m.date)}`,
+    body: `<label class="f" for="cTxt" style="margin-top:0">1 · Incolla i cognomi (uno per riga o separati da virgola)</label>
+      <textarea id="cTxt" rows="4" placeholder="Callari&#10;Citro L.&#10;Nunnari, Memolla, Parisi"></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn sm primary" id="cParse">Aggiungi dal testo</button><span class="tiny muted">Va bene cognome, cognome e iniziale, cognome e nome o nome e cognome. Se il cognome è di due giocatori (es. Citro) e non c'è il nome, te lo chiedo.</span></div>
+      <div id="cPend"></div>
+      <label class="f">Convocati (<span id="cN">${chosen.length}</span>) · in ordine di ruolo</label><div id="cChosen">${chosenHtml()}</div>
+      <label class="f" for="cQ">Oppure aggiungi dall'elenco</label><input type="text" id="cQ" placeholder="Cerca…" style="margin-bottom:6px"><div id="cAll" style="max-height:260px;overflow:auto">${allHtml()}</div>
+      <label class="f" for="cLm">2 · Chi fa le squadre</label><select id="cLm">${lmOpts()}</select>
+      <div class="tiny muted" style="margin-top:4px">Il giocatore scelto vede la partita con il pulsante “Fai le squadre” e può dividere i convocati tra ${esc(TW)} e ${esc(TD)} finché la partita non è giocata. Tu puoi sempre modificarle.</div>`,
+    onOpen: el => {
+      const redraw = () => { $('#cChosen', el).innerHTML = chosenHtml(); $('#cAll', el).innerHTML = allHtml(); $('#cPend', el).innerHTML = pendHtml(); $('#cN', el).textContent = chosen.length; $('#cLm', el).innerHTML = lmOpts(); };
+      $('#cQ', el).oninput = e => { q = e.target.value.toLowerCase(); $('#cAll', el).innerHTML = allHtml(); };
+      $('#cLm', el).onchange = e => lm = e.target.value;
+      $('#cParse', el).onclick = () => {
+        const toks = $('#cTxt', el).value.split(/[\n,;]+/).map(x => x.replace(/^\s*(\d+[.)-]?|[-•*])\s*/, '').trim()).filter(Boolean);
+        let n = 0;
+        for (const raw of toks) {
+          const r = matchPlayer(raw, pool);
+          if (r.status === 'ok') { if (!chosen.includes(r.id)) n++; add(r.id); }
+          else pending.push({ raw, status: r.status, candidates: r.status === 'ambiguo' ? r.candidates : r.candidates.slice(0, 3) });
+        }
+        $('#cTxt', el).value = ''; redraw();
+        toast(`${n} aggiunti${pending.length ? ` · ${pending.length} da chiarire` : ''}`);
+      };
+      el.addEventListener('click', e => {
+        const rm = e.target.closest('[data-rm]'); if (rm) { chosen = chosen.filter(x => x !== Number(rm.dataset.rm)); return redraw(); }
+        const tg = e.target.closest('[data-tog]'); if (tg) { const id = Number(tg.dataset.tog); chosen.includes(id) ? chosen = chosen.filter(x => x !== id) : add(id); return redraw(); }
+        const pk = e.target.closest('[data-pick]'); if (pk) { add(Number(pk.dataset.id)); pending.splice(Number(pk.dataset.pick), 1); return redraw(); }
+        const po = e.target.closest('[data-pok]'); if (po) { pending.splice(Number(po.dataset.pok), 1); return redraw(); }
+      });
+    },
+    actions: [
+      { label: 'Salva', fn: () => save(false) },
+      { label: 'Salva e fai le squadre', cls: 'primary', fn: () => save(true) }]
+  });
+  async function save(teams) {
+    if (pending.length && !await confirmBox(`Ci sono ancora ${pending.length} nomi da chiarire: verranno ignorati. Continuo?`, 'Continua')) return false;
+    if (!await act(() => rpc('admin_set_callups', { p_token: T(), p_match: m.id, p_players: chosen }))) return false;
+    // chi non è più convocato esce anche dalle squadre (solo se la partita non è giocata)
+    if (m.status === 'programmata' && m.players.some(p => !chosen.includes(p.id))) {
+      const keep = m.players.filter(p => chosen.includes(p.id));
+      if (!await act(() => rpc('admin_set_teams', { p_token: T(), p_match: m.id, p_white: keep.filter(p => p.team === 'W').map(p => p.id), p_dark: keep.filter(p => p.team === 'D').map(p => p.id) }))) return false;
+    }
+    if (String(lm) !== String(m.lineup_manager ?? '') && !await act(() => rpc('admin_set_lineup_manager', { p_token: T(), p_match: m.id, p_player: lm === '' ? null : Number(lm) }))) return false;
+    toast(`Convocati salvati (${chosen.length})`);
+    await loadMatches(true); renderTab();
+    if (teams || thenTeams === 'teams') editTeams(S.matches.list.find(x => x.id === m.id));
+    return true;
+  }
+}
+
 function editTeams(m, thenResult) {
+  const pres = isPres();
+  if (!S.roles) return loadRoles().then(() => editTeams(m, thenResult));
   const sel = {}; m.players.forEach(p => sel[p.id] = p.team);
-  const list = activePlayers();
+  const cu = callupIds(m);
+  const list = cu.length ? cu.map(id => S.boot.players.find(x => x.id === id)).filter(Boolean) : activePlayers();
   m.players.forEach(p => { if (!list.some(x => x.id === p.id)) list.push(S.boot.players.find(x => x.id === p.id)); });
   let q = '', lm = m.lineup_manager ?? '';
   const lmOpts = () => '<option value="">— nessuno —</option>' + [...S.boot.players].filter(p => p.is_active || p.id === m.lineup_manager).sort((a, b) => a.name.localeCompare(b.name, 'it')).map(p => `<option value="${p.id}" ${String(p.id) === String(lm) ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
-  const counts = () => { const w = Object.values(sel).filter(x => x === 'W').length, d = Object.values(sel).filter(x => x === 'D').length; return `<span class="team"><span class="dot W"></span>${esc(TW)} ${w}</span> &nbsp; <span class="team"><span class="dot D"></span>${esc(TD)} ${d}</span> <span class="muted small">· obiettivo ${m.type} per squadra</span>`; };
-  const rows = () => list.filter(p => !q || p.name.toLowerCase().includes(q)).map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>
-      <button class="tbtn W ${sel[p.id] === 'W' ? 'on' : ''}" data-p="${p.id}" data-t="W">${esc(TW[0])}</button><button class="tbtn D ${sel[p.id] === 'D' ? 'on' : ''}" data-p="${p.id}" data-t="D">${esc(TD[0])}</button></div>`).join('');
+  const counts = () => { const w = Object.values(sel).filter(x => x === 'W').length, d = Object.values(sel).filter(x => x === 'D').length, free = cu.filter(id => !sel[id]).length;
+    return `<span class="team"><span class="dot W"></span>${esc(TW)} ${w}</span> &nbsp; <span class="team"><span class="dot D"></span>${esc(TD)} ${d}</span> <span class="muted small">· ${L(`obiettivo ${m.type} per squadra`, `target ${m.type} per team`)}${free ? L(` · ${free} convocati da assegnare`, ` · ${free} still to assign`) : ''}</span>`; };
+  const btns = id => `<button class="tbtn W ${sel[id] === 'W' ? 'on' : ''}" data-p="${id}" data-t="W">${esc(TW[0])}</button><button class="tbtn D ${sel[id] === 'D' ? 'on' : ''}" data-p="${id}" data-t="D">${esc(TD[0])}</button>`;
+  const rows = () => { const vis = list.filter(p => !q || p.name.toLowerCase().includes(q));
+    return cu.length ? groupedRows(vis.map(p => p.id), btns) : vis.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>${btns(p.id)}</div>`).join(''); };
   modal({
-    title: `Squadre · ${typeLabel(m.type)}`,
-    body: `<label class="f" for="tlm" style="margin-top:0">Lineup manager (chi ha fatto le squadre)</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>
+    title: `${L('Squadre', 'Teams')} · ${typeLabel(m.type)}`,
+    body: `${pres ? `<label class="f" for="tlm" style="margin-top:0">Chi fa le squadre</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>` : ''}
       <div id="tcount" style="margin-bottom:10px">${counts()}</div>
-      <input type="text" id="tq" placeholder="Cerca…" style="margin-bottom:6px">
-      <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. Tocca di nuovo per togliere.</div>
+      ${pres && cu.length ? `<div class="row" style="margin-bottom:8px"><span class="small muted">${cu.length} convocati</span><button class="btn sm" id="tcu">Modifica convocati</button></div>` : ''}
+      ${pres && !cu.length && m.status === 'programmata' ? `<div class="row" style="margin-bottom:8px"><span class="small muted">Nessun convocato: elenco di tutti i giocatori.</span><button class="btn sm" id="tcu">Scegli i convocati</button></div>` : ''}
+      <input type="text" id="tq" placeholder="${L('Cerca…', 'Search…')}" style="margin-bottom:6px">
+      <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. ${L('Tocca di nuovo per togliere; puoi spostare un giocatore quando vuoi.', 'Tap again to remove; you can move a player any time.')}</div>
       <div id="tlist">${rows()}</div>`,
     onOpen: el => {
       $('#tq', el).oninput = e => { q = e.target.value.toLowerCase(); $('#tlist', el).innerHTML = rows(); };
-      $('#tlm', el).onchange = e => lm = e.target.value;
+      if ($('#tlm', el)) $('#tlm', el).onchange = e => lm = e.target.value;
+      if ($('#tcu', el)) $('#tcu', el).onclick = () => { el._close(); editCallups(m); };
       $('#tlist', el).onclick = e => { const b = e.target.closest('.tbtn'); if (!b) return; const id = Number(b.dataset.p); sel[id] = sel[id] === b.dataset.t ? undefined : b.dataset.t; if (!sel[id]) delete sel[id];
         b.parentElement.querySelectorAll('.tbtn').forEach(x => x.classList.toggle('on', sel[id] === x.dataset.t)); $('#tcount', el).innerHTML = counts(); };
     },
-    actions: [{ label: thenResult ? 'Avanti: risultato' : 'Salva squadre', cls: 'primary', fn: async () => {
+    actions: [{ label: thenResult ? 'Avanti: risultato' : L('Salva squadre', 'Save teams'), cls: 'primary', fn: async () => {
       const w = Object.keys(sel).filter(k => sel[k] === 'W').map(Number), d = Object.keys(sel).filter(k => sel[k] === 'D').map(Number);
-      const ok = await act(() => rpc('admin_set_teams', { p_token: T(), p_match: m.id, p_white: w, p_dark: d }), thenResult ? null : 'Squadre salvate');
+      const ok = await act(() => rpc(pres ? 'admin_set_teams' : 'team_set_teams', { p_token: T(), p_match: m.id, p_white: w, p_dark: d }), thenResult ? null : L('Squadre salvate', 'Teams saved'));
       if (!ok) return false;
-      if (String(lm) !== String(m.lineup_manager ?? '') && !await act(() => rpc('admin_set_lineup_manager', { p_token: T(), p_match: m.id, p_player: lm === '' ? null : Number(lm) }))) return false;
+      if (pres && String(lm) !== String(m.lineup_manager ?? '') && !await act(() => rpc('admin_set_lineup_manager', { p_token: T(), p_match: m.id, p_player: lm === '' ? null : Number(lm) }))) return false;
       await loadMatches(true); renderTab();
       if (thenResult) editResult(S.matches.list.find(x => x.id === m.id), false);
       return true;
