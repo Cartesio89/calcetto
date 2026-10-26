@@ -1396,7 +1396,28 @@ function parseCallupText(txt) {
       if (t) (inRes ? reserves : main).push({ raw: t, gk });
     }
   }
-  return { main, reserves };
+  return { main, reserves, type: callupTextType(txt) };
+}
+// tipo di partita scritto nel messaggio ("calciotto", "calcio a 11"...). "calcetto" no: spesso è nel nome del campo
+function callupTextType(txt) {
+  const t = normTxt(txt);
+  let m = t.match(/calcio\s*a\s*(5|7|8|11)\b/); if (m) return Number(m[1]);
+  if (/calcio\s*a\s*cinque/.test(t)) return 5;
+  if (/calcio\s*a\s*sette|calciosette/.test(t)) return 7;
+  if (/calcio\s*a\s*otto|calciotto/.test(t)) return 8;
+  if (/calcio\s*a\s*undici/.test(t)) return 11;
+  return null;
+}
+// avvisi: tipo del messaggio diverso da quello della partita, o numero di convocati da un altro tipo di partita
+function callupWarnings(type, msgType, n) {
+  const w = [];
+  if (msgType && msgType !== type) w.push({ txt: `Il messaggio parla di calcio a ${msgType}, ma questa partita è a ${type}.`, fix: msgType });
+  else if (n) {
+    const near = [...TYPES].sort((a, b) => Math.abs(n - 2 * a) - Math.abs(n - 2 * b))[0];
+    // piccole differenze (una riserva in più o un assente) non contano
+    if (Math.abs(n - 2 * type) >= 3 && Math.abs(n - 2 * type) > Math.abs(n - 2 * near)) w.push({ txt: `${n} convocati: per il calcio a ${type} di solito sono ${2 * type}, ${n} è da calcio a ${near}.`, fix: near });
+  }
+  return w;
 }
 
 // passo 1 e 2 (presidente): convocati (da elenco o da testo) e chi fa le squadre
@@ -1405,7 +1426,9 @@ async function editCallups(m, thenTeams) {
   const pool = S.boot.players.filter(p => !p.is_guest);
   let chosen = callupIds(m);
   if (!chosen.length && m.players.length) chosen = m.players.map(p => p.id);   // partita con squadre già fatte: parto da quelle
-  let q = '', lm = m.lineup_manager ?? '', pending = [];
+  let q = '', lm = m.lineup_manager ?? '', pending = [], msgType = null, parsed = false;
+  const warns = () => callupWarnings(m.type, msgType, chosen.length);
+  const warnHtml = () => !parsed ? '' : warns().map(w => `<div class="card small" style="margin:6px 0;padding:8px 10px;border-color:var(--warn)">⚠️ ${esc(w.txt)} <button class="btn sm" data-fixtype="${w.fix}">Imposta calcio a ${w.fix}</button></div>`).join('');
   const add = id => { if (!chosen.includes(id)) chosen.push(id); };
   const lmOpts = () => '<option value="">— nessuno (le faccio io) —</option>' + [...pool].filter(p => p.is_active || p.id === m.lineup_manager)
     .sort((a, b) => (chosen.includes(b.id) - chosen.includes(a.id)) || a.name.localeCompare(b.name, 'it'))
@@ -1420,17 +1443,18 @@ async function editCallups(m, thenTeams) {
     body: `<label class="f" for="cTxt" style="margin-top:0">1 · Incolla i cognomi (uno per riga o separati da virgola)</label>
       <textarea id="cTxt" rows="4" placeholder="Callari&#10;Citro L.&#10;Nunnari, Memolla, Parisi"></textarea>
       <div class="row" style="margin-top:6px"><button class="btn sm primary" id="cParse">Aggiungi dal testo</button><span class="tiny muted">Puoi incollare anche il messaggio di convocazione intero: leggo solo l'elenco numerato e tengo a parte le riserve. Va bene cognome, cognome e iniziale, cognome e nome o nome e cognome. Se il cognome è di due giocatori (es. Citro) e non c'è il nome, te lo chiedo.</span></div>
-      <div id="cPend"></div>
+      <div id="cWarn"></div><div id="cPend"></div>
       <label class="f">Convocati (<span id="cN">${chosen.length}</span>) · in ordine di ruolo</label><div id="cChosen">${chosenHtml()}</div>
       <label class="f" for="cQ">Oppure aggiungi dall'elenco</label><input type="text" id="cQ" placeholder="Cerca…" style="margin-bottom:6px"><div id="cAll" style="max-height:260px;overflow:auto">${allHtml()}</div>
       <label class="f" for="cLm">2 · Chi fa le squadre</label><select id="cLm">${lmOpts()}</select>
       <div class="tiny muted" style="margin-top:4px">Il giocatore scelto vede la partita con il pulsante “Fai le squadre” e può dividere i convocati tra ${esc(TW)} e ${esc(TD)} finché la partita non è giocata. Tu puoi sempre modificarle.</div>`,
     onOpen: el => {
-      const redraw = () => { $('#cChosen', el).innerHTML = chosenHtml(); $('#cAll', el).innerHTML = allHtml(); $('#cPend', el).innerHTML = pendHtml(); $('#cN', el).textContent = chosen.length; $('#cLm', el).innerHTML = lmOpts(); };
+      const redraw = () => { $('#cWarn', el).innerHTML = warnHtml(); $('#cChosen', el).innerHTML = chosenHtml(); $('#cAll', el).innerHTML = allHtml(); $('#cPend', el).innerHTML = pendHtml(); $('#cN', el).textContent = chosen.length; $('#cLm', el).innerHTML = lmOpts(); };
       $('#cQ', el).oninput = e => { q = e.target.value.toLowerCase(); $('#cAll', el).innerHTML = allHtml(); };
       $('#cLm', el).onchange = e => lm = e.target.value;
       $('#cParse', el).onclick = () => {
-        const { main, reserves } = parseCallupText($('#cTxt', el).value);
+        const { main, reserves, type: tt } = parseCallupText($('#cTxt', el).value);
+        if (tt) msgType = tt; parsed = true;
         let n = 0;
         for (const { raw, gk } of main) {
           const r = matchPlayer(raw, pool, gk);
@@ -1447,6 +1471,12 @@ async function editCallups(m, thenTeams) {
         const tg = e.target.closest('[data-tog]'); if (tg) { const id = Number(tg.dataset.tog); chosen.includes(id) ? chosen = chosen.filter(x => x !== id) : add(id); return redraw(); }
         const pk = e.target.closest('[data-pick]'); if (pk) { add(Number(pk.dataset.id)); pending.splice(Number(pk.dataset.pick), 1); return redraw(); }
         const po = e.target.closest('[data-pok]'); if (po) { pending.splice(Number(po.dataset.pok), 1); return redraw(); }
+        const fx = e.target.closest('[data-fixtype]'); if (fx) (async () => {
+          const nt = Number(fx.dataset.fixtype);
+          if (![8, 11].includes(nt) && m.fanta_state !== 'chiuso' && !await confirmBox(`Passando a calcio a ${nt} la giornata FantaNunnaree di questa partita viene annullata. Confermi?`, 'Conferma', true)) return;
+          if (!await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: nt, p_date: m.date, p_note: m.note || '' }), `Partita impostata a calcio a ${nt}`)) return;
+          m.type = nt; msgType = null; el.querySelector('header h2').textContent = `Convocati · ${typeLabel(nt)} del ${fmtDate(m.date)}`; redraw();
+        })();
       });
     },
     actions: [
@@ -1454,7 +1484,10 @@ async function editCallups(m, thenTeams) {
       { label: 'Salva e fai le squadre', cls: 'primary', fn: () => save(true) }]
   });
   async function save(teams) {
-    if (pending.length && !await confirmBox(`Ci sono ancora ${pending.length} nomi da chiarire: verranno ignorati. Continuo?`, 'Continua')) return false;
+    const open = pending.filter(x => x.status !== 'riserva').length;
+    if (open && !await confirmBox(`Ci sono ancora ${open} nomi da chiarire: verranno ignorati. Continuo?`, 'Continua')) return false;
+    const w = callupWarnings(m.type, msgType, chosen.length);
+    if (w.length && !await confirmBox(`${w.map(x => esc(x.txt)).join(' ')} Salvo comunque? (Il tipo si cambia da “Dati partita” o con il pulsante nell'avviso.)`, 'Salva comunque')) return false;
     if (!await act(() => rpc('admin_set_callups', { p_token: T(), p_match: m.id, p_players: chosen }))) return false;
     // chi non è più convocato esce anche dalle squadre (solo se la partita non è giocata)
     if (m.status === 'programmata' && m.players.some(p => !chosen.includes(p.id))) {
