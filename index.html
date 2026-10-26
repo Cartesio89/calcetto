@@ -1240,7 +1240,7 @@ function openMatch(id) {
       ${cuHtml}${fantaCtl}${voteCtl}${ytCtl}`,
     actions
   });
-  if (cuHtml && !S.roles) loadRoles().then(() => { const b = mo.el.querySelector('[data-cu]'); if (b) b.innerHTML = groupedRows(cu, id => { const t = m.players.find(p => p.id === id)?.team; return t ? `<span class="team small"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</span>` : `<span class="tiny muted">${L('da assegnare', 'unassigned')}</span>`; }, true); });
+  if (cuHtml) Promise.all([loadRoles(), loadAvgs(m)]).then(() => { const b = mo.el.querySelector('[data-cu]'); if (b) b.innerHTML = groupedRows(cu, id => { const t = m.players.find(p => p.id === id)?.team; return t ? `<span class="team small"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</span>` : `<span class="tiny muted">${L('da assegnare', 'unassigned')}</span>`; }, true); });
   const redraw = () => { const c = mo.el.querySelector('.mx-cols'); if (c) c.innerHTML = col('W') + col('D'); const n = mo.el.querySelector('#mxNote'); if (n) n.innerHTML = mode === 'fv' ? fvNote() : ''; };
   const setMode = async val => {
     if (val === 'fv' && !fvMap) {
@@ -1325,7 +1325,7 @@ async function fantaBannerClick(e) {
   }
 }
 async function refreshAll() {
-  S.stats = S.fanta = S.partners = null;
+  S.stats = S.fanta = S.partners = S.avgs = null;
   await loadMatches(true).catch(() => {});
   loadVotesBadge();
   renderTab();
@@ -1361,7 +1361,24 @@ function editMatchMeta(m, retro) {
 }
 // ---- CONVOCATI: ordine per ruolo (primo ruolo indicato nella scheda): portieri, difensori, centrocampisti, attaccanti
 const ROLE_GRP = { P: 0, DC: 1, DD: 1, DS: 1, B: 1, TS: 1, TD: 1, E: 2, M: 2, C: 2, CC: 2, CM: 2, T: 2, W: 3, A: 3, PC: 3, AT: 3 };
-const roleGrp = id => isGkId(id) ? 0 : (ROLE_GRP[String(S.roles?.[id] || '').trim().split(/[\/,\s]+/)[0].toUpperCase()] ?? 4);
+// vale il primo ruolo; eccezione: un esterno (E) che ha anche un ruolo da difensore va tra i difensori (es. E/DD)
+const roleGrp = id => {
+  if (isGkId(id)) return 0;
+  const rs = String(S.roles?.[id] || '').trim().toUpperCase().split(/[\/,\s]+/).filter(Boolean);
+  if (!rs.length) return 4;
+  if (rs[0] === 'E' && rs.slice(1).some(r => ROLE_GRP[r] === 1)) return 1;
+  return ROLE_GRP[rs[0]] ?? 4;
+};
+// voto medio (voto pulito) nella stagione e nel tipo di partita, come in Classifica
+async function loadAvgs(m) {
+  const key = `${S.season}|${m.type}`; S.avgs ||= {};
+  if (!S.avgs[key]) {
+    const rows = S.stats?.key === key ? S.stats.rows : await rpc('get_stats', { p_token: T(), p_season: S.season, p_type: m.type }).catch(() => []);
+    S.avgs[key] = Object.fromEntries((rows || []).map(r => [r.id, r]));
+  }
+  S.curAvg = S.avgs[key];
+  return S.curAvg;
+}
 const GRP_LBL = () => [L('Portieri', 'Goalkeepers'), L('Difensori', 'Defenders'), L('Centrocampisti', 'Midfielders'), L('Attaccanti', 'Forwards'), L('Ruolo non indicato', 'No role')];
 const byRole = ids => [...ids].sort((a, b) => roleGrp(a) - roleGrp(b) || pname(a).localeCompare(pname(b), 'it'));
 async function loadRoles(force) {
@@ -1370,7 +1387,8 @@ async function loadRoles(force) {
   return S.roles;
 }
 const callupIds = m => (m?.callups || []).map(c => c.id);
-const roleTag = id => S.roles?.[id] ? `<span class="pst">${esc(S.roles[id])}</span>` : '';
+const roleTag = id => { const a = S.curAvg?.[id], parts = [S.roles?.[id] ? esc(S.roles[id]) : '', a?.mv != null ? `${L('media voto', 'avg rating')} <b>${fmtVote(a.mv)}</b>` : ''].filter(Boolean);
+  return parts.length ? `<span class="pst">${parts.join(' · ')}</span>` : ''; };
 // righe raggruppate per ruolo; cell(id) = contenuto a destra del nome
 const groupedRows = (ids, cell, link) => { const out = []; let g = -1;
   for (const id of byRole(ids)) { const k = roleGrp(id); if (k !== g) { g = k; out.push(`<div class="grp-h">${esc(GRP_LBL()[k])}</div>`); }
@@ -1422,7 +1440,7 @@ function callupWarnings(type, msgType, n) {
 
 // passo 1 e 2 (presidente): convocati (da elenco o da testo) e chi fa le squadre
 async function editCallups(m, thenTeams) {
-  await loadRoles(true);
+  await Promise.all([loadRoles(true), loadAvgs(m)]);
   const pool = S.boot.players.filter(p => !p.is_guest);
   let chosen = callupIds(m);
   if (!chosen.length && m.players.length) chosen = m.players.map(p => p.id);   // partita con squadre già fatte: parto da quelle
@@ -1504,7 +1522,7 @@ async function editCallups(m, thenTeams) {
 
 function editTeams(m, thenResult) {
   const pres = isPres();
-  if (!S.roles) return loadRoles().then(() => editTeams(m, thenResult));
+  if (!S.roles || S.curAvg !== S.avgs?.[`${S.season}|${m.type}`]) return Promise.all([loadRoles(), loadAvgs(m)]).then(() => editTeams(m, thenResult));
   const sel = {}; m.players.forEach(p => sel[p.id] = p.team);
   const cu = callupIds(m);
   const list = cu.length ? cu.map(id => S.boot.players.find(x => x.id === id)).filter(Boolean) : activePlayers();
