@@ -1378,6 +1378,27 @@ const groupedRows = (ids, cell, link) => { const out = []; let g = -1;
   return out.join(''); };
 const canMakeTeams = m => !!m && m.status === 'programmata' && !isPres() && !isGuest() && !!me() && m.lineup_manager === me().id;
 
+// messaggio di convocazione (es. WhatsApp): se ci sono righe numerate si leggono solo quelle (l'intestazione con data,
+// campo e prezzo si salta); "Riserve:" e quello che segue sono a parte; "- gk", "(gk)", "portiere" indicano il portiere
+function parseCallupText(txt) {
+  const lines = String(txt || '').split(/\r?\n/);
+  const NUM = /^\s*\d{1,2}\s*[.)\-:]\s*\S/;
+  const numbered = lines.filter(l => NUM.test(l)).length >= 2;
+  const main = [], reserves = []; let inRes = false;
+  for (let l of lines) {
+    const head = normTxt(l).replace(/[^a-z\s]/g, ' ').trim();
+    if (/^(riserv|panchin|in attesa|lista d.?attesa)/.test(head)) { inRes = true; l = l.includes(':') ? l.slice(l.indexOf(':') + 1) : ''; if (!l.trim()) continue; }
+    else if (numbered ? !NUM.test(l) : /\d|€|@|http/.test(l)) continue;   // intestazione: data, orario, campo, prezzo
+    l = l.replace(/^\s*(\d{1,2}\s*[.)\-:]|[-•*·])\s*/, '');
+    for (let t of l.split(/[,;]+/)) {
+      const gk = /\b(gk|portiere|por)\b|\(p\)/i.test(t);
+      t = t.replace(/\(.*?\)/g, ' ').replace(/\s[-–—]\s.*$/, ' ').replace(/\b(gk|portiere|por)\b/ig, ' ').replace(/[^\p{L}\s'’.]/gu, ' ').replace(/\s+/g, ' ').trim();
+      if (t) (inRes ? reserves : main).push({ raw: t, gk });
+    }
+  }
+  return { main, reserves };
+}
+
 // passo 1 e 2 (presidente): convocati (da elenco o da testo) e chi fa le squadre
 async function editCallups(m, thenTeams) {
   await loadRoles(true);
@@ -1390,15 +1411,15 @@ async function editCallups(m, thenTeams) {
     .sort((a, b) => (chosen.includes(b.id) - chosen.includes(a.id)) || a.name.localeCompare(b.name, 'it'))
     .map(p => `<option value="${p.id}" ${String(p.id) === String(lm) ? 'selected' : ''}>${esc(p.name)}${chosen.includes(p.id) ? '' : ' (non convocato)'}</option>`).join('');
   const chosenHtml = () => chosen.length ? groupedRows(chosen, id => `<button class="btn sm" data-rm="${id}" aria-label="Togli">✕</button>`) : '<div class="muted small" style="padding:8px 0">Nessun convocato.</div>';
-  const pendHtml = () => pending.map((x, i) => `<div class="card small" style="margin:6px 0;padding:8px 10px">«${esc(x.raw)}»: ${x.status === 'nuovo' ? '<span class="muted">non trovato</span> <button class="btn sm" data-pok="' + i + '">Ignora</button>'
-      : `${x.status === 'simile' ? 'forse' : 'quale?'} ${x.candidates.map(id => `<button class="btn sm" data-pick="${i}" data-id="${id}">${esc(pname(id))}</button>`).join(' ')} <button class="btn sm" data-pok="${i}">Nessuno</button>`}</div>`).join('');
+  const pendHtml = () => pending.map((x, i) => `<div class="card small" style="margin:6px 0;padding:8px 10px">${x.status === 'riserva' ? 'Riserva ' : ''}«${esc(x.raw)}»: ${!x.candidates.length ? '<span class="muted">non trovato</span> <button class="btn sm" data-pok="' + i + '">Ignora</button>'
+      : `${x.status === 'riserva' ? 'non aggiunta. Aggiungi' : x.status === 'simile' ? 'forse' : 'quale?'} ${x.candidates.map(id => `<button class="btn sm" data-pick="${i}" data-id="${id}">${esc(pname(id))}</button>`).join(' ')} <button class="btn sm" data-pok="${i}">Nessuno</button>`}</div>`).join('');
   const allHtml = () => pool.filter(p => (p.is_active || chosen.includes(p.id)) && (!q || p.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name, 'it'))
     .map(p => `<div class="pick"><span class="nm">${esc(p.name)}${roleTag(p.id)}</span><button class="tbtn ${chosen.includes(p.id) ? 'W on' : ''}" data-tog="${p.id}">${chosen.includes(p.id) ? '✓' : '+'}</button></div>`).join('');
   modal({
     title: `Convocati · ${typeLabel(m.type)} del ${fmtDate(m.date)}`,
     body: `<label class="f" for="cTxt" style="margin-top:0">1 · Incolla i cognomi (uno per riga o separati da virgola)</label>
       <textarea id="cTxt" rows="4" placeholder="Callari&#10;Citro L.&#10;Nunnari, Memolla, Parisi"></textarea>
-      <div class="row" style="margin-top:6px"><button class="btn sm primary" id="cParse">Aggiungi dal testo</button><span class="tiny muted">Va bene cognome, cognome e iniziale, cognome e nome o nome e cognome. Se il cognome è di due giocatori (es. Citro) e non c'è il nome, te lo chiedo.</span></div>
+      <div class="row" style="margin-top:6px"><button class="btn sm primary" id="cParse">Aggiungi dal testo</button><span class="tiny muted">Puoi incollare anche il messaggio di convocazione intero: leggo solo l'elenco numerato e tengo a parte le riserve. Va bene cognome, cognome e iniziale, cognome e nome o nome e cognome. Se il cognome è di due giocatori (es. Citro) e non c'è il nome, te lo chiedo.</span></div>
       <div id="cPend"></div>
       <label class="f">Convocati (<span id="cN">${chosen.length}</span>) · in ordine di ruolo</label><div id="cChosen">${chosenHtml()}</div>
       <label class="f" for="cQ">Oppure aggiungi dall'elenco</label><input type="text" id="cQ" placeholder="Cerca…" style="margin-bottom:6px"><div id="cAll" style="max-height:260px;overflow:auto">${allHtml()}</div>
@@ -1409,15 +1430,17 @@ async function editCallups(m, thenTeams) {
       $('#cQ', el).oninput = e => { q = e.target.value.toLowerCase(); $('#cAll', el).innerHTML = allHtml(); };
       $('#cLm', el).onchange = e => lm = e.target.value;
       $('#cParse', el).onclick = () => {
-        const toks = $('#cTxt', el).value.split(/[\n,;]+/).map(x => x.replace(/^\s*(\d+[.)-]?|[-•*])\s*/, '').trim()).filter(Boolean);
+        const { main, reserves } = parseCallupText($('#cTxt', el).value);
         let n = 0;
-        for (const raw of toks) {
-          const r = matchPlayer(raw, pool);
+        for (const { raw, gk } of main) {
+          const r = matchPlayer(raw, pool, gk);
           if (r.status === 'ok') { if (!chosen.includes(r.id)) n++; add(r.id); }
           else pending.push({ raw, status: r.status, candidates: r.status === 'ambiguo' ? r.candidates : r.candidates.slice(0, 3) });
         }
+        // riserve: non le aggiungo, le propongo
+        for (const { raw, gk } of reserves) { const r = matchPlayer(raw, pool, gk); pending.push({ raw, status: 'riserva', candidates: r.status === 'ok' ? [r.id] : r.candidates.slice(0, 3) }); }
         $('#cTxt', el).value = ''; redraw();
-        toast(`${n} aggiunti${pending.length ? ` · ${pending.length} da chiarire` : ''}`);
+        toast(`${n} aggiunti${reserves.length ? ` · ${reserves.length} riserve non aggiunte` : ''}${pending.length - reserves.length > 0 ? ` · ${pending.length - reserves.length} da chiarire` : ''}`);
       };
       el.addEventListener('click', e => {
         const rm = e.target.closest('[data-rm]'); if (rm) { chosen = chosen.filter(x => x !== Number(rm.dataset.rm)); return redraw(); }
