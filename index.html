@@ -350,6 +350,41 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 @media (max-width:560px){ .pbtns{flex-direction:column;align-items:stretch} .pbtns .btn{justify-content:center} }
 .pcard .ph.nophoto{background:#000;position:relative}
 .pcard .ph.nophoto svg{width:100%;height:100%;display:block}
+/* album campioncini */
+.alb-note{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;padding:8px 12px;margin-bottom:12px}
+.alb-prog{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.alb-prog .bar{flex:1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.alb-prog .bar i{display:block;height:100%;background:var(--brand-2)}
+.alb-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 8px;margin-bottom:18px}
+.alb-pair{grid-column:span 2;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px}
+.alb-pair .alb-name{grid-column:span 2;text-align:center;font-weight:600;font-size:13px;line-height:1.2;margin-top:-2px}
+.alb-pair .alb-name .tiny{display:block;font-weight:400}
+.alb-wrap{max-width:760px;margin:0 auto}
+.alb-card{position:relative;width:100%;aspect-ratio:3/4;border-radius:10px;overflow:hidden;cursor:pointer;border:2px dashed var(--line);background:var(--surface-2);display:grid;place-items:center;padding:0}
+.alb-card .n{font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:28px;color:var(--muted);opacity:.55}
+.alb-card.full{border:3px solid #fff;background:#000;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.alb-card.full img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.alb-card.full .n{position:absolute;left:4px;bottom:2px;font-size:13px;color:#fff;opacity:.9;text-shadow:0 1px 2px #000}
+.alb-scudo{grid-column:2 / span 2}
+.alb-scudo .alb-card.full{background:#0f3d2e}
+.alb-scudo .alb-card.full img{object-fit:contain;padding:12%}
+.alb-scudo .alb-name{text-align:center;font-weight:700;margin-top:4px}
+.alb-h{font-family:'Barlow Condensed',Inter,sans-serif;font-size:21px;margin:6px 0 8px}
+.alb-rare .alb-card{border-color:#c9a227;background:linear-gradient(160deg,rgba(201,162,39,.18),rgba(201,162,39,.04))}
+.alb-rare .alb-card.full{border:3px solid #c9a227}
+.alb-rare .alb-card .n{color:#a8861a}
+.alb-rare .alb-name{text-align:center;font-size:12px;line-height:1.2;margin-top:4px}
+.alb-rare .alb-name b{display:block;font-size:12.5px}
+.alb-zoom{display:block;max-width:100%;max-height:70vh;margin:0 auto;border-radius:12px;border:4px solid #fff;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.alb-empty{aspect-ratio:3/4;max-width:240px;margin:0 auto;border-radius:12px;border:2px dashed var(--line);background:var(--surface-2);display:grid;place-items:center}
+.alb-empty .n{font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:64px;color:var(--muted);opacity:.5}
+.alb-rule{margin:0;padding-left:18px} .alb-rule li{margin:3px 0}
+@media (min-width:720px){
+  .alb-grid{grid-template-columns:repeat(6,1fr);gap:10px}
+  .alb-pair{gap:10px}
+  .alb-scudo{grid-column:3 / span 2}
+  .alb-rare-first{grid-column-start:2}
+}
 .pcard .ph .patch{position:absolute;left:-25%;right:-25%;top:56%;transform:rotate(-15deg);background:#d0161b;color:#fff;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:12px;line-height:1.15;letter-spacing:.2px;text-transform:uppercase;text-align:center;padding:6px 27%;box-shadow:0 3px 10px rgba(0,0,0,.55);border-top:1px solid rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.35)}
 .pcard .ph .ini{font-family:'Barlow Condensed',Inter,sans-serif;font-size:54px;font-weight:800;color:var(--muted)}
 .pcard .nmb{font-family:'Barlow Condensed',Inter,sans-serif;font-size:28px;font-weight:800;line-height:1.05;margin:0 0 10px}
@@ -629,6 +664,7 @@ const TABS = [
   { id: 'voti', label: L('Voti', 'Ratings'), ic: '★' },
   { id: 'coppie', label: L('Coppie', 'Pairs'), ic: '⇄' },
   { id: 'fanta', label: 'FantaNunnaree', short: 'Fanta', ic: '🎲' },
+  { id: 'album', label: 'Album', ic: '📒', album: true },
   { id: 'admin', label: 'Presidente', short: 'Admin', ic: '⚙', pres: true },
 ];
 async function start() {
@@ -636,7 +672,8 @@ async function start() {
   catch (e) { if (!S.token) return; S.token = null; store.set('calc_token', null); return renderLogin(e.message); }
   S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
   if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
-  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest())) S.tab = 'classifica';
+  S.albumOk = false; if (!isGuest()) { try { S.albumOk = !!await rpc('album_access', { p_token: T() }); } catch {} }
+  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest()) || (S.tab === 'album' && !S.albumOk)) S.tab = 'classifica';
   await loadAwards();
   renderShell();
   navInit();
@@ -654,7 +691,7 @@ function renderShell() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
       </button>
     </div>
-    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
+    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && (!t.album || S.albumOk) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
   </div>
   <main><div class="wrap">${isGuest() ? `<div class="guestbar small">👀 ${L('Modalità ospite · sola lettura', 'Guest mode · read only')}</div>` : ''}<div id="view"></div></div></main>`;
   $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
@@ -669,7 +706,7 @@ function setTheme() {
 }
 function renderTab() {
   const v = $('#view'); setTheme(); if (!v) return;
-  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, admin: viewAdmin }[S.tab] || viewClassifica)(v);
+  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, album: viewAlbum, admin: viewAdmin }[S.tab] || viewClassifica)(v);
 }
 async function loadVotesBadge() {
   try {
@@ -2608,6 +2645,63 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 }
 
 // ------------------------------------------------------------- ADMIN
+// ------------------------------------------------------------- ALBUM CAMPIONCINI (anteprima: solo impaginazione, niente figurine né bustine)
+// numerazione: 1 scudetto · 2..73 due figurine per ogni giocatore con foto in scheda (ordine alfabetico) · 74..77 le 4 rare (premi della stagione scorsa)
+async function viewAlbum(v) {
+  if (!S.albumOk) return viewClassifica(v);
+  const u = S.ui; u.albumTab = u.albumTab || 'album';
+  v.innerHTML = `<div class="section-title"><h2>${L('Album Campioncini', 'Campioncini album')}</h2><div class="spacer"></div>${segHtml('alTab', [{ v: 'album', l: 'Album' }, { v: 'bustine', l: L('Bustine', 'Packs') }, { v: 'scambi', l: L('Scambi', 'Trades') }], u.albumTab)}</div>
+    <div class="alb-note small">🔒 ${L('Anteprima visibile solo a te. Le figurine non sono ancora caricate: le caselle mostrano solo il numero.', 'Preview visible only to you. Stickers are not loaded yet: slots only show their number.')}</div><div id="alv"><div class="muted">${L('Caricamento…', 'Loading…')}</div></div>`;
+  bindSeg($('#alTab'), val => { if (val === u.albumTab) return; u.albumTab = val; navPush(); viewAlbum(v); });
+  if (!S.album) { try { S.album = await rpc('get_album_layout', { p_token: T() }); } catch (e) { $('#alv').innerHTML = `<div class="card">${esc(e.message)}</div>`; return; } }
+  const al = $('#alv'); if (!al) return;
+  const A = S.album, nP = A.players.length, total = 1 + nP * 2 + A.rares.length;
+  const firstRare = 2 + nP * 2;
+  if (u.albumTab === 'bustine') {
+    al.innerHTML = `<div class="card"><h3 class="alb-h">${L('Nessuna bustina da aprire', 'No packs to open')}</h3>
+      <p class="small muted" style="margin:0 0 8px">${L('Qui arriveranno le bustine dopo ogni partita, una volta inserito il risultato.', 'Packs will show up here after each match, once the result is entered.')}</p>
+      <ul class="alb-rule small">
+        <li>${L('Vittoria o pareggio: bustina intera; sconfitta: mezza bustina.', 'Win or draw: full pack; loss: half pack.')}</li>
+        <li>${L('La bustina cresce durante la stagione: da 4 a 7 figurine a vittoria.', 'Packs grow during the season: from 4 to 7 stickers per win.')}</li>
+        <li>${L('Chi ha saltato partite riceve un recupero, che aumenta verso fine stagione.', 'Players who missed matches get a catch-up bonus that grows towards the end of the season.')}</li>
+        <li>${L('Le figurine nuove vanno da sole al loro posto, le altre finiscono tra i doppioni.', 'New stickers go straight to their slot, the others go to your duplicates.')}</li></ul></div>`;
+    return;
+  }
+  if (u.albumTab === 'scambi') {
+    al.innerHTML = `<div class="card"><h3 class="alb-h">${L('Doppioni', 'Duplicates')}: 0</h3><p class="small muted" style="margin:0">${L('Nell\'album resta sempre una copia: si scambiano e si regalano solo i doppioni.', 'One copy always stays in the album: only duplicates can be traded or gifted.')}</p></div>
+      <div class="card"><h3 class="alb-h">🏦 ${L('Banco', 'Bank')}</h3><ul class="alb-rule small">
+        <li>${L('3 doppioni qualsiasi = 1 figurina normale a scelta tra quelle che ti mancano.', '3 duplicates = 1 regular sticker of your choice among the missing ones.')}</li>
+        <li>${L('6 doppioni = 1 rara, solo se hai già tutte le normali e finché ce ne sono (45 copie per rara).', '6 duplicates = 1 rare, only once you have all regular stickers and while stock lasts (45 copies per rare).')}</li></ul></div>
+      <div class="card"><h3 class="alb-h">⇄ ${L('Offerte', 'Offers')}</h3><ul class="alb-rule small">
+        <li>${L('Pubblichi “do X, cerco Y”. Puoi offrire lo stesso X in più offerte.', 'Post “I give X, I want Y”. The same X can be in several offers.')}</li>
+        <li>${L('Chi accetta deve avere Y doppio: lo scambio è immediato e le offerte che non puoi più onorare spariscono.', 'Whoever accepts must have a spare Y: the swap is instant and offers you can no longer honour disappear.')}</li>
+        <li>${L('In cima vedi le offerte che puoi accettare subito e gli scambi suggeriti.', 'On top you see offers you can accept right away and suggested swaps.')}</li></ul></div>
+      <div class="card"><h3 class="alb-h">🎁 ${L('Regali', 'Gifts')}</h3><ul class="alb-rule small">
+        <li>${L('Puoi regalare un tuo doppione a un altro giocatore.', 'You can gift one of your duplicates to another player.')}</li>
+        <li>${L('Ognuno può ricevere al massimo 10 figurine in regalo; dalla partita 27 il limite non vale più.', 'Everyone can receive at most 10 gifted stickers; from match 27 the limit no longer applies.')}</li></ul></div>`;
+    return;
+  }
+  const fill = !!u.albumFill;
+  const card = (n, img, cls = '') => `<button class="alb-card ${fill && img ? 'full' : ''} ${cls}" data-n="${n}">${fill && img ? `<img src="${esc(img)}" alt="" loading="lazy">` : ''}<span class="n">${n}</span></button>`;
+  const owned = fill ? total : 0;
+  al.innerHTML = `<div class="alb-wrap"><div class="alb-prog"><b>${owned} / ${total}</b><div class="bar"><i style="width:${Math.round(100 * owned / total)}%"></i></div><span class="small muted">${Math.round(100 * owned / total)}%</span></div>
+    <label class="small" style="display:flex;gap:8px;align-items:flex-start;margin:-6px 0 14px"><input type="checkbox" id="albFill" ${fill ? 'checked' : ''} style="margin-top:3px"> <span>${L('Simula album completo (foto della scheda al posto delle figurine)', 'Simulate a full album (profile photos instead of stickers)')}</span></label>
+    <div class="alb-grid"><div class="alb-scudo">${card(1, 'logo/badge-256.webp')}<div class="alb-name">${L('Scudetto', 'Badge')}</div></div></div>
+    <div class="alb-grid">${A.players.map((p, i) => `<div class="alb-pair">${card(2 + i * 2, p.photo)}${card(3 + i * 2, p.photo)}<div class="alb-name">${plink(p.id)}<span class="tiny muted">${2 + i * 2}-${3 + i * 2}${p.role ? ' · ' + esc(p.role) : ''}</span></div></div>`).join('')}</div>
+    <h3 class="alb-h">✨ ${L('Rare', 'Rares')}</h3>
+    <div class="alb-grid">${A.rares.map((r, i) => { const ph = A.players.find(p => p.id === r.player_id)?.photo; return `<div class="alb-rare ${i === 0 ? 'alb-rare-first' : ''}">${card(firstRare + i, ph)}<div class="alb-name"><b>${esc(L(r.title, r.title_en || r.title))}</b>${r.player_id ? plink(r.player_id) : ''}</div></div>`; }).join('')}</div></div>`;
+  $('#albFill').onchange = e => { u.albumFill = e.target.checked; viewAlbum(v); };
+  al.onclick = e => {
+    const c = e.target.closest('.alb-card'); if (!c) return;
+    const n = Number(c.dataset.n);
+    let title, img;
+    if (n === 1) { title = L('Scudetto', 'Badge'); img = 'logo/badge-256.webp'; }
+    else if (n < firstRare) { const p = A.players[Math.floor((n - 2) / 2)]; title = pname(p.id); img = p.photo; }
+    else { const r = A.rares[n - firstRare]; title = `${L(r.title, r.title_en || r.title)}${r.player_id ? ' · ' + pname(r.player_id) : ''}`; img = A.players.find(p => p.id === r.player_id)?.photo; }
+    modal({ title: `${n} · ${title}`, body: fill && img ? `<img class="alb-zoom" src="${esc(img)}" alt="">` : `<div class="alb-empty"><span class="n">${n}</span></div><p class="small muted" style="text-align:center;margin-top:10px">${L('Non ancora trovata', 'Not found yet')}</p>`, actions: [{ label: L('Chiudi', 'Close'), fn: () => true }] });
+  };
+}
+
 async function viewAdmin(v) {
   if (!isPres()) return viewClassifica(v);
   const u = S.ui;
