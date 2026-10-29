@@ -1073,6 +1073,63 @@ async function loadMatches(force) {
   return S.matches.list;
 }
 const seasonInfo = () => S.boot.seasons.find(s => s.id === S.season);
+
+// ------------------------------------------------------------- EXPORT EXCEL (solo presidenti)
+// scegli le partite giocate della stagione selezionata (per date) e scarichi un .xlsx con due fogli: Partite e Giocatori.
+// La libreria Excel (SheetJS) si carica solo al primo download.
+function loadScript(src) { return new Promise((ok, ko) => { if ([...document.scripts].some(x => x.src === src)) return ok(); const el = document.createElement('script'); el.src = src; el.onload = ok; el.onerror = () => ko(new Error('Impossibile caricare la libreria Excel. Controlla la connessione.')); document.head.appendChild(el); }); }
+async function openExcelExport() {
+  let list; try { list = (await loadMatches()).filter(m => m.status === 'giocata').sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id); } catch (e) { return toast(e.message, true); }
+  if (!list.length) return toast('Nessuna partita giocata in questa stagione.', true);
+  const first = list[0].date, last = list[list.length - 1].date;
+  const mo = modal({ title: 'Scarica partite in Excel', body: `<p class="small muted" style="margin:0 0 8px">Stagione ${esc(seasonInfo()?.name || '')}. Scegli un intervallo di date o spunta le singole partite.</p>
+      <div class="row"><label class="small">Dal <input type="date" id="xFrom" value="${first}" min="${first}" max="${last}"></label><label class="small">al <input type="date" id="xTo" value="${last}" min="${first}" max="${last}"></label></div>
+      <div class="row small" style="margin:8px 0"><button class="btn sm" id="xAll" type="button">Tutte</button><button class="btn sm" id="xNone" type="button">Nessuna</button><span class="muted" id="xCnt"></span></div>
+      <div style="max-height:46vh;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px">${list.map(m => `<label class="row small" style="padding:5px 0;border-bottom:1px solid var(--line);gap:8px;flex-wrap:nowrap"><input type="checkbox" data-xm="${m.id}" data-d="${m.date}" checked><span style="flex:1">${esc(fmtDate(m.date))} · ${esc(typeLabel(m.type))}</span><b>${m.score_w ?? '–'}-${m.score_d ?? '–'}</b></label>`).join('')}</div>
+      <p class="tiny muted" style="margin:8px 0 0">Fogli: <b>Partite</b> (risultato e formazioni) e <b>Giocatori</b> (una riga per giocatore e partita: squadra, esito, gol, media voto, fantavoto). Media voto e fantavoto compaiono solo a votazione chiusa; il fantavoto solo per le partite a 8 e a 11.</p>`,
+    actions: [{ label: 'Scarica', cls: 'primary', fn: async el => {
+      const ids = new Set($$('[data-xm]', el).filter(c => c.checked).map(c => Number(c.dataset.xm)));
+      if (!ids.size) { toast('Scegli almeno una partita.', true); return false; }
+      try { await excelDownload(list.filter(m => ids.has(m.id))); return true; } catch (e) { toast(e.message, true); return false; }
+    } }] });
+  const el = mo.el || document;
+  const cnt = () => { $('#xCnt', el).textContent = `${$$('[data-xm]', el).filter(c => c.checked).length} di ${list.length} selezionate`; };
+  const byDate = () => { const f = $('#xFrom', el).value || first, t = $('#xTo', el).value || last; $$('[data-xm]', el).forEach(c => { c.checked = c.dataset.d >= f && c.dataset.d <= t; }); cnt(); };
+  $('#xFrom', el).onchange = byDate; $('#xTo', el).onchange = byDate;
+  $('#xAll', el).onclick = () => { $$('[data-xm]', el).forEach(c => { c.checked = true; }); cnt(); };
+  $('#xNone', el).onclick = () => { $$('[data-xm]', el).forEach(c => { c.checked = false; }); cnt(); };
+  el.addEventListener('change', e => { if (e.target.matches('[data-xm]')) cnt(); });
+  cnt();
+}
+async function excelDownload(ms) {
+  toast('Preparo il file…');
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js');
+  const fv = {};
+  await Promise.all(ms.filter(m => [8, 11].includes(m.type)).map(async m => { try { fv[m.id] = Object.fromEntries((await rpc('get_match_fanta', { p_token: T(), p_match: m.id })).map(d => [d.id, d])); } catch { fv[m.id] = {}; } }));
+  const res = (m, t) => m.score_w == null ? '' : m.score_w === m.score_d ? 'N' : ((t === 'W') === (m.score_w > m.score_d) ? 'V' : 'P');
+  const team = t => t === 'W' ? TW : TD;
+  const names = (m, t) => m.players.filter(p => p.team === t).map(p => pname(p.id)).sort((a, b) => a.localeCompare(b, 'it')).join(', ');
+  const sheet1 = ms.map(m => ({ 'Data': m.date, 'Tipo': 'Calcio a ' + m.type, [`Gol ${TW}`]: m.score_w, [`Gol ${TD}`]: m.score_d,
+    'Vince': m.score_w == null ? '' : m.score_w === m.score_d ? 'Pareggio' : (m.score_w > m.score_d ? TW : TD), [TW]: names(m, 'W'), [TD]: names(m, 'D'), 'Note': m.note || '' }));
+  const sheet2 = [];
+  for (const m of ms) for (const p of [...m.players].sort((a, b) => (a.team === b.team ? 0 : a.team === 'W' ? -1 : 1) || pname(a.id).localeCompare(pname(b.id), 'it'))) {
+    const f = fv[m.id]?.[p.id];
+    sheet2.push({ 'Data': m.date, 'Tipo': 'Calcio a ' + m.type, 'Giocatore': pname(p.id), 'Squadra': team(p.team), 'Esito': res(m, p.team),
+      'Gol': p.goals || 0, 'di cui su rigore': p.pen_goals || 0, 'Autogol': p.own_goals || 0, 'In porta': p.in_goal ? 'sì' : '', 'Gol subiti': p.in_goal ? (p.conceded ?? '') : '',
+      'Rigori parati': p.pen_saved || 0, 'Rigori sbagliati': p.pen_missed || 0,
+      'Media voto': p.avg == null ? '' : Number(p.avg), 'N. voti': p.n_votes ?? '',
+      'Fantavoto': f && f.fv != null ? Number(f.fv) : '', 'Bonus/malus': f ? Number(f.bonus) : '' });
+  }
+  const wb = XLSX.utils.book_new();
+  const ws1 = XLSX.utils.json_to_sheet(sheet1), ws2 = XLSX.utils.json_to_sheet(sheet2);
+  ws1['!cols'] = [{ wch: 11 }, { wch: 11 }, { wch: 9 }, { wch: 9 }, { wch: 10 }, { wch: 70 }, { wch: 70 }, { wch: 30 }];
+  ws2['!cols'] = [{ wch: 11 }, { wch: 11 }, { wch: 18 }, { wch: 8 }, { wch: 6 }, { wch: 5 }, { wch: 9 }, { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 11 }, { wch: 8 }, { wch: 10 }, { wch: 11 }];
+  ws1['!autofilter'] = { ref: ws1['!ref'] }; ws2['!autofilter'] = { ref: ws2['!ref'] };
+  XLSX.utils.book_append_sheet(wb, ws1, 'Partite'); XLSX.utils.book_append_sheet(wb, ws2, 'Giocatori');
+  const sn = (seasonInfo()?.name || 'stagione').replace(/[^\w-]+/g, '_');
+  XLSX.writeFile(wb, `partite_${sn}_${ms[0].date}_${ms[ms.length - 1].date}.xlsx`);
+  toast(`Scaricate ${ms.length} partite`);
+}
 const canEditSeason = () => isPres() && S.season === S.boot.active_season && !seasonInfo()?.ended;
 function scorersText(m, team) {
   const out = [];
@@ -1164,13 +1221,14 @@ async function viewPartite(v) {
   const u = S.ui;
   const plOpts = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   v.innerHTML = `<div class="section-title"><h2>${L('Partite', 'Matches')}</h2><div class="spacer"></div>
-    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}</div>
+    ${canEditSeason() ? `<button class="btn primary" id="newMatch">+ Nuova partita</button><button class="btn" id="retroMatch">+ Inserisci partita giocata</button><button class="btn accent" id="importMatch">⇪ Importa tabellino</button>` : ''}${isPres() ? `<button class="btn" id="xlsMatch" title="Scarica le partite in Excel">⬇ Excel</button>` : ''}</div>
     <div class="row" style="margin-bottom:12px"><div class="tyrow">${segHtml('mFilType', typeOpts, u.matchType)}${hlListBtn()}</div>
       <select id="mFilPl" aria-label="${L('Filtra per giocatore', 'Filter by player')}" style="max-width:240px"><option value="">${L('Tutti i giocatori', 'All players')}</option>${plOpts.map(p => `<option value="${p.id}" ${p.id === u.matchPlayer ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
       <span class="small muted" id="mCount"></span></div>
     <div id="pBanner"></div>
     <div id="mlist"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>`;
   if (canEditSeason()) { $('#newMatch').onclick = () => editMatchMeta(null, false); $('#retroMatch').onclick = () => editMatchMeta(null, true); $('#importMatch').onclick = openImport; }
+  if (isPres()) $('#xlsMatch').onclick = openExcelExport;
   let list = null;
   const draw = () => {
     const box = $('#mlist'); if (!list || !box) return;
@@ -2426,7 +2484,7 @@ async function viewFanta(v) {
       { k: 'act', label: '', fmt: r => inRoster.has(r.id) ? `<span class="pill ok">${L('In rosa', 'In squad')}</span>` : r.id === me().id ? `<span class="pill">${L('sei tu', 'you')}</span>` : canTrade ? `<button class="btn sm ${r.price <= maxSpend && mine.roster.length < rosterSize ? 'accent' : ''}" data-buy="${r.id}" ${r.price > maxSpend || mine.roster.length >= rosterSize ? `disabled title="${esc(r.price > mine.credits || mine.roster.length >= rosterSize ? '' : L(`Devi tenere almeno ${freeSlots - 1} crediti per completare la rosa`, `You must keep at least ${freeSlots - 1} credits to complete your squad`))}"` : ''}>${L('Compra', 'Buy')}</button>` : '' },
     ];
     const rowsAll = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base, pres: fps[p.id]?.pg || 0, fv: fps[p.id]?.fv ?? null }));
-    fv.innerHTML = head + `<div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">${L('Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.', 'Prices update after every match based on the current season. The first FantaNunnaree matchday is a trial: it does not move prices.')}</span></div><div id="mt"></div>`;
+    fv.innerHTML = head + `<div class="alb-note small">🤖 ${L('Quotazioni ribilanciate dall\'AI il 30/10/2026: ora salgono più gradualmente, e più un giocatore è caro più fa fatica a salire. Prezzi pagati e crediti ricalcolati, rose invariate. Dettagli in Regole.', 'Prices rebalanced by AI on 30/10/2026: they now rise more gradually, and the more expensive a player is, the harder it is to rise. Prices paid and credits recalculated, squads unchanged. Details in Rules.')}</div><div class="row" style="margin-bottom:10px"><input type="text" id="mq" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.marketSearch)}" style="max-width:260px"><span class="tiny muted">${L('Le quotazioni si aggiornano dopo ogni partita in base alla stagione in corso. La prima giornata FantaNunnaree è di prova: non le muove.', 'Prices update after every match based on the current season. The first FantaNunnaree matchday is a trial: it does not move prices.')}</span></div><div id="mt"></div>`;
     const draw = () => {
       let rows = rowsAll; if (u.marketSearch) rows = rows.filter(r => r.name.toLowerCase().includes(u.marketSearch.toLowerCase()));
       $('#mt').innerHTML = tableHtml(cols, sortRows(rows, u.marketSort, cols), u.marketSort, { rowCls: r => inRoster.has(r.id) ? 'me' : '' });
@@ -2519,9 +2577,10 @@ async function viewFanta(v) {
 
       <h3>3. Le quotazioni</h3><ul>
       <li>Ogni giocatore parte da una <b>quotazione base</b> di inizio stagione, calcolata sulla stagione precedente e approvata dai presidenti (che possono correggerla).</li>
-      <li>Dopo ogni partita a 8 o a 11 il prezzo si aggiorna in base alla stagione in corso: <b>punti attesi</b> = (partite giocate dal giocatore ÷ partite disputate) × media dei suoi punti fanta (voto, o ${st('fanta_voto_ufficio')} d'ufficio, + bonus/malus).</li>
-      <li>Prezzo dalla stagione = 1 + (punti attesi − 1)², arrotondato, minimo 1 e massimo <b>${st('price_max')}</b>.</li>
-      <li>Prezzo attuale = mix tra base e prezzo dalla stagione: il peso della stagione cresce del ${fmtNum(100 / settings('price_blend_matches'))}% a partita; dopo <b>${st('price_blend_matches')} partite</b> conta solo la stagione. Chi non gioca mai scende partita dopo partita verso 1.</li>
+      <li><b>Quotazioni ribilanciate dall'AI il 30/10/2026</b>: ora salgono in modo graduale. Prezzi pagati e crediti sono stati ricalcolati con la nuova regola; le rose non sono cambiate.</li>
+      <li>Dopo ogni partita a 8 o a 11 il prezzo si aggiorna, partendo da quello attuale. <b>Se giochi</b>: variazione = ${fmtNum(settings('price_presence'))} per la presenza + ${fmtNum(settings('price_per_point'))} per ogni punto di fantavoto (voto, o ${st('fanta_voto_ufficio')} d'ufficio, + bonus/malus) sopra ${st('price_neutral')}; sotto ${st('price_neutral')} toglie. Il fantavoto conta al massimo 5 punti sopra e 3 sotto la soglia.</li>
+      <li><b>Più sei caro, più è difficile salire</b>: l'aumento viene diviso per 1 + (prezzo ÷ ${st('price_damp')})². Esempio: a 6 crediti un aumento vale l'80%, a 12 la metà, a 24 un quinto. Le discese invece valgono intere.</li>
+      <li><b>Se non giochi</b> perdi ${st('price_absent_pct')}% del valore. Prezzo minimo 1, massimo <b>${st('price_max')}</b>; i decimali si tengono, il prezzo mostrato è arrotondato.</li>
       <li>La <b>prima giornata FantaNunnaree</b> della stagione è di prova: vale per la classifica, ma <b>non muove le quotazioni</b>. Le quotazioni cambiano dalla seconda giornata in poi.</li>
       <li>Le partite che i presidenti escludono dalle quotazioni (per esempio le prime 5 del 2026-27) non contano.</li></ul>
 
@@ -2596,9 +2655,10 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 
       <h3>3. Prices</h3><ul>
       <li>Every player starts from a <b>base price</b> for the season, calculated from the previous season and approved by the presidents (who can adjust it).</li>
-      <li>After every 8- or 11-a-side match the price updates based on the current season: <b>expected points</b> = (matches the player played ÷ matches played) × the average of their fanta points (rating, or a default ${st('fanta_voto_ufficio')}, + bonus/malus).</li>
-      <li>Season price = 1 + (expected points − 1)², rounded, minimum 1 and maximum <b>${st('price_max')}</b>.</li>
-      <li>Current price = a mix of base price and season price: the weight of the season grows by ${fmtNum(100 / settings('price_blend_matches'))}% per match; after <b>${st('price_blend_matches')} matches</b> only the season counts. Players who never play drift towards 1 match after match.</li>
+      <li><b>Prices rebalanced by AI on 30/10/2026</b>: they now rise gradually. Prices paid and credits were recalculated with the new rule; squads did not change.</li>
+      <li>After every 8- or 11-a-side match the price updates, starting from the current one. <b>If you play</b>: change = ${fmtNum(settings('price_presence'))} for the appearance + ${fmtNum(settings('price_per_point'))} for each fanta point (rating, or a default ${st('fanta_voto_ufficio')}, + bonus/malus) above ${st('price_neutral')}; below ${st('price_neutral')} it goes down. The fanta score counts at most 5 points above and 3 below the threshold.</li>
+      <li><b>The more expensive you are, the harder it is to rise</b>: the increase is divided by 1 + (price ÷ ${st('price_damp')})². Example: at 6 credits an increase counts 80%, at 12 half, at 24 a fifth. Drops count in full.</li>
+      <li><b>If you don't play</b> you lose ${st('price_absent_pct')}% of your value. Minimum price 1, maximum <b>${st('price_max')}</b>; decimals are kept, the price shown is rounded.</li>
       <li>The season's <b>first FantaNunnaree matchday</b> is a trial: it counts for the table, but <b>does not move prices</b>. Prices change from the second matchday onwards.</li>
       <li>Matches the presidents exclude from prices (for example the first 5 of 2026-27) don't count.</li></ul>
 
@@ -2742,12 +2802,11 @@ async function viewAdmin(v) {
     const F = await loadFanta(true).catch(e => (av.innerHTML = `<div class="empty">${esc(e.message)}</div>`, null)); if (!F) return;
     const cols = [
       { k: 'name', label: 'Giocatore' }, { k: 'price', label: 'Prezzo ora', cls: 'strong' }, { k: 'base', label: 'Base', title: 'Quotazione di inizio stagione (modificabile)' },
-      { k: 'season_price', label: 'Da stagione', title: 'Prezzo calcolato solo sui dati della stagione in corso' }, { k: 'efp', label: 'Punti attesi', title: 'Punti fanta attesi per giornata (stagione in corso)' },
+      { k: 'delta', label: 'Var.', title: 'Prezzo ora − base', fmt: r => r.delta > 0 ? `<span class="up">+${r.delta}</span>` : r.delta < 0 ? `<span class="down">${r.delta}</span>` : '<span class="muted">0</span>' }, { k: 'efp', label: 'Con decimali', title: 'Valore esatto: il prezzo è arrotondato' },
       { k: 'pres', label: 'PG' }, { k: 'ed', label: '', fmt: r => S.season === S.boot.active_season ? `<button class="btn sm" data-bp="${r.id}">Base</button>` : '' },
     ];
-    const rows = F.prices.map(p => ({ ...p, name: pname(p.id) }));
-    const w = rows[0]?.w ?? 0;
-    av.innerHTML = `<div class="card small">Prezzo ora = ${Math.round((1 - w) * 100)}% quotazione base + ${Math.round(w * 100)}% prezzo calcolato sulla stagione (il peso della stagione cresce di ${Math.round(100 / settings('price_blend_matches'))}% per ogni partita a 8/11 giocata). Puoi correggere a mano la quotazione base.</div><div id="qt"></div>`;
+    const rows = F.prices.map(p => ({ ...p, name: pname(p.id), delta: p.price - p.base }));
+    av.innerHTML = `<div class="card small">🤖 Quotazioni ribilanciate dall'AI il 30/10/2026. Il prezzo parte dalla base e si aggiorna a ogni partita a 8/11 che conta: chi gioca sale di ${fmtNum(settings('price_presence'))} + ${fmtNum(settings('price_per_point'))} per punto di fantavoto sopra ${fmtNum(settings('price_neutral'))} (sotto scende), con la salita divisa per 1 + (prezzo ÷ ${fmtNum(settings('price_damp'))})²; chi non gioca perde ${fmtNum(settings('price_absent_pct'))}% del valore. I parametri sono nelle Impostazioni. Correggere la base ricalcola tutto il percorso del giocatore.</div><div id="qt"></div>`;
     const draw = () => { $('#qt').innerHTML = tableHtml(cols, sortRows(rows, u.pricesSort, cols), u.pricesSort); bindSort($('#qt'), u.pricesSort, draw); };
     draw();
     av.onclick = e => { const b = e.target.closest('[data-bp]'); if (!b) return; const r = rows.find(x => x.id === Number(b.dataset.bp));
@@ -2771,7 +2830,7 @@ async function viewAdmin(v) {
   if (u.adminTab === 'impostazioni') {
     const keys = Object.keys(S.boot.settings);
     av.innerHTML = `<div class="card"><p class="small muted">Valori usati da voti, statistiche e FantaNunnaree. Le modifiche valgono anche per i calcoli passati.</p>
-      ${keys.map(k => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px" class="small">${esc(S.boot.settings_labels[k] || k)}</span><input type="number" step="0.25" value="${S.boot.settings[k]}" data-k="${k}" style="width:100px"></div>`).join('')}
+      ${keys.map(k => `<div class="row" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px" class="small">${esc(S.boot.settings_labels[k] || k)}</span><input type="number" step="any" value="${S.boot.settings[k]}" data-k="${k}" style="width:100px"></div>`).join('')}
       <div class="row" style="margin-top:12px"><div class="spacer"></div><button class="btn primary" id="saveSet">Salva impostazioni</button></div></div>`;
     $('#saveSet').onclick = async () => {
       for (const i of $$('[data-k]', av)) if (Number(i.value) !== Number(S.boot.settings[i.dataset.k])) {
