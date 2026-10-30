@@ -2872,7 +2872,7 @@ function albViewAlbum(al, v) {
 
 function albPackModal(pk, v) {
   const A = ALB.data, d = A.designs.find(x => x.id === pk.design);
-  const mo = modal({ title: pkTitle(pk), body: `<div style="max-width:300px;margin:0 auto;aspect-ratio:3/4" id="pkZ">${d?.thumb ? `<img class="alb-zoom" src="${d.thumb}" alt="">` : pkArt(null)}</div>`,
+  const mo = modal({ title: L('Busta da collezione', 'Collector pack'), body: `<div style="max-width:300px;margin:0 auto;aspect-ratio:3/4" id="pkZ">${d?.thumb ? `<img class="alb-zoom" src="${d.thumb}" alt="">` : pkArt(null)}</div>`,
     actions: [{ label: L('Lascia chiusa', 'Keep it sealed'), fn: () => true },
       { label: L('Sbusta ora', 'Open it now'), cls: 'primary', fn: async () => { albOpen(pk, v); return true; } }] });
   albDesign(pk.design).then(img => { const z = mo.el.querySelector('#pkZ'); if (z && img) z.innerHTML = `<img class="alb-zoom" src="${img}" alt="">`; });
@@ -2902,7 +2902,7 @@ function albViewPacks(al, v) {
   if (!A.live) { al.innerHTML = `<div class="card"><h3 class="alb-h">${L('Bustine in arrivo', 'Packs coming soon')}</h3><p class="small muted" style="margin:0">${L(`Le prime bustine si aprono ${fmtDateTime(A.launch_at)}.`, `The first packs open ${fmtDateTime(A.launch_at)}.`)}</p></div>`; return; }
   const list = A.packs.filter(p => !p.collected), col = A.packs.filter(p => p.collected).length;
   al.innerHTML = list.length ? `<p class="small muted" style="margin:0 0 10px">${L('Tocca una busta per aprirla, oppure tienila chiusa nella collezione (un posto per ogni grafica, in cima all\'album).', 'Tap a pack to open it, or keep it sealed in your collection (one slot per design, at the top of the album).')}</p>
-    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div><span class="small"><b>${esc(pkTitle(p))}</b>${p.kind === 'bonus' ? `<span class="gift">${esc(pkGift())}</span>` : ''}</span></button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
+    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div>${p.kind === 'bonus' ? `<span class="small"><span class="gift">${esc(pkGift())}</span></span>` : ''}</button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
     : `<div class="card empty">${L('Nessuna bustina da aprire: la prossima arriva dopo la prossima partita che giochi.', 'No packs to open: the next one arrives after the next match you play.')}${col ? `<br>${L(`Hai ${col} buste nella collezione.`, `You have ${col} packs in your collection.`)}` : ''}</div>`;
   al.onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; albOpen(A.packs.find(p => p.id === Number(b.dataset.p)), v); };
 }
