@@ -390,7 +390,9 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .pko{position:fixed;inset:0;z-index:200;background:rgba(8,10,20,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;color:#fff;touch-action:none;user-select:none;-webkit-user-select:none}
 .pko .x{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;background:none;border:0;color:#fff;font-size:26px;cursor:pointer}
 .pko .stage{position:relative;width:min(78vw,340px);aspect-ratio:3/4}
-.pko .pk-top,.pko .pk-bot{position:absolute;inset:0;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .7s}
+.pko .pk-top,.pko .pk-bot{position:absolute;inset:0;pointer-events:none;transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .7s,visibility 0s .7s}
+.pko.torn .pk-top,.pko.torn .pk-bot{visibility:hidden}
+.pko.torn .tear{display:none}
 .pko .pk-top{clip-path:inset(0 0 84% 0)}
 .pko .pk-bot{clip-path:inset(16% 0 0 0)}
 .pko .tear{position:absolute;left:0;right:0;top:0;height:16%;z-index:3;cursor:grab}
@@ -400,7 +402,14 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .pko.torn .pk-bot{transform:translateY(110%);opacity:0}
 .pko .hint{margin-top:16px;text-align:center;font-size:14px;opacity:.9;max-width:340px}
 .pko .cards{position:absolute;inset:0;display:none}
-.pko.torn .cards,.pko.reveal .cards{display:block}
+.pko.reveal .cards{display:block}
+.pko.reveal .fc{animation:fcIn .45s cubic-bezier(.2,.8,.2,1) backwards}
+@keyframes fcIn{from{transform:scale(.7) translateY(30px);opacity:0}}
+.pko img{-webkit-user-drag:none;user-drag:none;pointer-events:none;-webkit-touch-callout:none}
+.pko .stage,.pko .cards{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+.pko .wait{position:absolute;inset:0;display:none;place-items:center;font-size:15px;opacity:.85}
+.pko.torn:not(.reveal) .wait{display:grid;animation:pkWait 1s ease-in-out infinite alternate}
+@keyframes pkWait{from{opacity:.35}to{opacity:.95}}
 .pko .fc{position:absolute;inset:0;border-radius:14px;overflow:hidden;border:4px solid #fff;background:#000;box-shadow:0 8px 30px rgba(0,0,0,.6);transition:transform .35s ease,opacity .35s}
 .pko .fc img{width:100%;height:100%;object-fit:cover;display:block}
 .pko .fc .tag{position:absolute;left:8px;top:8px;background:#d8f36a;color:#13200a;font-weight:800;font-size:12px;border-radius:99px;padding:2px 9px}
@@ -2908,49 +2917,83 @@ function albViewPacks(al, v) {
 }
 
 // apertura: strappa la busta trascinando sulla linea in alto, poi scorri le figurine
+// pk.test = busta di prova (?prova-busta): stessa interfaccia, nessuna chiamata al database
 async function albOpen(pk, v) {
-  const A = ALB.data;
-  const canCollect = pk.kind !== 'bonus' && !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
+  const A = ALB.data || { packs: [], designs: [] };
+  const canCollect = !pk.test && pk.kind !== 'bonus' && !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
   const d = A.designs.find(x => x.id === pk.design);
   const ov = document.createElement('div'); ov.className = 'pko';
   const art = d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null);
   ov.innerHTML = `<button class="x" aria-label="${L('Chiudi', 'Close')}">✕</button>
-    <div class="pk-title">${esc(pkTitle(pk))}${pk.kind === 'bonus' ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${esc(pkGift())}</div>` : ''}</div>
-    <div class="stage"><div class="cards"></div><div class="pk-bot">${art}</div><div class="pk-top">${art}</div><div class="tear"><span class="trail"></span></div></div>
+    <div class="pk-title">${pk.test ? L('Bustina di prova', 'Test pack') : esc(pkTitle(pk))}${pk.kind === 'bonus' ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${esc(pkGift())}</div>` : ''}${pk.test ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${L('Non conta: non tocca album né database', 'Does not count: album and database untouched')}</div>` : ''}</div>
+    <div class="stage"><div class="wait">${L('Apertura…', 'Opening…')}</div><div class="cards"></div><div class="pk-bot">${art}</div><div class="pk-top">${art}</div><div class="tear"><span class="trail"></span></div></div>
     <div class="hint">✂️ ${L('Strappa la busta: trascina il dito lungo la linea in alto', 'Tear the pack: drag your finger along the line at the top')}</div>
     <div class="acts">${canCollect ? `<button class="btn" data-col>📦 ${L('Colleziona bustina', 'Collect pack')}</button>` : ''}</div>`;
   document.body.appendChild(ov); document.body.style.overflow = 'hidden';
-  albDesign(pk.design).then(img => { if (img) ov.querySelectorAll('.pk-top .pk-art, .pk-bot .pk-art').forEach(x => { x.innerHTML = `<img src="${img}" alt="">`; }); });
+  if (!pk.test) albDesign(pk.design).then(img => { if (img) ov.querySelectorAll('.pk-top .pk-art, .pk-bot .pk-art').forEach(x => { x.innerHTML = `<img src="${img}" alt="">`; }); });
   let changed = false;
-  const close = () => { ov.remove(); if (!$('.modal-bg')) document.body.style.overflow = ''; if (changed) viewAlbum(v); };
+  const close = () => { ov.remove(); if (!$('.modal-bg')) document.body.style.overflow = ''; if (changed && !pk.test) viewAlbum(v); };
   ov.querySelector('.x').onclick = close;
   ov.querySelector('[data-col]')?.addEventListener('click', async () => { if (await act(() => rpc('album_collect_pack', { p_token: T(), p_pack: pk.id, p_collect: true }), L('Busta aggiunta alla collezione', 'Pack added to your collection'))) { changed = true; close(); } });
   const tear = ov.querySelector('.tear'), trail = ov.querySelector('.trail');
   let down = false, minX = Infinity, maxX = -Infinity, done = false;
-  const pos = e => { const r = tear.getBoundingClientRect(); return Math.max(0, Math.min(1, ((e.touches ? e.touches[0].clientX : e.clientX) - r.left) / r.width)); };
+  const pos = e => { const r = tear.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
   const move = e => { if (!down || done) return; e.preventDefault(); const x = pos(e); minX = Math.min(minX, x); maxX = Math.max(maxX, x); trail.style.left = (minX * 100) + '%'; trail.style.width = ((maxX - minX) * 100) + '%'; if (maxX - minX > 0.7) doTear(); };
-  tear.addEventListener('pointerdown', e => { down = true; minX = maxX = pos(e); tear.setPointerCapture?.(e.pointerId); });
-  tear.addEventListener('pointermove', move); tear.addEventListener('pointerup', () => { down = false; }); tear.addEventListener('pointercancel', () => { down = false; });
+  const resetTrail = () => { if (done) return; minX = Infinity; maxX = -Infinity; trail.style.width = 0; };
+  tear.addEventListener('pointerdown', e => { if (done) return; e.preventDefault(); down = true; minX = maxX = pos(e); try { tear.setPointerCapture(e.pointerId); } catch {} });
+  tear.addEventListener('pointermove', move);
+  tear.addEventListener('pointerup', () => { down = false; resetTrail(); });
+  tear.addEventListener('pointercancel', () => { down = false; resetTrail(); });
+  tear.addEventListener('dragstart', e => e.preventDefault());
   async function doTear() {
-    if (done) return; done = true; down = false;
-    let res; try { res = await rpc('album_open_pack', { p_token: T(), p_pack: pk.id }); } catch (e) { toast(e.message, true); done = false; return; }
-    changed = true; ov.querySelector('.acts').innerHTML = ''; ov.querySelector('.hint').textContent = '';
-    res.forEach(c => { ALB.img[c.id] = c.img; });
+    if (done) return; done = true; down = false; changed = true;
+    // l'animazione parte subito; il database risponde mentre la busta si apre
+    ov.querySelector('.acts').innerHTML = ''; ov.querySelector('.hint').textContent = '';
+    ov.classList.add('torn'); navigator.vibrate?.(30);
+    const anim = new Promise(r => setTimeout(r, 720));
+    let res;
+    try { res = await (pk.test ? albTestOpen() : rpc('album_open_pack', { p_token: T(), p_pack: pk.id })); }
+    catch (e) {
+      await anim; ov.classList.remove('torn'); done = false; trail.style.width = 0; minX = Infinity; maxX = -Infinity;
+      ov.querySelector('.hint').textContent = L('Non è andata: riprova a strappare', 'That did not work: try tearing again');
+      toast(e.message, true); return;
+    }
+    await anim;
+    if (!ov.isConnected) return;   // chiusa a metà: la lista si è già aggiornata in close()
+    res.forEach(c => { if (!pk.test) ALB.img[c.id] = c.img; });
     const box = ov.querySelector('.cards');
-    box.innerHTML = res.map((c, i) => `<div class="fc" style="z-index:${100 - i}"><img src="${c.img}" alt=""><span class="tag ${c.new ? (c.kind === 'rare' ? 'rare' : '') : 'dup'}">${c.new ? (c.kind === 'rare' ? L('RARA!', 'RARE!') : L('NUOVA', 'NEW')) : L('doppione', 'duplicate')}</span><div class="nm">${c.num} · ${esc(albLabel(c))}</div></div>`).join('');
-    ov.classList.add('torn');
+    box.innerHTML = res.map((c, i) => `<div class="fc" style="z-index:${100 - i}"><img src="${c.img}" alt="" draggable="false"><span class="tag ${c.new ? (c.kind === 'rare' ? 'rare' : '') : 'dup'}">${c.new ? (c.kind === 'rare' ? L('RARA!', 'RARE!') : L('NUOVA', 'NEW')) : L('doppione', 'duplicate')}</span><div class="nm">${c.num} · ${esc(c.label ?? albLabel(c))}</div></div>`).join('');
+    ov.classList.add('reveal');
     let i = 0; const fcs = [...box.querySelectorAll('.fc')];
     const cnt = document.createElement('div'); cnt.className = 'cnt'; ov.insertBefore(cnt, ov.querySelector('.acts'));
-    const fin = () => { cnt.remove(); const m = document.createElement('div'); m.className = 'done'; m.textContent = L('Le tue figurine ora sono nell\'album!', 'Your stickers are now in your album!'); ov.insertBefore(m, ov.querySelector('.acts'));
-      ov.querySelector('.acts').innerHTML = `<button class="btn primary" data-go>${L('Vai all\'album', 'Go to album')}</button>`; ov.querySelector('[data-go]').onclick = () => { S.ui.albumTab = 'album'; close(); }; };
-    const upd = () => { cnt.textContent = res.length > 1 ? `${Math.min(i + 1, res.length)} / ${res.length} · ${L('scorri per la prossima', 'swipe for the next')}` : ''; };
+    const fin = () => { cnt.remove(); const m = document.createElement('div'); m.className = 'done'; m.textContent = pk.test ? L('Fine della bustina di prova', 'End of the test pack') : L('Le tue figurine ora sono nell\'album!', 'Your stickers are now in your album!'); ov.insertBefore(m, ov.querySelector('.acts'));
+      ov.querySelector('.acts').innerHTML = pk.test ? `<button class="btn primary" data-again>${L('Apri un\'altra bustina di prova', 'Open another test pack')}</button>` : `<button class="btn primary" data-go>${L('Vai all\'album', 'Go to album')}</button>`;
+      ov.querySelector('[data-go]')?.addEventListener('click', () => { S.ui.albumTab = 'album'; close(); });
+      ov.querySelector('[data-again]')?.addEventListener('click', () => { close(); albTestPack(); }); };
+    const upd = () => { cnt.textContent = res.length > 1 ? `${Math.min(i + 1, res.length)} / ${res.length} · ${L('scorri o tocca per la prossima', 'swipe or tap for the next')}` : ''; };
     upd(); if (res.length === 1) fin();
     const next = () => { if (i >= res.length - 1) return; fcs[i].classList.add('gone'); i++; upd(); if (i === res.length - 1) fin(); };
-    let sx = null;
-    box.addEventListener('pointerdown', e => { sx = e.clientX; });
-    box.addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx; sx = null; if (Math.abs(dx) > 40 || Math.abs(dx) < 6) next(); });
+    // scorrimento: qualsiasi gesto (tocco o trascinamento in ogni direzione) fa avanzare; un gesto annullato non blocca nulla
+    let sx = null, sy = null;
+    box.addEventListener('pointerdown', e => { e.preventDefault(); sx = e.clientX; sy = e.clientY; try { box.setPointerCapture(e.pointerId); } catch {} });
+    box.addEventListener('pointerup', e => { if (sx == null) return; sx = sy = null; next(); });
+    box.addEventListener('pointercancel', () => { sx = sy = null; });
+    box.addEventListener('dragstart', e => e.preventDefault());
   }
 }
+
+// busta di prova: figurine finte generate qui, nessun accesso al database
+function albTestCard(n, kind, isNew) {
+  const col = kind === 'rare' ? '#c9a227' : ['#2e7d32', '#1565c0', '#6a1b9a', '#c62828', '#ef6c00'][n % 5];
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect width="300" height="400" fill="${col}"/><text x="150" y="190" font-family="sans-serif" font-size="64" font-weight="800" fill="#fff" text-anchor="middle">${n}</text><text x="150" y="240" font-family="sans-serif" font-size="26" fill="#fff" text-anchor="middle">PROVA</text></svg>`;
+  return { id: 'test' + n, num: n, kind, new: isNew, label: kind === 'rare' ? L('Figurina rara di prova', 'Test rare sticker') : L('Figurina di prova', 'Test sticker'), img: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg) };
+}
+async function albTestOpen() {
+  await new Promise(r => setTimeout(r, 300 + Math.random() * 1500));   // simula una rete lenta o veloce
+  const k = 2 + Math.floor(Math.random() * 4);
+  return Array.from({ length: k }, (_, i) => { const n = 1 + Math.floor(Math.random() * 77); return albTestCard(n, i === k - 1 && Math.random() < .3 ? 'rare' : 'normal', Math.random() < .65); });
+}
+function albTestPack() { albOpen({ id: 0, test: true, design: 0, kind: 'normal' }, null); }
 
 async function albViewTrades(al, v) {
   const A = ALB.data;
@@ -3150,6 +3193,7 @@ async function guestLogin() {
   try { const r = await rpc('guest_login', {}); S.token = r.token; store.set('calc_token', r.token); S.tab = 'classifica'; await start(); }
   catch (e) { const el = $('#lerr'); if (el) el.textContent = e.message; else renderLogin(e.message); }
 }
+if (/[?&]prova-busta\b/.test(location.search)) setTimeout(albTestPack, 600);
 if (/[?&](ospite|guest)\b/.test(location.search) && !S.token) guestLogin();
 else if (S.token) start(); else renderLogin();
 </script>
