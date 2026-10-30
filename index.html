@@ -422,6 +422,24 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .alb-empty{aspect-ratio:3/4;max-width:240px;margin:0 auto;border-radius:12px;border:2px dashed var(--line);background:var(--surface-2);display:grid;place-items:center}
 .alb-empty .n{font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:64px;color:var(--muted);opacity:.5}
 .alb-rule{margin:0;padding-left:18px} .alb-rule li{margin:3px 0}
+/* premio di completamento */
+.alb-prize{grid-column:1 / -1;justify-self:center;width:100%;max-width:440px}
+.alb-prize .ph{position:relative;width:100%;aspect-ratio:709/437;border-radius:12px;border:2px dashed #c9a227;background:linear-gradient(160deg,rgba(201,162,39,.16),rgba(201,162,39,.03));display:grid;place-items:center;overflow:hidden;padding:0}
+.alb-prize .ph.full{border:3px solid #c9a227;background:#fff;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.alb-prize .ph img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.alb-prize .ph .n{font-size:40px;opacity:.35}
+.gold{color:#f5c542;background:linear-gradient(180deg,#fff6c2 0%,#f5c542 45%,#c08a12 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.alb-gift{display:block;width:100%;margin:0 0 16px;padding:14px 12px;border-radius:14px;border:2px solid #c9a227;background:linear-gradient(160deg,#2a2208,#5a4610);cursor:pointer;text-align:center;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:22px;animation:albPulse 1.6s ease-in-out infinite}
+@keyframes albPulse{50%{box-shadow:0 0 18px rgba(245,197,66,.65)}}
+.pko.prz{touch-action:auto;overflow:auto;justify-content:flex-start;padding-top:calc(48px + env(safe-area-inset-top))}
+.pko.prz .t{font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;text-align:center;max-width:560px;line-height:1.15}
+.pko.prz .t1{font-size:clamp(20px,5.2vw,30px);margin:auto 0 18px}
+.pko.prz .t2{font-size:clamp(26px,7vw,40px);margin:18px 0 auto}
+.pko.prz .pic{width:min(92vw,620px);aspect-ratio:709/437;border-radius:12px;background:rgba(255,255,255,.06);display:grid;place-items:center;overflow:hidden;box-shadow:0 0 40px rgba(245,197,66,.45)}
+.pko.prz .pic img{width:100%;height:100%;object-fit:contain;display:block;animation:albIn .9s cubic-bezier(.2,.8,.2,1)}
+@keyframes albIn{from{transform:scale(.6) rotate(-4deg);opacity:0}}
+.pko .pk-title{margin-bottom:12px;font-weight:700;font-size:15px;text-align:center}
+.pk-item .gift{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
 @media (min-width:720px){
   .alb-grid{grid-template-columns:repeat(6,1fr);gap:10px}
   .alb-pair{gap:10px}
@@ -592,6 +610,36 @@ const ERR_EN = [
   [/^Voto non valido: (.*)/, 'Invalid rating: $1'],
   [/^È già nella tua rosa/, 'Already in your squad.'],
   [/^Connessione non riuscita/, 'Connection failed. Check your network.'],
+  [/^Sezione non disponibile/, 'Section not available.'],
+  [/^Bustina non trovata/, 'Pack not found.'],
+  [/^Bustina già aperta/, 'Pack already opened.'],
+  [/^Le bustine non sono ancora disponibili/, 'Packs are not available yet.'],
+  [/^Le bustine omaggio non si possono collezionare/, 'Free packs cannot be collected.'],
+  [/^Hai già collezionato una busta con questa grafica/, 'You have already collected a pack with this design.'],
+  [/^Figurina non trovata/, 'Sticker not found.'],
+  [/^Doppioni insufficienti: ne servono (\d+)/, 'Not enough duplicates: you need $1.'],
+  [/^Il banco non è ancora aperto/, 'The bank is not open yet.'],
+  [/^Ce l'hai già/, 'You already have it.'],
+  [/^Le rare dal banco si prendono solo/, 'Rares can only be taken from the bank after completing all regular stickers.'],
+  [/^Copie di questa rara esaurite/, 'No copies of this rare left: you can only get it by trading.'],
+  [/^Gli scambi non sono ancora aperti/, 'Trades are not open yet.'],
+  [/^Scegli due figurine diverse/, 'Pick two different stickers.'],
+  [/^Puoi offrire solo un tuo doppione/, 'You can only offer one of your duplicates.'],
+  [/^La figurina che cerchi ce l'hai già/, 'You already have the sticker you are looking for.'],
+  [/^Hai già questa offerta/, 'You already have this offer.'],
+  [/^Offerta non più disponibile/, 'Offer no longer available.'],
+  [/^È una tua offerta/, 'It is your own offer.'],
+  [/^Offerta non più valida/, 'Offer no longer valid: it was withdrawn.'],
+  [/^Per accettare devi avere un doppione/, 'To accept you need a duplicate of the requested sticker.'],
+  [/^I regali non sono ancora aperti/, 'Gifts are not open yet.'],
+  [/^Non puoi regalarla a te stesso/, 'You cannot gift it to yourself.'],
+  [/^Le rare non si possono regalare/, 'Rares cannot be gifted.'],
+  [/^Puoi regalare solo un tuo doppione/, 'You can only gift one of your duplicates.'],
+  [/^Ha già ricevuto il massimo di (\d+) figurine in regalo/, 'They have already received the maximum of $1 gifted stickers.'],
+  [/^Premio non ancora disponibile/, 'Prize not available yet.'],
+  [/^Immagine non valida o troppo grande/, 'Invalid or too large image.'],
+  [/^Immagine non leggibile/, 'Unreadable image.'],
+  [/^Non autorizzato/, 'Not authorised.'],
 ];
 const trErr = m => { if (!EN) return m; for (const [re, en] of ERR_EN) { const mm = String(m).match(re); if (mm) return en.replace(/\$(\d)/g, (_, i) => mm[i] ?? ''); } return m; };
 
@@ -2765,6 +2813,11 @@ const albDups = () => albCards().filter(c => c.qty > 1);
 const albMissing = () => albCards().filter(c => !c.qty);
 async function albFull(id) { if (!ALB.img[id]) ALB.img[id] = await rpc('album_card_image', { p_token: T(), p_card: id }); return ALB.img[id]; }
 async function albDesign(id) { const k = 'd' + id; if (ALB.img[k] === undefined) ALB.img[k] = await rpc('album_design_image', { p_token: T(), p_design: id }).catch(() => null); return ALB.img[k]; }
+const pkDay = d => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString(LOC, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+const pkTitle = p => L(`Bustina del ${pkDay(p.date)}`, `Pack from ${pkDay(p.date)}`);
+const pkGift = () => L('Bustina omaggio non collezionabile, contiene 1 figurina', 'Free pack, cannot be collected, contains 1 sticker');
+const ALB_PRIZE = 'premi/album.bin';
+async function albPrizeImg() { if (!ALB.prizeKey) ALB.prizeKey = await rpc('album_claim_prize', { p_token: T() }); return awardImg(ALB_PRIZE, ALB.prizeKey); }
 const pkArt = (img, title = 'Calciotto 26-27') => img ? `<div class="pk-art"><img src="${img}" alt=""></div>` : `<div class="pk-art"><b>${esc(title)}</b><i></i></div>`;
 
 async function viewAlbum(v) {
@@ -2792,15 +2845,21 @@ function albViewAlbum(al, v) {
   const collected = A.packs.filter(p => p.collected);
   const slot = (d, i) => { const pk = collected.find(p => p.design === d.id);
     return `<div class="alb-slot ${i === 0 ? 'alb-rare-first' : ''}">${pk ? `<button class="alb-card full" data-pk="${pk.id}" style="border-color:#7a5cff">${d.thumb ? `<img src="${d.thumb}" alt="">` : pkArt(null)}</button>` : `<div class="alb-card" style="cursor:default"><span class="n">${L('Busta', 'Pack')}<br>${esc(d.title)}</span></div>`}<div class="alb-name">${pk ? L('Collezionata', 'Collected') : L('Posto libero', 'Empty slot')}</div></div>`; };
-  al.innerHTML = `<div class="alb-wrap"><div class="alb-prog"><b>${owned} / ${total}</b><div class="bar"><i style="width:${Math.round(100 * owned / total)}%"></i></div><span class="small muted">${Math.round(100 * owned / total)}%</span></div>
+  const pz = A.prize || {};
+  al.innerHTML = `<div class="alb-wrap">${pz.ready ? `<button class="alb-gift" id="albGift"><span class="gold">🎁 ${L('Complimenti, apri il regalo speciale', 'Congratulations, open your special gift')}</span></button>` : ''}<div class="alb-prog"><b>${owned} / ${total}</b><div class="bar"><i style="width:${Math.round(100 * owned / total)}%"></i></div><span class="small muted">${Math.round(100 * owned / total)}%</span></div>
     ${A.viewer && !A.live ? `<p class="tiny muted" style="margin:-6px 0 12px">${L('In anteprima vedi tutte le immagini caricate; dopo l\'apertura vedrai solo quelle che trovi.', 'In preview you see every uploaded image; after launch you will only see the ones you find.')}</p>` : ''}
     <h3 class="alb-h">📦 ${L('Buste da collezione', 'Collector packs')}</h3>
     <div class="alb-grid">${A.designs.map(slot).join('')}</div>
     <div class="alb-grid"><div class="alb-scudo">${card(sc)}<div class="alb-name">${L('Scudetto', 'Badge')}</div></div></div>
     <div class="alb-grid">${pairs.map(p => `<div class="alb-pair">${p.cs.map(c => card(c)).join('')}<div class="alb-name">${plink(p.pid)}<span class="tiny muted">${p.cs.map(c => c.num).join('-')}</span></div></div>`).join('')}</div>
     <h3 class="alb-h">✨ ${L('Rare', 'Rares')}</h3>
-    <div class="alb-grid">${rares.map((r, i) => `<div class="alb-rare ${i === 0 ? 'alb-rare-first' : ''}">${card(r)}<div class="alb-name"><b>${esc(L(r.title, r.title_en || r.title))}</b>${plink(r.player_id)}</div></div>`).join('')}</div></div>`;
+    <div class="alb-grid">${rares.map((r, i) => `<div class="alb-rare ${i === 0 ? 'alb-rare-first' : ''}">${card(r)}<div class="alb-name"><b>${esc(L(r.title, r.title_en || r.title))}</b>${plink(r.player_id)}</div></div>`).join('')}</div>
+    <h3 class="alb-h" style="text-align:center">🏆 ${L('Premio di completamento', 'Completion prize')}</h3>
+    <div class="alb-grid"><div class="alb-prize"><div class="ph" id="albPz"><span class="n">🏆</span></div></div></div></div>`;
+  if (pz.claimed) albPrizeImg().then(url => { const z = al.querySelector('#albPz'); if (z) { z.classList.add('full'); z.innerHTML = `<img src="${url}" alt="">`; } }).catch(() => {});
+  al.querySelector('#albGift')?.addEventListener('click', () => albPrizeShow(v));
   al.onclick = async e => {
+    if (e.target.closest('#albPz.full')) return albPrizeZoom();
     const pkb = e.target.closest('[data-pk]');
     if (pkb) { const pk = A.packs.find(p => p.id === Number(pkb.dataset.pk)); return albPackModal(pk, v); }
     const b = e.target.closest('.alb-card[data-c]'); if (!b) return;
@@ -2813,10 +2872,29 @@ function albViewAlbum(al, v) {
 
 function albPackModal(pk, v) {
   const A = ALB.data, d = A.designs.find(x => x.id === pk.design);
-  const mo = modal({ title: L('Busta da collezione', 'Collector pack'), body: `<div style="max-width:300px;margin:0 auto;aspect-ratio:3/4" id="pkZ">${d?.thumb ? `<img class="alb-zoom" src="${d.thumb}" alt="">` : pkArt(null)}</div><p class="small muted" style="text-align:center">${L(`Contiene ${pk.n} figurin${pk.n === 1 ? 'a' : 'e'}. Puoi aprirla quando vuoi: il posto nella collezione si libera.`, `Contains ${pk.n} sticker${pk.n === 1 ? '' : 's'}. Open it whenever you like: the slot becomes free again.`)}</p>`,
-    actions: [{ label: L('Togli dalla collezione', 'Remove from collection'), fn: async () => { const ok = await act(() => rpc('album_collect_pack', { p_token: T(), p_pack: pk.id, p_collect: false }), L('Busta tolta dalla collezione', 'Pack removed from collection')); if (ok) viewAlbum(v); return ok; } },
-      { label: L('Apri la busta', 'Open the pack'), cls: 'primary', fn: async () => { albOpen(pk, v); return true; } }] });
+  const mo = modal({ title: pkTitle(pk), body: `<div style="max-width:300px;margin:0 auto;aspect-ratio:3/4" id="pkZ">${d?.thumb ? `<img class="alb-zoom" src="${d.thumb}" alt="">` : pkArt(null)}</div>`,
+    actions: [{ label: L('Lascia chiusa', 'Keep it sealed'), fn: () => true },
+      { label: L('Sbusta ora', 'Open it now'), cls: 'primary', fn: async () => { albOpen(pk, v); return true; } }] });
   albDesign(pk.design).then(img => { const z = mo.el.querySelector('#pkZ'); if (z && img) z.innerHTML = `<img class="alb-zoom" src="${img}" alt="">`; });
+}
+
+// premio di completamento: messaggio in oro, poi l'immagine (cifrata nel repo, chiave solo a chi ha completato)
+function albPrizeShow(v) {
+  const ov = document.createElement('div'); ov.className = 'pko prz';
+  ov.innerHTML = `<button class="x" aria-label="${L('Chiudi', 'Close')}">✕</button>
+    <div class="t t1 gold">${L('La verità è sempre stata che per averli avresti dovuto prima completare anche quest\'album', 'The truth has always been that to get them you first had to complete this album too')}</div>
+    <div class="pic"><div class="loader" style="color:#fff">…</div></div>
+    <div class="t t2 gold">${L('Ora sei il king degli album!', 'Now you are the king of albums!')}</div>
+    <div class="acts"><button class="btn primary" data-close>${L('Metti nell\'album', 'Put it in the album')}</button></div>`;
+  document.body.appendChild(ov); document.body.style.overflow = 'hidden';
+  const close = () => { ov.remove(); if (!$('.modal-bg')) document.body.style.overflow = ''; viewAlbum(v); };
+  ov.querySelector('.x').onclick = close; ov.querySelector('[data-close]').onclick = close;
+  albPrizeImg().then(url => { ov.querySelector('.pic').innerHTML = `<img src="${url}" alt="">`; })
+    .catch(e => { ov.querySelector('.pic').innerHTML = `<div class="small" style="padding:16px;text-align:center">${esc(e.message)}</div>`; });
+}
+async function albPrizeZoom() {
+  const url = await albPrizeImg().catch(() => null); if (!url) return;
+  modal({ title: L('Premio di completamento', 'Completion prize'), body: `<img class="alb-zoom" src="${url}" alt="" style="background:#fff">`, actions: [{ label: L('Chiudi', 'Close'), fn: () => true }] });
 }
 
 function albViewPacks(al, v) {
@@ -2824,7 +2902,7 @@ function albViewPacks(al, v) {
   if (!A.live) { al.innerHTML = `<div class="card"><h3 class="alb-h">${L('Bustine in arrivo', 'Packs coming soon')}</h3><p class="small muted" style="margin:0">${L(`Le prime bustine si aprono ${fmtDateTime(A.launch_at)}.`, `The first packs open ${fmtDateTime(A.launch_at)}.`)}</p></div>`; return; }
   const list = A.packs.filter(p => !p.collected), col = A.packs.filter(p => p.collected).length;
   al.innerHTML = list.length ? `<p class="small muted" style="margin:0 0 10px">${L('Tocca una busta per aprirla, oppure tienila chiusa nella collezione (un posto per ogni grafica, in cima all\'album).', 'Tap a pack to open it, or keep it sealed in your collection (one slot per design, at the top of the album).')}</p>
-    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div><span class="small"><b>${p.n} ${L(p.n === 1 ? 'figurina' : 'figurine', p.n === 1 ? 'sticker' : 'stickers')}</b> · ${esc(fmtDate(p.date))}${p.kind === 'bonus' ? ' · bonus' : ''}</span></button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
+    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div><span class="small"><b>${esc(pkTitle(p))}</b>${p.kind === 'bonus' ? `<span class="gift">${esc(pkGift())}</span>` : ''}</span></button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
     : `<div class="card empty">${L('Nessuna bustina da aprire: la prossima arriva dopo la prossima partita che giochi.', 'No packs to open: the next one arrives after the next match you play.')}${col ? `<br>${L(`Hai ${col} buste nella collezione.`, `You have ${col} packs in your collection.`)}` : ''}</div>`;
   al.onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; albOpen(A.packs.find(p => p.id === Number(b.dataset.p)), v); };
 }
@@ -2832,14 +2910,15 @@ function albViewPacks(al, v) {
 // apertura: strappa la busta trascinando sulla linea in alto, poi scorri le figurine
 async function albOpen(pk, v) {
   const A = ALB.data;
-  const canCollect = !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
+  const canCollect = pk.kind !== 'bonus' && !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
   const d = A.designs.find(x => x.id === pk.design);
   const ov = document.createElement('div'); ov.className = 'pko';
   const art = d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null);
   ov.innerHTML = `<button class="x" aria-label="${L('Chiudi', 'Close')}">✕</button>
+    <div class="pk-title">${esc(pkTitle(pk))}${pk.kind === 'bonus' ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${esc(pkGift())}</div>` : ''}</div>
     <div class="stage"><div class="cards"></div><div class="pk-bot">${art}</div><div class="pk-top">${art}</div><div class="tear"><span class="trail"></span></div></div>
     <div class="hint">✂️ ${L('Strappa la busta: trascina il dito lungo la linea in alto', 'Tear the pack: drag your finger along the line at the top')}</div>
-    <div class="acts">${canCollect ? `<button class="btn" data-col>📦 ${L('Colleziono la busta', 'Keep the pack sealed')}</button>` : ''}</div>`;
+    <div class="acts">${canCollect ? `<button class="btn" data-col>📦 ${L('Colleziona bustina', 'Collect pack')}</button>` : ''}</div>`;
   document.body.appendChild(ov); document.body.style.overflow = 'hidden';
   albDesign(pk.design).then(img => { if (img) ov.querySelectorAll('.pk-top .pk-art, .pk-bot .pk-art').forEach(x => { x.innerHTML = `<img src="${img}" alt="">`; }); });
   let changed = false;
@@ -2908,7 +2987,8 @@ function albViewRules(al) {
   const A = ALB.data;
   al.innerHTML = `<div class="card small"><h3 class="alb-h">${L('Le bustine', 'Packs')}</h3><ul class="alb-rule">
       <li>${L('Dopo ogni partita che giochi ricevi una bustina, che trovi in “Bustine”.', 'After every match you play you get a pack, which you find under “Packs”.')}</li>
-      <li>${L('Quante figurine contiene dipende dal risultato (chi perde ne prende meno) e da una curva di distribuzione legata alle presenze: verso fine stagione le bustine crescono, e chi ha saltato qualche partita può recuperare un po\' giocando.', 'How many stickers it holds depends on the result (losers get fewer) and on a distribution curve tied to attendance: packs grow towards the end of the season, and players who missed some matches can catch up a bit by playing.')}</li>
+      <li>${L('Il contenuto delle bustine segue una curva di distribuzione legata alle presenze, pensata per garantire una buona quota di figurine anche a chi gioca meno: le bustine crescono con il passare delle partite, conta anche il risultato, e chi ha saltato qualche partita può recuperare giocando.', 'Pack contents follow a distribution curve tied to attendance, designed to give a fair share of stickers even to those who play less: packs grow as the matches go by, the result counts too, and players who missed some matches can catch up by playing.')}</li>
+      <li>${L('Le bustine omaggio delle prime partite non si possono collezionare.', 'The free packs from the first matches cannot be collected.')}</li>
       <li>${L('Si apre strappandola: trascina il dito lungo la linea in alto, poi scorri le figurine. Le nuove vanno da sole al loro posto, le altre diventano doppioni.', 'Open it by tearing: drag your finger along the line at the top, then swipe through the stickers. New ones go straight to their slot, the others become duplicates.')}</li>
       <li>${L('Puoi anche tenerla chiusa nella tua collezione di buste, in cima all\'album: c\'è un posto per ognuna delle 4 grafiche. Una busta collezionata si può aprire in qualsiasi momento.', 'You can also keep it sealed in your pack collection at the top of the album: there is one slot for each of the 4 designs. A collected pack can be opened at any time.')}</li>
       <li>${L('Le 4 rare (i premi della stagione scorsa) escono molto più di rado e hanno un numero limitato di copie.', 'The 4 rares (last season\'s awards) come out much more rarely and have a limited number of copies.')}</li></ul>
@@ -2922,7 +3002,7 @@ function albViewRules(al) {
       <li>${L('Nella bacheca in cima trovi le offerte che puoi accettare subito e che ti servono.', 'At the top of the board you find the offers you can accept right away and actually need.')}</li></ul>
     <h3 class="alb-h">${L('Regali', 'Gifts')}</h3><ul class="alb-rule">
       <li>${L('Puoi regalare un tuo doppione a un altro giocatore. Le rare non si regalano.', 'You can gift one of your duplicates to another player. Rares cannot be gifted.')}</li>
-      <li>${L(`Ognuno può ricevere al massimo ${A.gift_limit} figurine in regalo fino alla partita 26; dalla partita 27 il limite non vale più.`, `Everyone can receive at most ${A.gift_limit} gifted stickers until match 26; from match 27 the limit no longer applies.`)}</li></ul></div>`;
+      <li>${A.gift_free ? L('Il limite di figurine ricevute in regalo non vale più.', 'The limit on gifted stickers received no longer applies.') : L(`Ognuno può ricevere al massimo ${A.gift_limit} figurine in regalo.`, `Everyone can receive at most ${A.gift_limit} gifted stickers.`)}</li></ul></div>`;
 }
 
 // ---- caricamento immagini (solo chi vede l'anteprima): abbina i file alle figurine dal nome
@@ -2950,21 +3030,21 @@ function albResize(file, w, h, q) {
   return new Promise((ok, ko) => { const im = new Image(); im.onload = () => { const cv = document.createElement('canvas'); cv.width = w; cv.height = h; const x = cv.getContext('2d');
     const r = Math.max(w / im.width, h / im.height), dw = im.width * r, dh = im.height * r; x.drawImage(im, (w - dw) / 2, (h - dh) / 2, dw, dh);
     let out = cv.toDataURL('image/webp', q); if (!out.startsWith('data:image/webp')) out = cv.toDataURL('image/jpeg', q); URL.revokeObjectURL(im.src); ok(out); };
-    im.onerror = () => ko(new Error('Immagine non leggibile: ' + file.name)); im.src = URL.createObjectURL(file); });
+    im.onerror = () => ko(new Error(L('Immagine non leggibile: ', 'Unreadable image: ') + file.name)); im.src = URL.createObjectURL(file); });
 }
 function albViewUpload(al, v) {
   const A = ALB.data, cards = A.cards;
   al.innerHTML = `<div class="card small"><h3 class="alb-h">🖼️ ${L('Figurine', 'Stickers')}</h3><p class="muted" style="margin:0 0 8px">${L(`Seleziona tutti i file della cartella in una volta. L'app li abbina alle caselle dal nome del file (es. “Morfuni 1”, “Citro E 2”, “Scudetto”, “Bomber Pargalia”): controlla l'abbinamento, correggi se serve e carica. Le immagini vengono ridotte (600×800 e miniatura) prima dell'invio. Caricate: ${cards.filter(c => c.has_img).length}/${cards.length}.`, `Select all the files of the folder at once. The app matches them to slots from the file name: check, fix if needed and upload. Uploaded: ${cards.filter(c => c.has_img).length}/${cards.length}.`)}</p>
       <input type="file" id="upF" accept="image/*" multiple><div id="upMap" style="margin-top:10px"></div></div>
     <div class="card small"><h3 class="alb-h">📦 ${L('Grafiche delle buste', 'Pack designs')}</h3><p class="muted" style="margin:0 0 8px">${L('Una immagine per ognuna delle 4 buste (formato verticale 3:4).', 'One image for each of the 4 packs (portrait 3:4).')}</p>
-      ${A.designs.map(d => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1"><b>${d.id}</b> · ${esc(d.title)} ${d.has_img ? '<span class="pill ok">caricata</span>' : '<span class="pill">mancante</span>'}</span><input type="file" accept="image/*" data-dz="${d.id}"></div>`).join('')}</div>`;
+      ${A.designs.map(d => `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)"><span style="flex:1"><b>${d.id}</b> · ${esc(d.title)} ${d.has_img ? `<span class="pill ok">${L('caricata', 'uploaded')}</span>` : `<span class="pill">${L('mancante', 'missing')}</span>`}</span><input type="file" accept="image/*" data-dz="${d.id}"></div>`).join('')}</div>`;
   let files = [];
   const opts = `<option value="">— ${L('non caricare', 'skip')} —</option>` + cards.map(c => `<option value="${c.id}">${c.num} · ${esc(albLabel(c))}${c.has_img ? ' ✓' : ''}</option>`).join('');
   $('#upF').onchange = e => {
     files = [...e.target.files].sort((a, b) => a.name.localeCompare(b.name, 'it')).map(f => ({ f, c: albGuess(f.name, cards) }));
     const used = {}; files.forEach(x => { if (x.c) used[x.c.id] = (used[x.c.id] || 0) + 1; });
     const unmatched = cards.filter(c => !files.some(x => x.c?.id === c.id));
-    $('#upMap').innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>File</th><th>${L('Figurina', 'Sticker')}</th></tr></thead><tbody>${files.map((x, i) => `<tr><td>${esc(x.f.name)}</td><td><select data-up="${i}" style="max-width:260px">${opts}</select>${x.c && used[x.c.id] > 1 ? ' <span class="pill" style="color:var(--danger)">doppio</span>' : ''}${!x.c ? ' <span class="pill" style="color:var(--danger)">?</span>' : ''}</td></tr>`).join('')}</tbody></table></div>
+    $('#upMap').innerHTML = `<div class="tbl-wrap"><table class="t"><thead><tr><th>File</th><th>${L('Figurina', 'Sticker')}</th></tr></thead><tbody>${files.map((x, i) => `<tr><td>${esc(x.f.name)}</td><td><select data-up="${i}" style="max-width:260px">${opts}</select>${x.c && used[x.c.id] > 1 ? ` <span class="pill" style="color:var(--danger)">${L('doppio', 'double')}</span>` : ''}${!x.c ? ' <span class="pill" style="color:var(--danger)">?</span>' : ''}</td></tr>`).join('')}</tbody></table></div>
       <p class="small ${unmatched.length ? '' : 'muted'}" style="margin:8px 0">${unmatched.length ? L(`Caselle senza file: ${unmatched.map(c => c.num + ' ' + albLabel(c)).join(', ')}`, `Slots without a file: ${unmatched.map(c => c.num).join(', ')}`) : L('Tutte le caselle hanno un file.', 'Every slot has a file.')}</p>
       <button class="btn primary" id="upGo">${L(`Carica ${files.length} immagini`, `Upload ${files.length} images`)}</button> <span class="small muted" id="upSt"></span>`;
     files.forEach((x, i) => { const s = $(`[data-up="${i}"]`); s.value = x.c ? String(x.c.id) : ''; s.onchange = () => { x.c = albCard(Number(s.value)) || null; }; });
