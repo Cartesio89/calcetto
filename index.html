@@ -2771,13 +2771,13 @@ async function viewAlbum(v) {
   if (!S.albumOk) return viewClassifica(v);
   const u = S.ui; u.albumTab = u.albumTab || 'album';
   v.innerHTML = `<div class="loader">${L('Caricamento…', 'Loading…')}</div>`;
-  let A; try { A = await albLoad(true); } catch (e) { v.innerHTML = `<div class="card">${esc(e.message)}</div>`; return; }
+  let A; try { A = await albLoad(true); } catch (e) { v.innerHTML = `<div class="card">${/non disponibile/i.test(e.message) ? L('Tutte le immagini sono caricate: l\'album si apre per tutti all\'ora stabilita, e da lì lo completi come gli altri.', 'All images are uploaded: the album opens to everyone at the set time, and from then on you complete it like everyone else.') : esc(e.message)}</div>`; return; }
   const packs = A.packs.filter(p => !p.collected);
   const tabs = [{ v: 'album', l: 'Album' }, { v: 'bustine', l: L('Bustine', 'Packs') + (A.live && packs.length ? ` (${packs.length})` : '') }, { v: 'scambi', l: L('Scambi', 'Trades') }, { v: 'regole', l: L('Regole', 'Rules') }];
   if (A.viewer) tabs.push({ v: 'carica', l: L('Carica immagini', 'Upload images') });
   if (!tabs.some(t => t.v === u.albumTab)) u.albumTab = 'album';
   const launch = new Date(A.launch_at);
-  const note = !A.live ? `<div class="alb-note small">🔒 ${L('Anteprima visibile solo a te.', 'Preview visible only to you.')} ${L('Apertura per tutti, con le bustine:', 'Opens to everyone, with packs:')} <b>${esc(fmtDateTime(A.launch_at))}</b>${A.missing_images ? ` · <b style="color:var(--danger)">${L(`mancano ${A.missing_images} immagini: senza tutte le immagini l'album non apre`, `${A.missing_images} images missing: the album won't open without all of them`)}</b>` : ''}</div>` : '';
+  const note = !A.live ? `<div class="alb-note small">🔒 ${L('Anteprima visibile solo a te.', 'Preview visible only to you.')} ${L('Apertura per tutti, con le bustine:', 'Opens to everyone, with packs:')} <b>${esc(fmtDateTime(A.launch_at))}</b>${A.missing_images ? ` · <b style="color:var(--danger)">${L(`mancano ${A.missing_images} immagini: senza tutte le immagini l'album non apre`, `${A.missing_images} images missing: the album won't open without all of them`)}</b>` : ''}${A.missing_designs ? ` · ${L(`mancano ${A.missing_designs} grafiche delle buste`, `${A.missing_designs} pack designs missing`)}` : ''}<br>${L('Quando figurine e buste sono tutte caricate, l\'album sparisce anche per te fino all\'apertura: da lì lo completi come tutti.', 'Once all stickers and packs are uploaded, the album disappears for you too until launch: then you complete it like everyone else.')}</div>` : '';
   v.innerHTML = `<div class="section-title"><h2>${L('Album Campioncini', 'Campioncini album')}</h2><div class="spacer"></div>${segHtml('alTab', tabs, u.albumTab)}</div>${note}<div id="alv"></div>`;
   bindSeg($('#alTab'), val => { if (val === u.albumTab) return; u.albumTab = val; navPush(); viewAlbum(v); });
   const al = $('#alv');
