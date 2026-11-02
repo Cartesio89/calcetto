@@ -922,7 +922,11 @@ function bindSort(container, sort, rerender) {
 }
 function segHtml(id, opts, val) { return `<div class="seg" id="${id}">${opts.map(o => `<button data-v="${o.v}" class="${String(o.v) === String(val) ? 'on' : ''}">${esc(o.l)}</button>`).join('')}</div>`; }
 function bindSeg(el, fn) { el.onclick = e => { const b = e.target.closest('button'); if (b) fn(b.dataset.v); }; }
-const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.map(t => ({ v: t, l: EN ? t + 's' : 'a ' + t }))];
+// nei filtri non c'è il calcio a 7: le partite giocate a 7 contano come calcio a 8 (m.a7 = true)
+const typeOpts = [{ v: 'all', l: L('Tutte', 'All') }, ...TYPES.filter(t => t !== 7).map(t => ({ v: t, l: EN ? t + 's' : 'a ' + t }))];
+// tipo da mostrare/scegliere nelle schermate admin: 7 per le partite giocate a 7
+const kindOf = m => m?.a7 ? 7 : m?.type;
+const a7Note = () => L('Giocata 7 contro 7: conta come calcio a 8 (classifiche, statistiche e FantaNunnaree).', 'Played 7-a-side: it counts as an 8-a-side match (tables, stats and FantaNunnaree).');
 
 // ------------------------------------------------------------- SCHEDA GIOCATORE
 // bandiera dalla nazionalità scritta in italiano (immagini flagcdn.com, gratuite)
@@ -1099,6 +1103,7 @@ async function viewClassifica(v) {
   const allowAll = !isGuest() && !!me() && pname(me().id) === 'Cicerani M.';
   const stOpts = allowAll ? typeOpts : typeOpts.filter(o => o.v !== 'all');
   if (!allowAll && u.statType === 'all') u.statType = 8;
+  if (String(u.statType) === '7') u.statType = 8;
   v.innerHTML = `<div class="section-title"><h2>${L('Classifica', 'Table')}</h2><div class="spacer"></div><div class="tyrow">${segHtml('stType', stOpts, u.statType)}${hlListBtn()}</div></div>
     <div class="row" style="margin-bottom:12px"><input type="text" id="stSearch" placeholder="${L('Cerca giocatore…', 'Search player…')}" value="${esc(u.statSearch)}" style="max-width:260px">
       <label class="small row" style="gap:6px;cursor:pointer"><input type="checkbox" id="stHide" ${u.hideZero ? 'checked' : ''}> ${L('solo chi ha giocato', 'only players who played')}</label>
@@ -1426,7 +1431,7 @@ function openMatch(id) {
   function fvNote() { return L(`Fantavoto = voto + bonus/malus FantaNunnaree. In grigio: meno di ${minV} voti, vale il voto d'ufficio (${fmtVote(settings('fanta_voto_ufficio'))}). Tocca un numero per il dettaglio.`, `Fanta score = rating + FantaNunnaree bonus/malus. Greyed out: fewer than ${minV} ratings, the default rating (${fmtVote(settings('fanta_voto_ufficio'))}) applies. Tap a number for details.`); }
   const mo = modal({
     title: L('Dettaglio partita', 'Match details'), wide: true,
-    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.lineup_manager ? `<p class="small" style="margin:4px 0">${played ? L('Squadre fatte da', 'Teams picked by') : L('Fa le squadre', 'Picking the teams')}: <b>${esc(pname(m.lineup_manager))}</b>${canMakeTeams(m) ? ` <span class="pill live">${L('tocca a te', 'your turn')}</span>` : ''}</p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
+    body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.a7 ? `<p class="small muted" style="margin:4px 0">ℹ️ ${esc(a7Note())}</p>` : ''}${m.lineup_manager ? `<p class="small" style="margin:4px 0">${played ? L('Squadre fatte da', 'Teams picked by') : L('Fa le squadre', 'Picking the teams')}: <b>${esc(pname(m.lineup_manager))}</b>${canMakeTeams(m) ? ` <span class="pill live">${L('tocca a te', 'your turn')}</span>` : ''}</p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
       ${canFv ? `<div class="row" style="justify-content:center;margin:4px 0 8px">${segHtml('mxMode', [{ v: 'voto', l: L('Voto', 'Rating') }, { v: 'fv', l: L('Fantavoto', 'Fanta score') }], mode)}</div>` : ''}
       <div class="mx-cols">${col('W')}${col('D')}</div>
       ${canFv ? `<p class="tiny muted" id="mxNote" style="margin:4px 0">${mode === 'fv' ? fvNote() : ''}</p>` : ''}
@@ -1530,16 +1535,16 @@ function editMatchMeta(m, retro) {
   modal({
     title: m ? 'Dati partita' : retro ? 'Partita già giocata' : 'Nuova partita',
     body: `${retro ? '<p class="small muted">Per caricare partite passate: dopo i dati scegli le squadre e poi inserisci risultato e marcatori.</p>' : ''}
-      <label class="f">Tipo</label>${segHtml('mType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), m?.type || 8)}
+      <label class="f">Tipo</label>${segHtml('mType', TYPES.map(t => ({ v: t, l: 'Calcio a ' + t })), kindOf(m) || 8)}<div class="tiny muted" style="margin-top:4px">Il calcio a 7 conta come calcio a 8 (classifiche, statistiche e FantaNunnaree): nel dettaglio partita compare la nota “giocata 7 contro 7”.</div>
       <label class="f">Data</label><input type="date" id="mDate" value="${m?.date || today}">
       <label class="f">Nota (facoltativa)</label><input type="text" id="mNote" value="${esc(m?.note || '')}" placeholder="Es. campo, recupero…">`,
     onOpen: el => bindSeg($('#mType', el), val => $$('#mType button', el).forEach(b => b.classList.toggle('on', b.dataset.v === val))),
     actions: [{ label: m ? 'Salva' : retro ? 'Avanti: squadre' : 'Avanti: convocati', cls: 'primary', fn: async el => {
       const type = Number($('#mType .on', el).dataset.v), date = $('#mDate', el).value, note = $('#mNote', el).value;
       if (!date) { toast('Inserisci la data', true); return false; }
-      if (m && type !== m.type) {
+      if (m && type !== kindOf(m)) {
         const warn = [];
-        if (![8, 11].includes(type) && m.fanta_state !== 'chiuso') warn.push('la giornata FantaNunnaree verrà annullata e le formazioni cancellate');
+        if (![7, 8, 11].includes(type) && m.fanta_state !== 'chiuso') warn.push('la giornata FantaNunnaree verrà annullata e le formazioni cancellate');
         if (type === 5 && (m.votes_close_at || m.voters)) warn.push('i voti di questa partita verranno cancellati (nel calcio a 5 non si vota)');
         if (warn.length && !await confirmBox(`Passando a calcio a ${type}: ${warn.join('; ')}. Confermi?`, 'Conferma', true)) return false;
       }
@@ -1640,7 +1645,7 @@ async function editCallups(m, thenTeams) {
   let chosen = callupIds(m);
   if (!chosen.length && m.players.length) chosen = m.players.map(p => p.id);   // partita con squadre già fatte: parto da quelle
   let q = '', lm = m.lineup_manager ?? '', pending = [], msgType = null, parsed = false;
-  const warns = () => callupWarnings(m.type, msgType, chosen.length);
+  const warns = () => callupWarnings(kindOf(m), msgType, chosen.length);
   const warnHtml = () => !parsed ? '' : warns().map(w => `<div class="card small" style="margin:6px 0;padding:8px 10px;border-color:var(--warn)">⚠️ ${esc(w.txt)} <button class="btn sm" data-fixtype="${w.fix}">Imposta calcio a ${w.fix}</button></div>`).join('');
   const add = id => { if (!chosen.includes(id)) chosen.push(id); };
   const lmOpts = () => '<option value="">— nessuno (le faccio io) —</option>' + [...pool].filter(p => p.is_active || p.id === m.lineup_manager)
@@ -1652,7 +1657,7 @@ async function editCallups(m, thenTeams) {
   const allHtml = () => pool.filter(p => (p.is_active || chosen.includes(p.id)) && (!q || p.name.toLowerCase().includes(q))).sort((a, b) => a.name.localeCompare(b.name, 'it'))
     .map(p => `<div class="pick"><span class="nm">${esc(p.name)}${roleTag(p.id)}</span><button class="tbtn ${chosen.includes(p.id) ? 'W on' : ''}" data-tog="${p.id}">${chosen.includes(p.id) ? '✓' : '+'}</button></div>`).join('');
   modal({
-    title: `Convocati · ${typeLabel(m.type)} del ${fmtDate(m.date)}`,
+    title: `Convocati · ${typeLabel(kindOf(m))} del ${fmtDate(m.date)}`,
     body: `<label class="f" for="cTxt" style="margin-top:0">1 · Incolla i cognomi (uno per riga o separati da virgola)</label>
       <textarea id="cTxt" rows="4" placeholder="Callari&#10;Citro L.&#10;Nunnari, Memolla, Parisi"></textarea>
       <div class="row" style="margin-top:6px"><button class="btn sm primary" id="cParse">Aggiungi dal testo</button><span class="tiny muted">Puoi incollare anche il messaggio di convocazione intero: leggo solo l'elenco numerato e tengo a parte le riserve. Va bene cognome, cognome e iniziale, cognome e nome o nome e cognome. Se il cognome è di due giocatori (es. Citro) e non c'è il nome, te lo chiedo.</span></div>
@@ -1662,6 +1667,16 @@ async function editCallups(m, thenTeams) {
       <label class="f" for="cLm">2 · Chi fa le squadre</label><select id="cLm">${lmOpts()}</select>
       <div class="tiny muted" style="margin-top:4px">Il giocatore scelto vede la partita con il pulsante “Fai le squadre” e può dividere i convocati tra ${esc(TW)} e ${esc(TD)} finché la partita non è giocata. Tu puoi sempre modificarle.</div>`,
     onOpen: el => {
+      // calcio a 7 e a 8 valgono uguale (classifiche e fanta): 14 convocati (o "calcio a 7" nel messaggio) = calcio a 7, 16 = calcio a 8
+      const setKind = nt => { m.type = nt === 7 ? 8 : nt; m.a7 = nt === 7; el.querySelector('header h2').textContent = `Convocati · ${typeLabel(nt)} del ${fmtDate(m.date)}`; };
+      const autoKind = async () => {
+        const k = kindOf(m), n = chosen.length;
+        const want = k === 8 && (msgType === 7 || (!msgType && n === 14)) ? 7 : k === 7 && (msgType === 8 || (!msgType && n === 16)) ? 8 : null;
+        if (!want) return;
+        if (!await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: want, p_date: m.date, p_note: m.note || '' }),
+          want === 7 ? `${n} convocati: partita impostata a calcio a 7 (conta come calcio a 8)` : `${n} convocati: partita impostata a calcio a 8`)) return;
+        setKind(want); msgType = null; redraw();
+      };
       const redraw = () => { $('#cWarn', el).innerHTML = warnHtml(); $('#cChosen', el).innerHTML = chosenHtml(); $('#cAll', el).innerHTML = allHtml(); $('#cPend', el).innerHTML = pendHtml(); $('#cN', el).textContent = chosen.length; $('#cLm', el).innerHTML = lmOpts(); };
       $('#cQ', el).oninput = e => { q = e.target.value.toLowerCase(); $('#cAll', el).innerHTML = allHtml(); };
       $('#cLm', el).onchange = e => lm = e.target.value;
@@ -1676,7 +1691,7 @@ async function editCallups(m, thenTeams) {
         }
         // riserve: non le aggiungo, le propongo
         for (const { raw, gk } of reserves) { const r = matchPlayer(raw, pool, gk); pending.push({ raw, status: 'riserva', candidates: r.status === 'ok' ? [r.id] : r.candidates.slice(0, 3) }); }
-        $('#cTxt', el).value = ''; redraw();
+        $('#cTxt', el).value = ''; redraw(); autoKind();
         toast(`${n} aggiunti${reserves.length ? ` · ${reserves.length} riserve non aggiunte` : ''}${pending.length - reserves.length > 0 ? ` · ${pending.length - reserves.length} da chiarire` : ''}`);
       };
       el.addEventListener('click', e => {
@@ -1686,9 +1701,9 @@ async function editCallups(m, thenTeams) {
         const po = e.target.closest('[data-pok]'); if (po) { pending.splice(Number(po.dataset.pok), 1); return redraw(); }
         const fx = e.target.closest('[data-fixtype]'); if (fx) (async () => {
           const nt = Number(fx.dataset.fixtype);
-          if (![8, 11].includes(nt) && m.fanta_state !== 'chiuso' && !await confirmBox(`Passando a calcio a ${nt} la giornata FantaNunnaree di questa partita viene annullata. Confermi?`, 'Conferma', true)) return;
+          if (![7, 8, 11].includes(nt) && m.fanta_state !== 'chiuso' && !await confirmBox(`Passando a calcio a ${nt} la giornata FantaNunnaree di questa partita viene annullata. Confermi?`, 'Conferma', true)) return;
           if (!await act(() => rpc('admin_update_match', { p_token: T(), p_match: m.id, p_type: nt, p_date: m.date, p_note: m.note || '' }), `Partita impostata a calcio a ${nt}`)) return;
-          m.type = nt; msgType = null; el.querySelector('header h2').textContent = `Convocati · ${typeLabel(nt)} del ${fmtDate(m.date)}`; redraw();
+          setKind(nt); msgType = null; redraw();
         })();
       });
     },
@@ -1730,7 +1745,7 @@ function editTeams(m, thenResult) {
   const rows = () => { const vis = list.filter(p => !q || p.name.toLowerCase().includes(q));
     return cu.length ? groupedRows(vis.map(p => p.id), btns) : vis.map(p => `<div class="pick"><span class="nm">${esc(p.name)}</span>${btns(p.id)}</div>`).join(''); };
   modal({
-    title: `${L('Squadre', 'Teams')} · ${typeLabel(m.type)}`,
+    title: `${L('Squadre', 'Teams')} · ${typeLabel(kindOf(m))}`,
     body: `${pres ? `<label class="f" for="tlm" style="margin-top:0">Chi fa le squadre</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>` : ''}
       <div id="tcount" style="margin-bottom:10px">${counts()}</div>
       ${pres && cu.length ? `<div class="row" style="margin-bottom:8px"><span class="small muted">${cu.length} convocati</span><button class="btn sm" id="tcu">Modifica convocati</button></div>` : ''}
@@ -1775,7 +1790,7 @@ function editResult(m, openVotesDefault) {
     return [w, d];
   };
   modal({
-    title: `Risultato · ${typeLabel(m.type)} ${fmtDate(m.date)}`, wide: true,
+    title: `Risultato · ${typeLabel(kindOf(m))} ${fmtDate(m.date)}`, wide: true,
     body: `<div class="bigscore"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
         <input type="number" min="0" id="sw" value="${m.score_w ?? ''}" inputmode="numeric"><b>–</b><input type="number" min="0" id="sd" value="${m.score_d ?? ''}" inputmode="numeric">
         <span class="team">${esc(TD)}<span class="dot D"></span></span></div>
@@ -2126,7 +2141,7 @@ function importPreview(res, src) {
   const NUMF = [['goals', 'Gol'], ['pen_goals', 'di cui rig.'], ['own_goals', 'Autogol'], ['conceded', 'Gol subiti'], ['pen_saved', 'Rig. parati'], ['pen_missed', 'Rig. sbagl.']];
   const plist = [...S.boot.players].sort((a, b) => a.name.localeCompare(b.name, 'it'));
   const tgt = () => st.target === 'new' ? null : prog.find(m => String(m.id) === st.target);
-  const effType = () => tgt()?.type ?? st.type;
+  const effType = () => tgt() ? kindOf(tgt()) : st.type;
   const optHtml = r => `<option value="new" ${r.pid == null ? 'selected' : ''}>➕ Nuovo giocatore…</option>` + plist.map(p => `<option value="${p.id}" ${p.id === r.pid ? 'selected' : ''}>${esc(p.name)}${p.is_gk ? ' · GK' : ''}${p.is_active ? '' : ' (disattivato)'}</option>`).join('');
   const flag = r => r.pid == null ? '<span class="pill warn">nuovo giocatore</span>' : r.status === 'ambiguo' ? '<span class="pill warn">nome ambiguo: controlla</span>' : r.status === 'simile' ? '<span class="pill warn">nome simile: controlla</span>' : '';
   const rowHtml = r => `<div class="imp-row ${r.pid == null || r.status === 'ambiguo' || r.status === 'simile' ? 'flag' : ''}" data-i="${r.i}">
@@ -2142,7 +2157,7 @@ function importPreview(res, src) {
     body: `${res.warn.length ? `<div class="card imp-warn"><b>Da controllare</b><ul>${res.warn.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
       <div class="tiny muted">Letto da: ${esc(src)}. Niente è stato ancora salvato.</div>
       <label class="f" for="impTarget">Dove salvare</label>
-      <select id="impTarget"><option value="new">Nuova partita</option>${prog.map(m => `<option value="${m.id}" ${String(m.id) === st.target ? 'selected' : ''}>Partita già creata: ${esc(typeLabel(m.type))} · ${esc(fmtDate(m.date))}</option>`).join('')}</select>
+      <select id="impTarget"><option value="new">Nuova partita</option>${prog.map(m => `<option value="${m.id}" ${String(m.id) === st.target ? 'selected' : ''}>Partita già creata: ${esc(typeLabel(kindOf(m)))} · ${esc(fmtDate(m.date))}</option>`).join('')}</select>
       <div id="impMeta"></div>
       <label class="f" for="impLm">Lineup manager</label><select id="impLm"><option value="">— nessuno —</option>${plist.filter(p => p.is_active || p.id === st.lm).map(p => `<option value="${p.id}" ${p.id === st.lm ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>${res.lineupManager ? `<div class="tiny muted">dal file: <i>${esc(res.lineupManager.name)}</i></div>` : ''}
       <div class="bigscore" style="margin-top:14px"><span class="team"><span class="dot W"></span>${esc(TW)}</span>
@@ -2658,9 +2673,9 @@ async function viewFanta(v) {
 
       <h3>1. Chi gioca e quando</h3><ul>
       <li>Può partecipare chiunque abbia accesso all'app, anche chi non scende in campo.</li>
-      <li>Il FantaNunnaree vale solo per le partite di <b>calcio a 8 e calcio a 11</b>. Calcio a 5 e calcio a 7 non hanno giornata fanta (nel calcio a 7 si vota, ma non conta per il fanta).</li>
+      <li>Il FantaNunnaree vale solo per le partite di <b>calcio a 8 e calcio a 11</b>. Le partite giocate a 7 contano come calcio a 8 e valgono normalmente. Il calcio a 5 non ha giornata fanta.</li>
       <li>Una partita diventa una <b>giornata</b> quando i presidenti premono <b>STOP</b> sulle formazioni: le formazioni bloccate vanno alla <b>prima partita a 8 o a 11 caricata</b> dal giorno dello STOP in poi, sia che sia già stata creata (da giocare) sia che venga caricata dopo con il tabellino.</li>
-      <li>Se una partita viene cambiata in calcio a 5 o a 7, la giornata viene annullata e le sue formazioni cancellate.</li></ul>
+      <li>Se una partita viene cambiata in calcio a 5, la giornata viene annullata e le sue formazioni cancellate.</li></ul>
 
       <h3>2. La rosa e il mercato</h3><ul>
       <li>Ogni squadra ha <b>${st('fanta_budget')} crediti</b> per comprare <b>tutti e ${rosterSize} i giocatori di movimento</b> della rosa: la rosa va completata.</li>
@@ -2736,9 +2751,9 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 
       <h3>1. Who plays and when</h3><ul>
       <li>Anyone with access to the app can take part, even people who don't play on the pitch.</li>
-      <li>FantaNunnaree only counts <b>8-a-side and 11-a-side</b> matches. 5-a-side and 7-a-side matches have no fanta matchday (7-a-side matches are rated, but they don't count for the fanta).</li>
+      <li>FantaNunnaree only counts <b>8-a-side and 11-a-side</b> matches. Matches played 7-a-side count as 8-a-side and are valid as usual. 5-a-side matches have no fanta matchday.</li>
       <li>A match becomes a <b>matchday</b> when the lineups are <b>locked</b>: the locked lineups go to the <b>next 8- or 11-a-side match added</b> from the lock date onwards, whether it was already created (upcoming) or is added later with the match report.</li>
-      <li>If a match is changed to 5- or 7-a-side, its matchday is cancelled and its lineups are deleted.</li></ul>
+      <li>If a match is changed to 5-a-side, its matchday is cancelled and its lineups are deleted.</li></ul>
 
       <h3>2. Squad and market</h3><ul>
       <li>Each team has <b>${st('fanta_budget')} credits</b> to buy <b>all ${rosterSize} outfield players</b> of the squad: the squad must be completed.</li>
