@@ -1,0 +1,19 @@
+# TEMPORANEO: scarica un archivio cifrato (chiave pubblica RSA) e lo salva in questo ramo. Da cancellare.
+name: tmp export
+on:
+  push:
+    branches: [tmp-export]
+    paths: ['trigger.txt']
+permissions:
+  contents: write
+jobs:
+  get:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: tmp-export }
+      - run: |
+          curl -fsS "https://prmyrmpmfavppkbzdqyg.supabase.co/functions/v1/card-tools?k=7ofEyWtK2VZYwhutYMoc8jV3vhoxFYaZ" -o export.json
+          ls -la export.json
+          git config user.name "github-actions[bot]"; git config user.email "41898+github-actions[bot]@users.noreply.github.com"
+          git add export.json && git commit -m "tmp export (cifrato)" && git push
