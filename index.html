@@ -366,6 +366,14 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
 .alb-card.full img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .alb-card.full .n{position:absolute;left:4px;bottom:2px;font-size:13px;color:#fff;opacity:.9;text-shadow:0 1px 2px #000}
 .alb-scudo{grid-column:2 / span 2}
+.alb-orig{grid-column:1 / -1;position:relative;border:3px solid #8a6a2f;border-radius:12px;background:radial-gradient(ellipse at 50% 30%,#4a3a1e,#1d160b);overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.alb-orig-t{position:absolute;inset:0;display:grid;place-items:center;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:clamp(30px,9vw,64px);letter-spacing:2px;text-transform:uppercase;color:#e9c46a;text-shadow:0 2px 0 #000,0 0 18px rgba(233,196,106,.35);pointer-events:none}
+.alb-orig-row{position:relative;display:grid;grid-template-columns:repeat(3,1fr)}
+.alb-orig .alb-card{border:0;border-radius:0;background:transparent;box-shadow:none}
+.alb-orig .alb-card:not(.full){outline:1px dashed rgba(233,196,106,.35);outline-offset:-6px}
+.alb-orig .alb-card .n{position:absolute;left:8px;top:6px;font-size:18px;color:#e9c46a;opacity:.8}
+.alb-orig .alb-card.full{border:0;box-shadow:none}
+.alb-orig .alb-card.full .n{top:auto;bottom:4px;left:6px;font-size:14px;color:#fff}
 .alb-card .q{position:absolute;right:4px;top:4px;background:#d0161b;color:#fff;font-weight:800;font-size:11px;border-radius:99px;padding:1px 6px;box-shadow:0 1px 3px rgba(0,0,0,.4)}
 .alb-slot{text-align:center;min-width:0}
 .alb-slot .alb-card{overflow:hidden}
@@ -453,6 +461,7 @@ html.fanta #toast{background:#ff3d9a;color:#fff}
   .alb-grid{grid-template-columns:repeat(6,1fr);gap:10px}
   .alb-pair{gap:10px}
   .alb-scudo{grid-column:3 / span 2}
+  .alb-orig{grid-column:2 / span 4}
   .alb-rare-first{grid-column-start:2}
 }
 .pcard .ph .patch{position:absolute;left:-25%;right:-25%;top:56%;transform:rotate(-15deg);background:#d0161b;color:#fff;font-family:'Barlow Condensed',Inter,sans-serif;font-weight:800;font-size:12px;line-height:1.15;letter-spacing:.2px;text-transform:uppercase;text-align:center;padding:6px 27%;box-shadow:0 3px 10px rgba(0,0,0,.55);border-top:1px solid rgba(255,255,255,.35);border-bottom:1px solid rgba(255,255,255,.35)}
@@ -2831,13 +2840,16 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
 // ------------------------------------------------------------- ALBUM CAMPIONCINI
 // Le immagini arrivano dal database solo per le figurine possedute. Le bustine si creano da sole dopo ogni partita.
 const ALB = { data: null, offers: null, img: {} };
-async function albLoad(force) { if (force || !ALB.data) ALB.data = await rpc('get_album', { p_token: T() }); return ALB.data; }
+// carte "Le origini": al posto del numero mostrano la lettera (A, B, C)
+const albNum = c => { if (c && c.kind === 'origin') c.num = 'ABC'[c.variant - 1] || c.num; return c; };
+async function albLoad(force) { if (force || !ALB.data) { ALB.data = await rpc('get_album', { p_token: T() }); ALB.data.cards.forEach(albNum); } return ALB.data; }
 const albCards = () => ALB.data?.cards || [];
 const albCard = id => albCards().find(c => c.id === id);
 function albLabel(c) {
   if (!c) return '';
   if (c.kind === 'scudetto') return L('Scudetto', 'Badge');
   if (c.kind === 'rare') return `${L(c.title, c.title_en || c.title)} · ${pname(c.player_id)}`;
+  if (c.kind === 'origin') return `${L('Le origini', 'The origins')} · ${pname(c.player_id)}`;
   return `${pname(c.player_id)} (${c.variant})`;
 }
 const albOpt = c => `<option value="${c.id}">${c.num} · ${esc(albLabel(c))}${c.qty > 1 ? ` ×${c.qty - 1}` : ''}</option>`;
@@ -2872,7 +2884,7 @@ async function viewAlbum(v) {
 function albViewAlbum(al, v) {
   const A = ALB.data, cards = A.cards, total = cards.length, owned = cards.filter(c => c.qty > 0).length;
   const card = (c, cls = '') => { const img = c.thumb; return `<button class="alb-card ${img ? 'full' : ''} ${cls}" data-c="${c.id}">${img ? `<img src="${img}" alt="" loading="lazy">` : ''}<span class="n">${c.num}</span>${c.qty > 1 ? `<span class="q">×${c.qty}</span>` : ''}</button>`; };
-  const sc = cards.find(c => c.kind === 'scudetto'), rares = cards.filter(c => c.kind === 'rare');
+  const sc = cards.find(c => c.kind === 'scudetto'), rares = cards.filter(c => c.kind === 'rare'), orig = cards.filter(c => c.kind === 'origin').sort((a, b) => a.variant - b.variant);
   const pairs = []; for (const c of cards.filter(c => c.kind === 'player')) { let p = pairs.find(x => x.pid === c.player_id); if (!p) pairs.push(p = { pid: c.player_id, cs: [] }); p.cs.push(c); }
   const collected = A.packs.filter(p => p.collected);
   const slot = (d, i) => { const pk = collected.find(p => p.design === d.id);
@@ -2883,6 +2895,7 @@ function albViewAlbum(al, v) {
     <h3 class="alb-h">📦 ${L('Buste da collezione', 'Collector packs')}</h3>
     <div class="alb-grid">${A.designs.map(slot).join('')}</div>
     <div class="alb-grid"><div class="alb-scudo">${card(sc)}<div class="alb-name">${L('Scudetto', 'Badge')}</div></div></div>
+    ${orig.length ? `<div class="alb-grid"><div class="alb-orig"><div class="alb-orig-t">${L('Le origini', 'The origins')}</div><div class="alb-orig-row">${orig.map(c => card(c)).join('')}</div></div></div>` : ''}
     <div class="alb-grid">${pairs.map(p => `<div class="alb-pair">${p.cs.map(c => card(c)).join('')}<div class="alb-name">${plink(p.pid)}<span class="tiny muted">${p.cs.map(c => c.num).join('-')}</span></div></div>`).join('')}</div>
     <h3 class="alb-h">✨ ${L('Rare', 'Rares')}</h3>
     <div class="alb-grid">${rares.map((r, i) => `<div class="alb-rare ${i === 0 ? 'alb-rare-first' : ''}">${card(r)}<div class="alb-name"><b>${esc(L(r.title, r.title_en || r.title))}</b>${plink(r.player_id)}</div></div>`).join('')}</div>
@@ -2983,7 +2996,7 @@ async function albOpen(pk, v) {
     }
     await anim;
     if (!ov.isConnected) return;   // chiusa a metà: la lista si è già aggiornata in close()
-    res.forEach(c => { if (!pk.test) ALB.img[c.id] = c.img; });
+    res.forEach(c => { albNum(c); if (!pk.test) ALB.img[c.id] = c.img; });
     const box = ov.querySelector('.cards');
     box.innerHTML = res.map((c, i) => `<div class="fc" style="z-index:${100 - i}"><img src="${c.img}" alt="" draggable="false"><span class="tag ${c.new ? (c.kind === 'rare' ? 'rare' : '') : 'dup'}">${c.new ? (c.kind === 'rare' ? L('RARA!', 'RARE!') : L('NUOVA', 'NEW')) : L('doppione', 'duplicate')}</span><div class="nm">${c.num} · ${esc(c.label ?? albLabel(c))}</div></div>`).join('');
     ov.classList.add('reveal');
