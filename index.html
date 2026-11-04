@@ -2867,8 +2867,15 @@ const albMissing = () => albCards().filter(c => !c.qty);
 async function albFull(id) { if (!ALB.img[id]) ALB.img[id] = await rpc('album_card_image', { p_token: T(), p_card: id }); return ALB.img[id]; }
 async function albDesign(id) { const k = 'd' + id; if (ALB.img[k] === undefined) ALB.img[k] = await rpc('album_design_image', { p_token: T(), p_design: id }).catch(() => null); return ALB.img[k]; }
 const pkDay = d => d ? new Date(String(d).slice(0, 10) + 'T12:00:00').toLocaleDateString(LOC, { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
-const pkTitle = p => L(`Bustina del ${pkDay(p.date)}`, `Pack from ${pkDay(p.date)}`);
-const pkGift = () => L('Bustina omaggio non collezionabile, contiene 1 figurina', 'Free pack, cannot be collected, contains 1 sticker');
+const pkTitle = p => p.kind === 'special' ? L(p.title, p.title_en || p.title) : L(`Bustina del ${pkDay(p.date)}`, `Pack from ${pkDay(p.date)}`);
+const pkGift = (p = {}) => {
+  const A = ALB.data || {}, n = p.n || 1, fig = L(n === 1 ? '1 figurina' : `${n} figurine`, n === 1 ? '1 sticker' : `${n} stickers`);
+  if (p.kind === 'imbattuto') return L(`Pacchetto omaggio ogni ${A.unbeaten_every || 3} partite senza sconfitta · ${fig}`, `Free pack every ${A.unbeaten_every || 3} matches without defeat · ${fig}`);
+  if (p.kind === 'presenze') return L(`Pacchetto omaggio ogni ${A.pres_every || 5} presenze · ${fig}`, `Free pack every ${A.pres_every || 5} appearances · ${fig}`);
+  if (p.kind === 'special') return `${L(p.title, p.title_en || p.title)} · ${fig}`;
+  return L(`Bustina omaggio non collezionabile, contiene ${fig}`, `Free pack, cannot be collected, contains ${fig}`);
+};
+const pkIsGift = p => p.kind && p.kind !== 'curve';
 const ALB_PRIZE = 'premi/album.bin';
 async function albPrizeImg() { if (!ALB.prizeKey) ALB.prizeKey = await rpc('album_claim_prize', { p_token: T() }); return awardImg(ALB_PRIZE, ALB.prizeKey); }
 const pkArt = (img, title = 'Calciotto 26-27') => img ? `<div class="pk-art"><img src="${img}" alt=""></div>` : `<div class="pk-art"><b>${esc(title)}</b><i></i></div>`;
@@ -2956,7 +2963,7 @@ function albViewPacks(al, v) {
   if (!A.live) { al.innerHTML = `<div class="card"><h3 class="alb-h">${L('Bustine in arrivo', 'Packs coming soon')}</h3><p class="small muted" style="margin:0">${L(`Le prime bustine si aprono ${fmtDateTime(A.launch_at)}.`, `The first packs open ${fmtDateTime(A.launch_at)}.`)}</p></div>`; return; }
   const list = A.packs.filter(p => !p.collected), col = A.packs.filter(p => p.collected).length;
   al.innerHTML = list.length ? `<p class="small muted" style="margin:0 0 10px">${L('Tocca una busta per aprirla, oppure tienila chiusa nella collezione (un posto per ogni grafica, in cima all\'album).', 'Tap a pack to open it, or keep it sealed in your collection (one slot per design, at the top of the album).')}</p>
-    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div>${p.kind === 'bonus' ? `<span class="small"><span class="gift">${esc(pkGift())}</span></span>` : ''}</button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
+    <div class="pk-list">${list.map(p => { const d = A.designs.find(x => x.id === p.design); return `<button class="pk-item" data-p="${p.id}"><div class="pk-box">${d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null)}</div>${pkIsGift(p) ? `<span class="small"><span class="gift">${esc(pkGift(p))}</span></span>` : p.extra ? `<span class="small"><span class="gift">${esc(L(`+${p.extra} per i gol della squadra`, `+${p.extra} for your team's goals`))}</span></span>` : ''}</button>`; }).join('')}</div>${col ? `<p class="tiny muted" style="margin-top:12px">${L(`Buste nella collezione: ${col}.`, `Packs in your collection: ${col}.`)}</p>` : ''}`
     : `<div class="card empty">${L('Nessuna bustina da aprire: la prossima arriva dopo la prossima partita che giochi.', 'No packs to open: the next one arrives after the next match you play.')}${col ? `<br>${L(`Hai ${col} buste nella collezione.`, `You have ${col} packs in your collection.`)}` : ''}</div>`;
   al.onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; albOpen(A.packs.find(p => p.id === Number(b.dataset.p)), v); };
 }
@@ -2965,12 +2972,12 @@ function albViewPacks(al, v) {
 // pk.test = busta di prova (?prova-busta): stessa interfaccia, nessuna chiamata al database
 async function albOpen(pk, v) {
   const A = ALB.data || { packs: [], designs: [] };
-  const canCollect = !pk.test && pk.kind !== 'bonus' && !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
+  const canCollect = !pk.test && !pkIsGift(pk) && !pk.collected && !A.packs.some(p => p.collected && p.design === pk.design);
   const d = A.designs.find(x => x.id === pk.design);
   const ov = document.createElement('div'); ov.className = 'pko';
   const art = d?.thumb ? `<div class="pk-art"><img src="${d.thumb}" alt=""></div>` : pkArt(null);
   ov.innerHTML = `<button class="x" aria-label="${L('Chiudi', 'Close')}">✕</button>
-    <div class="pk-title">${pk.test ? L('Bustina di prova', 'Test pack') : esc(pkTitle(pk))}${pk.kind === 'bonus' ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${esc(pkGift())}</div>` : ''}${pk.test ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${L('Non conta: non tocca album né database', 'Does not count: album and database untouched')}</div>` : ''}</div>
+    <div class="pk-title">${pk.test ? L('Bustina di prova', 'Test pack') : esc(pkTitle(pk))}${pkIsGift(pk) ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${esc(pkGift(pk))}</div>` : ''}${pk.test ? `<div class="small" style="font-weight:400;opacity:.85;margin-top:2px">${L('Non conta: non tocca album né database', 'Does not count: album and database untouched')}</div>` : ''}</div>
     <div class="stage"><div class="wait">${L('Apertura…', 'Opening…')}</div><div class="cards"></div><div class="pk-bot">${art}</div><div class="pk-top">${art}</div><div class="tear"><span class="trail"></span></div></div>
     <div class="hint">✂️ ${L('Strappa la busta: trascina il dito lungo la linea in alto', 'Tear the pack: drag your finger along the line at the top')}</div>
     <div class="acts">${canCollect ? `<button class="btn" data-col>📦 ${L('Colleziona bustina', 'Collect pack')}</button>` : ''}</div>`;
@@ -3099,7 +3106,9 @@ function albViewRules(al) {
   al.innerHTML = `<div class="card small"><h3 class="alb-h">${L('Le bustine', 'Packs')}</h3><ul class="alb-rule">
       <li>${L('Dopo ogni partita che giochi ricevi una bustina, che trovi in “Bustine”.', 'After every match you play you get a pack, which you find under “Packs”.')}</li>
       <li>${L('Il contenuto delle bustine segue una curva di distribuzione legata alle presenze, pensata per garantire una buona quota di figurine anche a chi gioca meno: le bustine crescono con il passare delle partite, conta anche il risultato, e chi ha saltato qualche partita può recuperare giocando.', 'Pack contents follow a distribution curve tied to attendance, designed to give a fair share of stickers even to those who play less: packs grow as the matches go by, the result counts too, and players who missed some matches can catch up by playing.')}</li>
-      <li>${L('Le bustine omaggio delle prime partite non si possono collezionare.', 'The free packs from the first matches cannot be collected.')}</li>
+      <li>${L('Nelle partite a 11 ricevi 1 figurina in più per ogni gol segnato dalla tua squadra.', 'In 11-a-side matches you get 1 extra sticker for every goal your team scores.')}</li>
+      <li>${L(`Omaggi: un pacchetto da ${A.unbeaten_n || 3} ogni ${A.unbeaten_every || 3} partite senza sconfitta (vittorie + pareggi della stagione) e uno da ${A.pres_n || 2} ogni ${A.pres_every || 5} presenze. Durante la stagione arrivano anche pacchetti speciali per tutti (es. Natale).`, `Free packs: one of ${A.unbeaten_n || 3} every ${A.unbeaten_every || 3} matches without defeat (season wins + draws) and one of ${A.pres_n || 2} every ${A.pres_every || 5} appearances. Special packs for everyone also arrive during the season (e.g. Christmas).`)}</li>
+      <li>${L('Le bustine omaggio e speciali non si possono collezionare.', 'Free and special packs cannot be collected.')}</li>
       <li>${L('Si apre strappandola: trascina il dito lungo la linea in alto, poi scorri le figurine. Le nuove vanno da sole al loro posto, le altre diventano doppioni.', 'Open it by tearing: drag your finger along the line at the top, then swipe through the stickers. New ones go straight to their slot, the others become duplicates.')}</li>
       <li>${L('Puoi anche tenerla chiusa nella tua collezione di buste, in cima all\'album: c\'è un posto per ognuna delle 4 grafiche. Una busta collezionata si può aprire in qualsiasi momento.', 'You can also keep it sealed in your pack collection at the top of the album: there is one slot for each of the 4 designs. A collected pack can be opened at any time.')}</li>
       <li>${L('Le 4 rare (i premi della stagione scorsa) escono molto più di rado e hanno un numero limitato di copie.', 'The 4 rares (last season\'s awards) come out much more rarely and have a limited number of copies.')}</li></ul>
