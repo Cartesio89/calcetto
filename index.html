@@ -649,6 +649,15 @@ const ERR_EN = [
   [/^È una tua offerta/, 'It is your own offer.'],
   [/^Offerta non più valida/, 'Offer no longer valid: it was withdrawn.'],
   [/^Per accettare devi avere un doppione/, 'To accept you need a duplicate of the requested sticker.'],
+  [/^Per dare la figurina cercata usa Accetta/, 'To give the requested sticker, use Accept.'],
+  [/^Non puoi proporre la stessa figurina offerta/, 'You cannot propose the same sticker that is offered.'],
+  [/^Puoi proporre solo un tuo doppione/, 'You can only propose one of your duplicates.'],
+  [/^Hai già fatto lo scambio con controfferta/, 'You have already made this week\'s counter-offer trade: the next one unlocks on Monday.'],
+  [/^Hai già una controfferta in attesa/, 'You already have a pending counter-offer: withdraw it or wait for the answer.'],
+  [/^Controfferta non più disponibile/, 'Counter-offer no longer available.'],
+  [/^La tua offerta non è più valida/, 'Your offer is no longer valid.'],
+  [/^Chi ha proposto non ha più quel doppione/, 'The proposer no longer has that duplicate.'],
+  [/^Chi ha proposto ha già fatto lo scambio con controfferta/, 'The proposer has already made this week\'s counter-offer trade.'],
   [/^I regali non sono ancora aperti/, 'Gifts are not open yet.'],
   [/^Non puoi regalarla a te stesso/, 'You cannot gift it to yourself.'],
   [/^Le rare non si possono regalare/, 'Rares cannot be gifted.'],
@@ -3037,12 +3046,15 @@ async function albViewTrades(al, v) {
   if (!A.live) { al.innerHTML = rules + `<div class="card empty">${L(`Banco, scambi e regali si aprono ${fmtDateTime(A.launch_at)}.`, `Bank, trades and gifts open ${fmtDateTime(A.launch_at)}.`)}</div>`; return; }
   al.innerHTML = '<div class="loader">…</div>';
   try { ALB.offers = await rpc('get_album_offers', { p_token: T() }); } catch (e) { al.innerHTML = `<div class="card">${esc(e.message)}</div>`; return; }
+  try { ALB.counters = await rpc('get_album_counters', { p_token: T() }); } catch { ALB.counters = null; }
+  const CO = ALB.counters, coFree = CO && !CO.week_used && !CO.mine;
+  const cl = id => { const c = albCard(id); return c ? `<b>${c.num}</b> ${esc(albLabel(c))}` : ''; };
   const dups = albDups(), miss = albMissing(), nd = dups.reduce((a, c) => a + c.qty - 1, 0);
   const normalsDone = !albCards().some(c => c.kind !== 'rare' && !c.qty);
   const bankable = miss.filter(c => c.kind !== 'rare' || (normalsDone && c.stock_left > 0));
   const players = [...S.boot.players].filter(p => p.is_active && p.id !== me().id).sort((a, b) => a.name.localeCompare(b.name, 'it'));
   const offers = ALB.offers.filter(o => !o.mine), mine = ALB.offers.filter(o => o.mine);
-  const oRow = o => `<div class="row small" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px">${o.mine ? '' : `<b>${esc(pname(o.owner_id))}</b> `}${L('dà', 'gives')} <b>${albCard(o.give)?.num}</b> ${esc(albLabel(albCard(o.give)))}${o.useful && !o.mine ? ` <span class="pill ok">${L('ti manca', 'you need it')}</span>` : ''} · ${L('cerca', 'wants')} <b>${albCard(o.want)?.num}</b> ${esc(albLabel(albCard(o.want)))}</span>${o.mine ? `<button class="btn sm" data-oc="${o.id}">${L('Ritira', 'Withdraw')}</button>` : o.can_accept ? `<button class="btn sm accent" data-oa="${o.id}">${L('Accetta', 'Accept')}</button>` : `<span class="tiny muted">${L('ti serve un doppione della cercata', 'you need a spare of the wanted one')}</span>`}</div>`;
+  const oRow = o => `<div class="row small" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px">${o.mine ? '' : `<b>${esc(pname(o.owner_id))}</b> `}${L('dà', 'gives')} <b>${albCard(o.give)?.num}</b> ${esc(albLabel(albCard(o.give)))}${o.useful && !o.mine ? ` <span class="pill ok">${L('ti manca', 'you need it')}</span>` : ''} · ${L('cerca', 'wants')} <b>${albCard(o.want)?.num}</b> ${esc(albLabel(albCard(o.want)))}</span>${o.mine ? `<button class="btn sm" data-oc="${o.id}">${L('Ritira', 'Withdraw')}</button>` : o.can_accept ? `<button class="btn sm accent" data-oa="${o.id}">${L('Accetta', 'Accept')}</button>` : o.useful && coFree ? `<button class="btn sm" data-co="${o.id}">${L('Proponi controfferta', 'Counter-offer')}</button>` : `<span class="tiny muted">${L('ti serve un doppione della cercata', 'you need a spare of the wanted one')}</span>`}</div>`;
   const sorted = [...offers].sort((a, b) => (b.can_accept && b.useful) - (a.can_accept && a.useful) || b.can_accept - a.can_accept);
   al.innerHTML = rules + `
     <div class="card"><h3 class="alb-h">🃏 ${L('I miei doppioni', 'My duplicates')}: ${nd}</h3>${dups.length ? `<div class="row small" style="gap:6px">${dups.map(c => `<span class="pill">${c.num} · ${esc(albLabel(c))} ×${c.qty - 1}</span>`).join('')}</div>` : `<p class="small muted" style="margin:0">${L('Nessun doppione per ora.', 'No duplicates yet.')}</p>`}</div>
@@ -3050,6 +3062,12 @@ async function albViewTrades(al, v) {
       ${bankable.length ? `<div class="row"><select id="bkC" style="flex:1;min-width:200px">${bankable.map(albOpt).join('')}</select><button class="btn primary" id="bkGo" ${nd < A.bank_normal ? 'disabled' : ''}>${L('Prendi', 'Get')}</button></div>` : `<p class="small muted" style="margin:0">${L('Niente da prendere al banco.', 'Nothing to get from the bank.')}</p>`}</div>
     <div class="card"><h3 class="alb-h">⇄ ${L('Proponi uno scambio', 'Propose a trade')}</h3>${dups.length && miss.length ? `<div class="row"><label class="small" style="flex:1;min-width:180px">${L('Do', 'I give')}<select id="ofG" style="width:100%">${dups.map(albOpt).join('')}</select></label><label class="small" style="flex:1;min-width:180px">${L('Cerco', 'I want')}<select id="ofW" style="width:100%">${miss.map(albOpt).join('')}</select></label><button class="btn primary" id="ofGo">${L('Pubblica', 'Post')}</button></div><p class="tiny muted" style="margin:6px 0 0">${L('Puoi offrire lo stesso doppione in più offerte: quando uno scambio va in porto, le offerte che non puoi più onorare spariscono da sole.', 'You can offer the same duplicate in several offers: when a trade goes through, offers you can no longer honour disappear by themselves.')}</p>` : `<p class="small muted" style="margin:0">${L('Per proporre uno scambio servono almeno un doppione e una figurina mancante.', 'To propose a trade you need at least one duplicate and one missing sticker.')}</p>`}
       ${mine.length ? `<h4 style="margin:12px 0 4px">${L('Le mie offerte', 'My offers')}</h4>${mine.map(oRow).join('')}` : ''}</div>
+    ${CO ? `<div class="card"><h3 class="alb-h">🤝 ${L('Controfferte', 'Counter-offers')}</h3>
+      <p class="tiny muted" style="margin:0 0 8px">${L('Se ti manca la figurina di un\'offerta ma non hai quella cercata, puoi proporre un tuo doppione diverso. Non sai se all\'altro serve: decide lui. Uno scambio con controfferta a settimana (da lunedì), una proposta in attesa alla volta.', 'If you need the sticker in an offer but don\'t have the wanted one, you can propose a different duplicate. You don\'t know if the other player needs it: they decide. One counter-offer trade per week (from Monday), one pending proposal at a time.')}</p>
+      ${CO.received.length ? `<h4 style="margin:8px 0 4px">${L('Ricevute', 'Received')}</h4>${CO.received.map(r => `<div class="row small" style="padding:8px 0;border-bottom:1px solid var(--line)"><span style="flex:1;min-width:200px"><b>${esc(pname(r.proposer_id))}</b> ${L('ti propone', 'offers you')} ${cl(r.give_card)}${r.have ? ` <span class="pill">${L('ce l\'hai già', 'you have it')}</span>` : ` <span class="pill ok">${L('ti manca', 'you need it')}</span>`} ${L('in cambio del tuo', 'for your')} ${cl(r.offer_give)}</span><button class="btn sm accent" data-ca="${r.id}">${L('Accetta', 'Accept')}</button><button class="btn sm" data-cr="${r.id}">${L('Rifiuta', 'Decline')}</button></div>`).join('')}` : ''}
+      ${CO.mine ? `<div class="row small" style="padding:8px 0"><span style="flex:1;min-width:200px">${L('In attesa', 'Pending')}: ${L('proponi', 'you offer')} ${cl(CO.mine.give_card)} ${L('a', 'to')} <b>${esc(pname(CO.mine.owner_id))}</b> ${L('per', 'for')} ${cl(CO.mine.offer_give)}</span><button class="btn sm" data-cx="${CO.mine.id}">${L('Ritira', 'Withdraw')}</button></div>`
+        : `<p class="small" style="margin:4px 0 0">${CO.week_used ? `✅ ${L('Scambio con controfferta di questa settimana già fatto: la prossima si sblocca lunedì.', 'This week\'s counter-offer trade is done: the next one unlocks on Monday.')}` : `🟢 ${L('Hai la controfferta della settimana disponibile: usa “Proponi controfferta” in bacheca.', 'Your weekly counter-offer is available: use “Counter-offer” on the board.')}`}</p>`}
+      ${CO.last && CO.last.status !== 'accettata' && !CO.mine ? `<p class="tiny muted" style="margin:6px 0 0">${L('Ultima proposta', 'Last proposal')}: ${cl(CO.last.give_card)} ${L('per', 'for')} ${cl(CO.last.offer_give)} — ${CO.last.status === 'rifiutata' ? L('rifiutata', 'declined') : L('annullata', 'cancelled')}</p>` : ''}</div>` : ''}
     <div class="card"><h3 class="alb-h">📋 ${L('Bacheca scambi', 'Trade board')}</h3>${sorted.length ? sorted.map(oRow).join('') : `<p class="small muted" style="margin:0">${L('Nessuna offerta aperta.', 'No open offers.')}</p>`}</div>
     <div class="card"><h3 class="alb-h">🎁 ${L('Regala un doppione', 'Gift a duplicate')}</h3>${dups.filter(c => c.kind !== 'rare').length ? `<div class="row"><select id="gfC" style="flex:1;min-width:180px">${dups.filter(c => c.kind !== 'rare').map(albOpt).join('')}</select><select id="gfP" style="flex:1;min-width:160px">${players.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select><button class="btn primary" id="gfGo">${L('Regala', 'Gift')}</button></div>` : `<p class="small muted" style="margin:0">${L('Nessun doppione da regalare (le rare non si regalano).', 'No duplicates to gift (rares cannot be gifted).')}</p>`}</div>`;
   const reload = async () => { await albLoad(true); albViewTrades(al, v); };
@@ -3058,7 +3076,21 @@ async function albViewTrades(al, v) {
   $('#gfGo')?.addEventListener('click', async () => { const c = albCard(Number($('#gfC').value)), to = Number($('#gfP').value); if (!await confirmBox(L(`Regalare ${c.num} · ${esc(albLabel(c))} a ${esc(pname(to))}?`, `Gift ${c.num} · ${esc(albLabel(c))} to ${esc(pname(to))}?`))) return; if (await act(() => rpc('album_gift', { p_token: T(), p_to: to, p_card: c.id }), L('Regalo inviato', 'Gift sent'))) reload(); });
   al.onclick = async e => {
     const a = e.target.closest('[data-oa]'); if (a) { if (await act(() => rpc('album_offer_accept', { p_token: T(), p_offer: Number(a.dataset.oa) }), L('Scambio fatto!', 'Trade done!'))) reload(); return; }
-    const c = e.target.closest('[data-oc]'); if (c) { if (await act(() => rpc('album_offer_cancel', { p_token: T(), p_offer: Number(c.dataset.oc) }), L('Offerta ritirata', 'Offer withdrawn'))) reload(); }
+    const c = e.target.closest('[data-oc]'); if (c) { if (await act(() => rpc('album_offer_cancel', { p_token: T(), p_offer: Number(c.dataset.oc) }), L('Offerta ritirata', 'Offer withdrawn'))) reload(); return; }
+    const co = e.target.closest('[data-co]'); if (co) {
+      const o = ALB.offers.find(x => x.id === Number(co.dataset.co)); if (!o) return;
+      const opts = dups.filter(d => d.id !== o.want && d.id !== o.give);
+      if (!opts.length) return toast(L('Non hai doppioni diversi da proporre.', 'You have no other duplicates to propose.'));
+      modal({ title: L('Proponi controfferta', 'Counter-offer'), body: `<p class="small" style="margin-top:0">${L('Per', 'For')} ${cl(o.give)} ${L('di', 'from')} <b>${esc(pname(o.owner_id))}</b> ${L('proponi uno dei tuoi doppioni. Non sai se gli serve: decide lui.', 'propose one of your duplicates. You don\'t know if they need it: they decide.')}</p>
+        <select id="coG" style="width:100%">${opts.map(albOpt).join('')}</select>
+        <p class="tiny muted">${L('Una sola controfferta in attesa alla volta; se viene accettata hai usato lo scambio con controfferta della settimana.', 'Only one pending counter-offer at a time; if accepted, you have used this week\'s counter-offer trade.')}</p>`,
+        actions: [{ label: L('Annulla', 'Cancel'), fn: async () => true },
+          { label: L('Invia', 'Send'), cls: 'primary', fn: async m => { const g = Number(m.querySelector('#coG').value); const ok = await act(() => rpc('album_counter', { p_token: T(), p_offer: o.id, p_give: g }), L('Controfferta inviata', 'Counter-offer sent')); if (ok) reload(); return ok; } }] });
+      return;
+    }
+    const ca = e.target.closest('[data-ca]'); if (ca) { if (await act(() => rpc('album_counter_answer', { p_token: T(), p_counter: Number(ca.dataset.ca), p_accept: true }), L('Scambio fatto!', 'Trade done!'))) reload(); return; }
+    const cr = e.target.closest('[data-cr]'); if (cr) { if (await act(() => rpc('album_counter_answer', { p_token: T(), p_counter: Number(cr.dataset.cr), p_accept: false }), L('Controfferta rifiutata', 'Counter-offer declined'))) reload(); return; }
+    const cx = e.target.closest('[data-cx]'); if (cx) { if (await act(() => rpc('album_counter_cancel', { p_token: T(), p_counter: Number(cx.dataset.cx) }), L('Controfferta ritirata', 'Counter-offer withdrawn'))) reload(); }
   };
 }
 
@@ -3078,7 +3110,9 @@ function albViewRules(al) {
       <li>${L('Nell\'album resta sempre una copia: si scambiano solo i doppioni.', 'One copy always stays in your album: only duplicates can be traded.')}</li>
       <li>${L('Pubblichi un\'offerta “do X, cerco Y”. Lo stesso doppione può stare in più offerte.', 'You post an offer “I give X, I want Y”. The same duplicate can be in several offers.')}</li>
       <li>${L('Chi accetta deve avere un doppione di Y: lo scambio è immediato, e le offerte che nessuno dei due può più onorare spariscono da sole.', 'Whoever accepts must have a spare Y: the swap is instant, and offers that neither of you can honour any more disappear by themselves.')}</li>
-      <li>${L('Nella bacheca in cima trovi le offerte che puoi accettare subito e che ti servono.', 'At the top of the board you find the offers you can accept right away and actually need.')}</li></ul>
+      <li>${L('Nella bacheca in cima trovi le offerte che puoi accettare subito e che ti servono.', 'At the top of the board you find the offers you can accept right away and actually need.')}</li>
+      <li>${L('Controfferta: se un\'offerta ti serve ma non hai la figurina cercata, puoi proporre un tuo doppione diverso. Chi ha pubblicato l\'offerta accetta o rifiuta; chi propone non sa se la figurina gli serve.', 'Counter-offer: if you need an offer but lack the wanted sticker, you can propose a different duplicate. The offer\'s owner accepts or declines; the proposer doesn\'t know whether they need it.')}</li>
+      <li>${L('Si può fare un solo scambio con controfferta a settimana (da lunedì a domenica) e avere una sola proposta in attesa alla volta. Le proposte rifiutate non contano.', 'Only one counter-offer trade per week (Monday to Sunday) and one pending proposal at a time. Declined proposals don\'t count.')}</li></ul>
     <h3 class="alb-h">${L('Regali', 'Gifts')}</h3><ul class="alb-rule">
       <li>${L('Puoi regalare un tuo doppione a un altro giocatore. Le rare non si regalano.', 'You can gift one of your duplicates to another player. Rares cannot be gifted.')}</li>
       <li>${A.gift_free ? L('Il limite di figurine ricevute in regalo non vale più.', 'The limit on gifted stickers received no longer applies.') : L(`Ognuno può ricevere al massimo ${A.gift_limit} figurine in regalo.`, `Everyone can receive at most ${A.gift_limit} gifted stickers.`)}</li></ul></div>`;
