@@ -1145,8 +1145,8 @@ async function viewClassifica(v) {
       ${awardsReady() ? '<div class="aw-wrap"><div class="aw-col">' : ''}${segHtml('stRole', [{ v: 'all', l: L('Tutti', 'All') }, { v: 'gk', l: L('Portieri', 'Goalkeepers') }, { v: 'mov', l: L('Movimento', 'Outfield') }], u.statRole)}
       <label class="small row" style="gap:6px" for="stMin">${L('PG almeno', 'Min. MP')} <input type="number" id="stMin" min="0" max="50" step="1" inputmode="numeric" value="${u.minPg || ''}" placeholder="0" style="width:72px;text-align:center"> <span id="stOrg"></span></label>${awardsReady() ? `</div>${awardsBtn()}</div>` : ''}</div>
     <div id="stTable"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>
-    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · Med GS media gol subiti a partita in porta (portieri: tutte le partite; giocatori di movimento: solo quelle segnate “In porta”) · Nel filtro Portieri compaiono anche i giocatori di movimento che sono stati in porta, con le sole partite giocate in porta · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree), solo partite a 8 e a 11 come nel FantaNunnaree. Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa · Lum partite in cui ha fatto le formazioni (line-up manager) · D+lum differenza reti media tra le due squadre in quelle partite: più è bassa, più erano equilibrate, quindi in classifica vince il valore più basso. Tocca un'intestazione per ordinare.`,
-      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · Avg GC average goals conceded per match in goal (goalkeepers: all matches; outfield players: only matches marked “In goal”) · The Goalkeepers filter also lists outfield players who played in goal, counting only those matches · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus), only 8- and 11-a-side matches as in FantaNunnaree. Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed · Lum matches in which he picked the teams (line-up manager) · D+lum average goal difference between the two teams in those matches: the lower, the more balanced, so the lowest value ranks first. Tap a header to sort.`)}</div>`;
+    <div class="legend">${L(`PG partite giocate · V vittorie · N pareggi · P sconfitte · PT punti (3 vittoria, 1 pareggio, 0 sconfitta) · Med pt media punti a partita (PT ÷ PG) · GF gol fatti · Rig gol su rigore · AG autogol · GS gol subiti · Med GS media gol subiti a partita in porta (portieri: tutte le partite; giocatori di movimento: solo quelle segnate “In porta”) · Nel filtro Portieri compaiono anche i giocatori di movimento che sono stati in porta, con le sole partite giocate in porta · RP rigori parati · RS rigori sbagliati · %P presenze (partite giocate ÷ partite organizzate, il numero dopo “PG almeno … su”) · Voto = media voto pulita · V+ = media fantavoto (voto + bonus/malus FantaNunnaree), solo partite a 8 e a 11 come nel FantaNunnaree. Voto e V+ contano solo le partite con almeno ${settings('min_votes')} voti ricevuti, a votazione chiusa · Lum partite in cui ha fatto le formazioni (line-up manager) · LMI Lineup Manager Index: per ogni partita la differenza reti viene divisa per un coefficiente che cresce con i giocatori nuovi per lui (mai giocato insieme prima: 0 → 1, 1 → 1,1, 2-3 → 1,2, 4+ → 1,3), poi la media viene avvicinata a quella generale come se avesse ${settings('lmi_k') || 5} partite in più nella media, così poche partite non falsano la classifica; vince il più basso · D+lum la stessa media senza questo aggiustamento. Tocca un'intestazione per ordinare.`,
+      `MP matches played · W wins · D draws · L losses · Pts points (3 win, 1 draw, 0 loss) · Avg pt average points per match (Pts ÷ MP) · G goals · Pen penalty goals · OG own goals · GC goals conceded · Avg GC average goals conceded per match in goal (goalkeepers: all matches; outfield players: only matches marked “In goal”) · The Goalkeepers filter also lists outfield players who played in goal, counting only those matches · PS penalties saved · PM penalties missed · App% appearances (matches played ÷ matches organised, the number after “Min. MP … of”) · Rating = plain average rating · F+ = average fanta score (rating + FantaNunnaree bonus/malus), only 8- and 11-a-side matches as in FantaNunnaree. Rating and F+ only count matches with at least ${settings('min_votes')} ratings received, after voting has closed · Lum matches in which he picked the teams (line-up manager) · LMI Lineup Manager Index: each match's goal difference is divided by a coefficient that grows with the players new to him (never played together before: 0 → 1, 1 → 1.1, 2-3 → 1.2, 4+ → 1.3), then the average is pulled towards the overall one as if he had ${settings('lmi_k') || 5} extra average matches, so a few matches don't skew the table; lowest wins · D+lum the same average without this adjustment. Tap a header to sort.`)}</div>`;
   let data = null, box = null;
   v.querySelector('[data-hllist]').onclick = openHighlightList;
   if ($('#awBtn')) $('#awBtn').onclick = openAwards;
@@ -1184,9 +1184,10 @@ async function viewClassifica(v) {
     { k: 'mv', label: L('Voto', 'Rating'), title: L('Media voto pulita', 'Plain average rating'), cls: 'strong', fmt: r => r.mv == null ? '<span class="muted">–</span>' : fmtVote(r.mv) + (r.nmv ? `<span class="tiny muted"> (${r.nmv})</span>` : '') },
     { k: 'vplus', label: L('V+', 'F+'), title: L('Media fantavoto (voto + bonus/malus), solo calcio a 8 e 11', 'Average fanta score (rating + bonus/malus), 8- and 11-a-side only'), cls: 'strong', fmt: r => r.vplus == null ? '<span class="muted">–</span>' : fmtVote(r.vplus) },
     { k: 'ppres', label: L('%P', 'App%'), tie: tieExcept('pres'), title: L(`Presenze: partite giocate ÷ partite organizzate${org != null ? ` (${org})` : ''}`, `Appearances: matches played ÷ matches organised${org != null ? ` (${org})` : ''}`), sv: r => org ? r.pg / org : null, fmt: r => org ? Math.round(r.pg / org * 100) + '%' : '–' },
-    { k: 'lum', label: 'Lum', title: L('Line-up manager: partite in cui ha fatto le formazioni', 'Line-up manager: matches in which he picked the teams'), tie: (a, b) => (a.dlum ?? 99) - (b.dlum ?? 99), fmt: r => r.lum || '<span class="muted">–</span>' },
-    // D+lum: vince il più basso (squadre più equilibrate), quindi in testa chi ha il valore minore
-    { k: 'dlum', label: 'D+lum', title: L('Differenza reti media tra le due squadre nelle partite in cui ha fatto le formazioni (più bassa = squadre più equilibrate)', 'Average goal difference between the two teams in the matches where he picked the teams (lower = more balanced teams)'), sv: r => r.dlum == null ? null : -r.dlum, tie: (a, b) => (b.lum || 0) - (a.lum || 0), fmt: r => r.dlum == null ? '<span class="muted">–</span>' : fmtNum(Number(r.dlum)) },
+    { k: 'lum', label: 'Lum', title: L('Line-up manager: partite in cui ha fatto le formazioni', 'Line-up manager: matches in which he picked the teams'), tie: (a, b) => (a.lmi ?? 99) - (b.lmi ?? 99), fmt: r => r.lum || '<span class="muted">–</span>' },
+    // LMI e D+lum: vince il più basso (squadre più equilibrate), quindi in testa chi ha il valore minore
+    { k: 'lmi', label: 'LMI', title: L('Lineup Manager Index: scarto corretto regolarizzato verso la media generale (più basso = migliore)', 'Lineup Manager Index: corrected goal difference, regularised towards the overall average (lower = better)'), cls: 'strong', sv: r => r.lmi == null ? null : -r.lmi, tie: (a, b) => (b.lum || 0) - (a.lum || 0), fmt: r => r.lmi == null ? '<span class="muted">N/D</span>' : fmtNum(Number(r.lmi)) },
+    { k: 'dlum', label: 'D+lum', title: L('Scarto corretto medio: differenza reti divisa per il coefficiente dei giocatori nuovi, media delle sue partite (senza regolarizzazione)', 'Average corrected difference: goal difference divided by the new-players coefficient, averaged over his matches (not regularised)'), sv: r => r.dlum == null ? null : -r.dlum, tie: (a, b) => (b.lum || 0) - (a.lum || 0), fmt: r => r.dlum == null ? '<span class="muted">–</span>' : fmtNum(Number(r.dlum)) },
   ];
   data = S.stats; box = $('#stTable');
   const maxPg = Math.max(1, ...data.rows.map(r => r.pg || 0));
@@ -1770,6 +1771,52 @@ async function editCallups(m, thenTeams) {
   }
 }
 
+// ---- GENERA SQUADRE (beta, solo presidenti): divide i convocati in due squadre con media voto simile e ruoli bilanciati.
+// Voto: media voto pulita di stagione e tipo (come in Classifica); chi non ne ha prende la media dei convocati.
+function teamGenSplits(ids, rating, grp, n = 3) {
+  const N = ids.length, half = Math.floor(N / 2);
+  const cost = W => {
+    const inW = new Set(W); let sw = 0, sd = 0; const cw = [0, 0, 0, 0, 0], cd = [0, 0, 0, 0, 0];
+    for (const id of ids) { if (inW.has(id)) { sw += rating(id); cw[grp(id)]++; } else { sd += rating(id); cd[grp(id)]++; } }
+    const nw = W.length, nd = N - nw;
+    let c = Math.abs(sw / nw - sd / nd) * 4;                                     // differenza di media voto (peso principale)
+    c += Math.max(0, Math.abs(cw[0] - cd[0]) - (cw[0] + cd[0]) % 2) * 3;          // portieri: uno per parte
+    for (const g of [1, 2, 3]) c += Math.max(0, Math.abs(cw[g] - cd[g]) - 1) * 0.6; // difesa, centrocampo, attacco
+    return c;
+  };
+  const found = new Map();
+  for (let t = 0; t < 300; t++) {
+    const sh = [...ids].sort(() => Math.random() - 0.5);
+    let W = sh.slice(0, half), D = sh.slice(half), c = cost(W), better = true;
+    while (better) {                                                              // scambi a coppie finché migliora
+      better = false;
+      for (let i = 0; i < W.length && !better; i++) for (let j = 0; j < D.length && !better; j++) {
+        const W2 = [...W]; W2[i] = D[j]; const c2 = cost(W2);
+        if (c2 < c - 1e-9) { D = [...D]; D[j] = W[i]; W = W2; c = c2; better = true; }
+      }
+    }
+    const a = [...W].sort((x, y) => x - y), b = [...D].sort((x, y) => x - y);
+    const key = [a.join(','), b.join(',')].sort().join('|');
+    if (!found.has(key)) found.set(key, { W: a, D: b, c });
+  }
+  return [...found.values()].sort((x, y) => x.c - y.c).slice(0, n);
+}
+function openTeamGen(m, ids, apply) {
+  const known = ids.map(id => S.curAvg?.[id]?.mv).filter(v => v != null);
+  const base = known.length ? known.reduce((x, y) => x + y, 0) / known.length : 6;
+  const rating = id => S.curAvg?.[id]?.mv ?? base;
+  const sug = teamGenSplits(ids, rating, roleGrp);
+  const avg = list => list.reduce((x, id) => x + rating(id), 0) / list.length;
+  const col = (list, t) => `<div style="flex:1;min-width:150px"><div style="font-weight:700;margin-bottom:4px"><span class="dot ${t}"></span> ${esc(t === 'W' ? TW : TD)} · ${list.length} · ${L('media', 'avg')} <b>${fmtNum(avg(list))}</b></div>
+    ${byRole(list).map(id => `<div class="small">${esc(pname(id))} <span class="tiny muted">${esc(['P', 'D', 'C', 'A', '–'][roleGrp(id)])} · ${S.curAvg?.[id]?.mv != null ? fmtVote(S.curAvg[id].mv) : L('senza voto', 'no rating')}</span></div>`).join('')}</div>`;
+  const mo = modal({ title: L('Genera squadre (beta)', 'Generate teams (beta)'), wide: true,
+    body: `<p class="tiny muted" style="margin-top:0">${L(`Solo presidenti. Proposte calcolate su media voto della stagione (${typeLabel(m.type)}) e ruolo: stessa media il più possibile, un portiere per parte, difensori, centrocampisti e attaccanti distribuiti. Chi non ha ancora un voto conta come la media dei convocati (${fmtVote(Math.round(base * 100) / 100)}). Scegli una proposta: la vedi applicata e puoi ancora spostare i giocatori prima di salvare.`, `Presidents only. Proposals based on season average rating (${typeLabel(m.type)}) and role: averages as close as possible, one goalkeeper per side, defenders, midfielders and forwards spread out. Players without a rating count as the call-up average (${fmtVote(Math.round(base * 100) / 100)}). Pick a proposal: it is applied and you can still move players before saving.`)}</p>
+      ${sug.map((x, i) => `<div class="card" style="margin:8px 0;padding:10px"><div class="row" style="margin-bottom:6px"><b>${L('Proposta', 'Proposal')} ${i + 1}</b><span class="small muted">${L('differenza di media', 'average difference')} ${fmtNum(Math.abs(avg(x.W) - avg(x.D)))}</span><span class="spacer"></span><button class="btn sm primary" data-gen="${i}">${L('Usa questa', 'Use this')}</button></div>
+        <div class="row" style="align-items:flex-start;gap:12px">${col(x.W, 'W')}${col(x.D, 'D')}</div></div>`).join('')}`,
+    onOpen: el => el.addEventListener('click', e => { const b = e.target.closest('[data-gen]'); if (!b) return; apply(sug[Number(b.dataset.gen)]); el._close(); }) });
+  return mo;
+}
+
 function editTeams(m, thenResult) {
   const pres = isPres();
   if (!S.roles || S.curAvg !== S.avgs?.[`${S.season}|${m.type}`]) return Promise.all([loadRoles(), loadAvgs(m)]).then(() => editTeams(m, thenResult));
@@ -1788,7 +1835,7 @@ function editTeams(m, thenResult) {
     title: `${L('Squadre', 'Teams')} · ${typeLabel(kindOf(m))}`,
     body: `${pres ? `<label class="f" for="tlm" style="margin-top:0">Chi fa le squadre</label><select id="tlm" style="margin-bottom:10px">${lmOpts()}</select>` : ''}
       <div id="tcount" style="margin-bottom:10px">${counts()}</div>
-      ${pres && cu.length ? `<div class="row" style="margin-bottom:8px"><span class="small muted">${cu.length} convocati</span><button class="btn sm" id="tcu">Modifica convocati</button></div>` : ''}
+      ${pres && cu.length ? `<div class="row" style="margin-bottom:8px"><span class="small muted">${cu.length} convocati</span><button class="btn sm" id="tcu">Modifica convocati</button>${cu.length >= 4 ? '<button class="btn sm accent" id="tgen" title="Solo presidenti: proposte di squadre equilibrate per media voto e ruolo">🧪 Genera squadre (beta)</button>' : ''}</div>` : ''}
       ${pres && !cu.length && m.status === 'programmata' ? `<div class="row" style="margin-bottom:8px"><span class="small muted">Nessun convocato: elenco di tutti i giocatori.</span><button class="btn sm" id="tcu">Scegli i convocati</button></div>` : ''}
       <input type="text" id="tq" placeholder="${L('Cerca…', 'Search…')}" style="margin-bottom:6px">
       <div class="tiny muted" style="margin-bottom:6px">${esc(TW[0])} = ${esc(TW)} · ${esc(TD[0])} = ${esc(TD)}. ${L('Tocca di nuovo per togliere; puoi spostare un giocatore quando vuoi.', 'Tap again to remove; you can move a player any time.')}</div>
@@ -1797,6 +1844,10 @@ function editTeams(m, thenResult) {
       $('#tq', el).oninput = e => { q = e.target.value.toLowerCase(); $('#tlist', el).innerHTML = rows(); };
       if ($('#tlm', el)) $('#tlm', el).onchange = e => lm = e.target.value;
       if ($('#tcu', el)) $('#tcu', el).onclick = () => { el._close(); editCallups(m); };
+      if ($('#tgen', el)) $('#tgen', el).onclick = () => openTeamGen(m, cu, split => {
+        Object.keys(sel).forEach(k => delete sel[k]); split.W.forEach(id => sel[id] = 'W'); split.D.forEach(id => sel[id] = 'D');
+        $('#tlist', el).innerHTML = rows(); $('#tcount', el).innerHTML = counts(); toast('Proposta applicata: controlla e salva');
+      });
       $('#tlist', el).onclick = e => { const b = e.target.closest('.tbtn'); if (!b) return; const id = Number(b.dataset.p); sel[id] = sel[id] === b.dataset.t ? undefined : b.dataset.t; if (!sel[id]) delete sel[id];
         b.parentElement.querySelectorAll('.tbtn').forEach(x => x.classList.toggle('on', sel[id] === x.dataset.t)); $('#tcount', el).innerHTML = counts(); };
     },
@@ -2750,7 +2801,7 @@ async function viewFanta(v) {
       <li>Le formazioni si <b>chiudono da sole${weeklyStopText() ? ' ogni ' + esc(weeklyStopText()) : ''}</b>: quelle salvate in quel momento vengono congelate e non si possono più modificare. Valgono per la prima partita a 8 o a 11 caricata.</li>
       <li>Se la partita si sposta, i presidenti possono cambiare l'orario di chiusura per quella settimana, o premere <b>STOP</b> a mano.</li>
       <li>Dopo il tabellino partono le votazioni (${st('vote_hours')} ore). Le formazioni si <b>riaprono da sole alla chiusura delle votazioni</b>: da lì inserisci la formazione per la partita successiva. La tua formazione resta quella di prima, la cambi solo se vuoi.</li>
-      <li>Anche i presidenti caricano la partita successiva solo dopo la chiusura delle votazioni della precedente (o chiudendole prima a mano).</li>
+      <li>I presidenti possono caricare la partita successiva anche mentre le votazioni della precedente sono aperte: le formazioni si chiudono comunque solo dopo la fine delle votazioni.</li>
       <li>Se non hai mai salvato una formazione, alla giornata prendi 0. I posti lasciati vuoti valgono 0.</li>
       <li>Le formazioni attuali di tutti sono visibili nella scheda Squadre.</li></ul>
 
@@ -2828,7 +2879,7 @@ function rulesEn({ st, gb, cs, cm, ps, pm, wb, ogm, ex1, ex2, ex3, rosterSize, l
       <li>Lineups <b>lock automatically${wk ? ' every ' + esc(wk) : ''}</b> (Italian time): the lineups saved at that moment are frozen and can no longer be changed. They count for the next 8- or 11-a-side match added.</li>
       <li>If the match is moved, the presidents can change the lock time for that week, or lock the lineups by hand.</li>
       <li>After the match report, voting opens (${st('vote_hours')} hours). Lineups <b>reopen automatically when voting closes</b>: from then on you set your lineup for the next match. Your lineup stays as it was; change it only if you want.</li>
-      <li>The presidents also add the next match only after voting on the previous one has closed (or after closing it early by hand).</li>
+      <li>The presidents can add the next match even while voting on the previous one is open: lineups still close only after voting has ended.</li>
       <li>If you never saved a lineup, you score 0 for the matchday. Empty slots score 0.</li>
       <li>Everyone's current lineups are visible in the Teams tab.</li></ul>
 
