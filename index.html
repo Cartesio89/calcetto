@@ -2965,7 +2965,7 @@ const pkGift = (p = {}) => {
     attacco: L('Ottimo attacco, pacchetto omaggio', 'Great attack, free pack'), consolazione: L('Pacchetto omaggio di consolazione', 'Consolation free pack'),
     portiere_top: L('Ottima prestazione, pacchetto omaggio', 'Great performance, free pack'), portiere: L('Ottima prestazione personale, pacchetto omaggio', 'Great personal performance, free pack') };
   const NB = { bet_segno: L('Nunnabet: segno indovinato', 'Nunnabet: right 1X2'), bet_esatto: L('Nunnabet: risultato esatto', 'Nunnabet: exact score'),
-    bet_marcatore: L('Nunnabet: marcatore indovinato', 'Nunnabet: right scorer'), bet_gol: L('Nunnabet: gol del marcatore indovinati', 'Nunnabet: right scorer goals') };
+    bet_marcatore: L('Nunnabet: marcatore (e suoi gol) indovinati', 'Nunnabet: right scorer (and his goals)'), bet_gol: L('Nunnabet: gol del marcatore indovinati', 'Nunnabet: right scorer goals') };
   if (PK[p.kind] || NB[p.kind]) return `${PK[p.kind] || NB[p.kind]} · ${fig}`;
   return L(`Bustina omaggio non collezionabile, contiene ${fig}`, `Free pack, cannot be collected, contains ${fig}`);
 };
@@ -3024,8 +3024,8 @@ async function viewNunnabet(v) {
   $('#nbBody').innerHTML = `<h3>${L('Prossime partite', 'Next matches')}</h3>${D.open.length ? D.open.map(openCard).join('') : `<div class="empty">${L('Nessuna partita in programma.', 'No match scheduled.')}</div>`}
     <h3>${L('Classifica scommettitori', 'Bettors table')}</h3><div id="nbBoard"></div>
     ${D.past.length ? `<h3>${L('Ultime partite', 'Recent matches')}</h3>${D.past.map(pastCard).join('')}` : ''}
-    <div class="legend">${L(`Possono scommettere solo i giocatori che non giocano la partita, fino all'inizio. Premi, sommabili tra loro: segno giusto (1 X 2) ${P.segno} figurine, risultato esatto ${P.esatto}, marcatore che segna ${P.marcatore}, gol esatti del marcatore ${P.gol}. Le bustine arrivano nell'album quando la partita è salvata con tutti i marcatori. Chi alla fine gioca la partita non vince niente. Le scommesse degli altri si vedono dopo la chiusura.`,
-      `Only players who do not play the match can bet, until kick-off. Prizes, they add up: right 1X2 ${P.segno} stickers, exact score ${P.esatto}, scorer who scores ${P.marcatore}, scorer's exact goals ${P.gol}. Packs reach the album when the match is saved with all scorers. Anyone who ends up playing wins nothing. Other people's bets are shown after closing.`)}</div>`;
+    <div class="legend">${L(`Possono scommettere solo i giocatori che non giocano la partita, fino all'inizio. Premi, sommabili tra loro: segno giusto (1 X 2) ${P.segno} figurine, risultato esatto ${P.esatto}, marcatore che segna ${P.marcatore} più ${P.gol} se indovini anche i suoi gol (nella stessa bustina): al massimo ${P.segno + P.esatto + P.marcatore + P.gol} figurine in 3 bustine. Le bustine arrivano nell'album quando la partita è salvata con tutti i marcatori. Chi alla fine gioca la partita non vince niente. Le scommesse degli altri si vedono dopo la chiusura.`,
+      `Only players who do not play the match can bet, until kick-off. Prizes, they add up: right 1X2 ${P.segno} stickers, exact score ${P.esatto}, scorer who scores ${P.marcatore} plus ${P.gol} if you also get his goals right (same pack): at most ${P.segno + P.esatto + P.marcatore + P.gol} stickers in 3 packs. Packs reach the album when the match is saved with all scorers. Anyone who ends up playing wins nothing. Other people's bets are shown after closing.`)}</div>`;
   const drawBoard = () => { const box = $('#nbBoard'); if (!box) return; box.innerHTML = tableHtml(cols, sortRows(D.board, S.ui.nbSort, cols), S.ui.nbSort, { rowCls: r => r.player_id === mine ? 'me' : '', empty: L('Ancora nessuna scommessa valutata.', 'No bet settled yet.') }); bindSort(box, S.ui.nbSort, drawBoard); };
   drawBoard();
   $('#nbBody').onclick = async e => {
