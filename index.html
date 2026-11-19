@@ -82,7 +82,13 @@ h1,h2,h3{font-family:'Barlow Condensed',Inter,sans-serif;letter-spacing:.3px;mar
   .tab .ti{display:block;font-size:18px;line-height:1}
   .tab .badge{position:absolute;top:0;right:4px;margin:0}
 }
-@media (min-width:721px){ .tab .ti{display:none} }
+@media (min-width:721px){ .tab .ti{display:none} .tab .ti.img{display:inline-block;vertical-align:middle;margin:-4px 6px -2px 0} }
+.tab .ti.img img{width:20px;height:20px;border-radius:50%;display:block}
+.nb-head{display:flex;align-items:center;gap:14px;margin-bottom:10px}.nb-head img{width:96px;height:96px;border-radius:50%;flex:none}
+.nb-card{margin:10px 0;padding:12px}.nb-form{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin-top:8px}
+.nb-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
+.nb-form input[type=number]{width:64px;text-align:center}.nb-ok{color:#2a9d5c;font-weight:700}.nb-ko{color:var(--muted)}
+.nb-bets{margin-top:8px;font-size:13px}.nb-bets div{padding:3px 0;border-bottom:1px solid var(--line)}
 main{padding:18px 0 40px}
 @media (max-width:720px){ main{padding-bottom:calc(110px + env(safe-area-inset-bottom))} }
 /* cards */
@@ -604,6 +610,15 @@ const TW = CFG.TEAM_W || 'Chiari', TD = CFG.TEAM_D || 'Scuri';
 const typeLabel = t => EN ? t + '-a-side' : 'Calcio a ' + t;
 // messaggi di errore del database tradotti per chi usa l'inglese
 const ERR_EN = [
+  [/^Scommesse chiuse per questa/, 'Betting is closed for this match.'],
+  [/^Scommesse chiuse: si scommette/, 'Betting closed: you can bet until kick-off.'],
+  [/^Scommesse chiuse: non si può/, 'Betting closed: the bet can no longer be withdrawn.'],
+  [/^Convocati non ancora pubblicati/, 'Call-ups not published yet: try again later.'],
+  [/^Giochi questa partita/, 'You play this match: only the others can bet.'],
+  [/^Risultato non valido/, 'Invalid score.'],
+  [/^Scegli sia il marcatore/, 'Choose both the scorer and his goals (or neither).'],
+  [/^Il marcatore deve essere/, 'The scorer must be among the called-up players.'],
+  [/^Gol del marcatore/, 'Scorer goals: from 1 to 20.'],
   [/^Testo troppo lungo/, 'Text too long.'],
   [/^Intervista e "dicono di lui": massimo (\d+)/, 'Interview and "what they say": $1 characters max.'],
   [/^Data di nascita non valida/, 'Invalid date of birth.'],
@@ -800,6 +815,7 @@ const TABS = [
   { id: 'coppie', label: L('Coppie', 'Pairs'), ic: '⇄' },
   { id: 'fanta', label: 'FantaNunnaree', short: 'Fanta', ic: '🎲' },
   { id: 'album', label: 'Album', ic: '📒', album: true },
+  { id: 'nunnabet', label: 'Nunnabet', ic: '<img src="logo/nunnabet-96.webp" alt="">', icImg: true, album: true, nb: true },
   { id: 'admin', label: 'Presidente', short: 'Admin', ic: '⚙', pres: true },
 ];
 async function start() {
@@ -808,7 +824,7 @@ async function start() {
   S.season = S.season && S.boot.seasons.some(s => s.id === S.season) ? S.season : S.boot.active_season || S.boot.seasons[0]?.id;
   if (!S.ui.pairPlayer) S.ui.pairPlayer = isGuest() ? activePlayers()[0]?.id : me().id;
   S.albumOk = false; if (!isGuest()) { try { S.albumOk = !!await rpc('album_access', { p_token: T() }); } catch {} }
-  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest()) || (S.tab === 'album' && !S.albumOk)) S.tab = 'classifica';
+  if ((S.tab === 'admin' && !isPres()) || (S.tab === 'voti' && isGuest()) || (['album', 'nunnabet'].includes(S.tab) && !S.albumOk)) S.tab = 'classifica';
   await loadAwards();
   renderShell();
   navInit();
@@ -826,7 +842,7 @@ function renderShell() {
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>
       </button>
     </div>
-    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && (!t.album || S.albumOk) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
+    <nav class="tabs" id="tabs">${TABS.filter(t => (!t.pres || isPres()) && (!t.album || S.albumOk) && (!t.nb || S.boot?.settings?.bet_segno_n != null) && !(isGuest() && t.id === 'voti')).map(t => `<button class="tab ${t.id === S.tab ? 'on' : ''}" data-tab="${t.id}"><span class="ti${t.icImg ? ' img' : ''}">${t.ic}</span><span class="tl">${esc(innerWidth <= 720 && t.short ? t.short : t.label)}</span>${t.id === 'voti' ? '<span class="badge hidden" id="voteBadge"></span>' : ''}</button>`).join('')}</nav>
   </div>
   <main><div class="wrap">${isGuest() ? `<div class="guestbar small">👀 ${L('Modalità ospite · sola lettura', 'Guest mode · read only')}</div>` : ''}<div id="view"></div></div></main>`;
   $('#seasonSel').onchange = e => { S.season = Number(e.target.value); S.matches = S.stats = S.fanta = S.partners = null; renderTab(); };
@@ -841,7 +857,7 @@ function setTheme() {
 }
 function renderTab() {
   const v = $('#view'); setTheme(); if (!v) return;
-  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, album: viewAlbum, admin: viewAdmin }[S.tab] || viewClassifica)(v);
+  ({ classifica: viewClassifica, partite: viewPartite, voti: viewVoti, coppie: viewCoppie, fanta: viewFanta, album: viewAlbum, nunnabet: viewNunnabet, admin: viewAdmin }[S.tab] || viewClassifica)(v);
 }
 async function loadVotesBadge() {
   try {
@@ -2948,7 +2964,9 @@ const pkGift = (p = {}) => {
   const PK = { gol8: L('Altri 8 gol della tua squadra, pacchetto omaggio', 'Another 8 goals by your team, free pack'), difesa: L('Ottima difesa, pacchetto omaggio', 'Great defence, free pack'),
     attacco: L('Ottimo attacco, pacchetto omaggio', 'Great attack, free pack'), consolazione: L('Pacchetto omaggio di consolazione', 'Consolation free pack'),
     portiere_top: L('Ottima prestazione, pacchetto omaggio', 'Great performance, free pack'), portiere: L('Ottima prestazione personale, pacchetto omaggio', 'Great personal performance, free pack') };
-  if (PK[p.kind]) return `${PK[p.kind]} · ${fig}`;
+  const NB = { bet_segno: L('Nunnabet: segno indovinato', 'Nunnabet: right 1X2'), bet_esatto: L('Nunnabet: risultato esatto', 'Nunnabet: exact score'),
+    bet_marcatore: L('Nunnabet: marcatore indovinato', 'Nunnabet: right scorer'), bet_gol: L('Nunnabet: gol del marcatore indovinati', 'Nunnabet: right scorer goals') };
+  if (PK[p.kind] || NB[p.kind]) return `${PK[p.kind] || NB[p.kind]} · ${fig}`;
   return L(`Bustina omaggio non collezionabile, contiene ${fig}`, `Free pack, cannot be collected, contains ${fig}`);
 };
 const pkIsGift = p => p.kind && p.kind !== 'curve';
@@ -2959,6 +2977,67 @@ const PK_COLLECT = ['curve', 'gol8', 'difesa', 'attacco', 'consolazione', 'porti
 const ALB_PRIZE = 'premi/album.bin';
 async function albPrizeImg() { if (!ALB.prizeKey) ALB.prizeKey = await rpc('album_claim_prize', { p_token: T() }); return awardImg(ALB_PRIZE, ALB.prizeKey); }
 const pkArt = (img, title = 'Calciotto 26-27') => img ? `<div class="pk-art"><img src="${img}" alt=""></div>` : `<div class="pk-art"><b>${esc(title)}</b><i></i></div>`;
+
+// ------------------------------------------------------------- NUNNABET (scommesse senza soldi, premi in bustine)
+async function viewNunnabet(v) {
+  v.innerHTML = `<div class="nb-head"><img src="logo/nunnabet.webp" alt="Nunnabet"><div><h2 style="margin:0">Nunnabet</h2><div class="small muted">${L('Scommetti sulle partite che non giochi: le vincite sono bustine per l\'album.', 'Bet on the matches you do not play: winnings are album packs.')}</div></div></div><div id="nbBody"><div class="loader">${L('Caricamento…', 'Loading…')}</div></div>`;
+  let D;
+  try { D = await rpc('get_nunnabet', { p_token: T() }); } catch (e) { $('#nbBody').innerHTML = `<div class="empty">${esc(e.message)}</div>`; return; }
+  if (S.tab !== 'nunnabet' || !$('#nbBody')) return;
+  const P = D.prizes || {}, mine = me()?.id;
+  const sc = (w, d) => `${esc(TW)} ${w} - ${d} ${esc(TD)}`;
+  const betTxt = b => `${sc(b.w, b.d)}${b.scorer ? ` · ${esc(pname(b.scorer))} ${b.goals} ${L(b.goals === 1 ? 'gol' : 'gol', b.goals === 1 ? 'goal' : 'goals')}` : ''}`;
+  const playersOf = m => { const t = m.teams || {}; return [...m.players].sort((a, b) => (t[a] || 'Z').localeCompare(t[b] || 'Z') || pname(a).localeCompare(pname(b), 'it')); };
+  const openCard = m => {
+    const my = m.bets.find(b => b.player_id === mine);
+    const head = `<div class="row"><b>${esc(fmtDate(m.date))} · ${esc(typeLabel(m.type))}</b><span class="spacer"></span><span class="small muted">${m.closed ? L('Scommesse chiuse', 'Betting closed') : L(`Si scommette fino a ${fmtDateTime(m.close_at)}`, `Betting open until ${fmtDateTime(m.close_at)}`)} · ${m.n} ${L(m.n === 1 ? 'scommessa' : 'scommesse', m.n === 1 ? 'bet' : 'bets')}</span></div>`;
+    if (m.closed) return `<div class="card nb-card">${head}<div class="nb-bets">${m.bets.length ? m.bets.map(b => `<div>${plink(b.player_id)}: ${betTxt(b)}</div>`).join('') : `<span class="muted">${L('Nessuna scommessa.', 'No bets.')}</span>`}</div></div>`;
+    if (m.plays) return `<div class="card nb-card">${head}<div class="small muted" style="margin-top:6px">${L('Giochi questa partita: scommettono solo gli altri.', 'You play this match: only the others can bet.')}</div></div>`;
+    if (!m.players.length) return `<div class="card nb-card">${head}<div class="small muted" style="margin-top:6px">${L('Convocati non ancora pubblicati: si scommette appena ci sono.', 'Call-ups not published yet: betting opens as soon as they are.')}</div></div>`;
+    const t = m.teams || {};
+    const opts = `<option value="">${L('— nessun marcatore —', '— no scorer —')}</option>` + playersOf(m).map(id => `<option value="${id}" ${my?.scorer === id ? 'selected' : ''}>${esc(pname(id))}${t[id] ? ` (${esc(t[id] === 'W' ? TW : TD)})` : ''}</option>`).join('');
+    return `<div class="card nb-card" data-nbm="${m.id}">${head}
+      ${my ? `<div class="small" style="margin-top:6px">${L('La tua scommessa', 'Your bet')}: <b>${betTxt(my)}</b></div>` : ''}
+      <div class="nb-form">
+        <label>${esc(TW)}<input type="number" min="0" max="40" inputmode="numeric" data-f="w" value="${my ? my.w : ''}"></label>
+        <label>${esc(TD)}<input type="number" min="0" max="40" inputmode="numeric" data-f="d" value="${my ? my.d : ''}"></label>
+        <label style="flex:1;min-width:160px">${L('Marcatore', 'Scorer')}<select data-f="s">${opts}</select></label>
+        <label>${L('Suoi gol', 'His goals')}<input type="number" min="1" max="20" inputmode="numeric" data-f="g" value="${my?.goals ?? ''}"></label>
+        <button class="btn primary" data-nbsave="${m.id}">${my ? L('Aggiorna', 'Update') : L('Scommetti', 'Bet')}</button>${my ? `<button class="btn" data-nbdel="${m.id}">${L('Ritira', 'Withdraw')}</button>` : ''}
+      </div></div>`;
+  };
+  const mark = (ok, n) => ok ? `<span class="nb-ok">✓ +${n}</span>` : '<span class="nb-ko">✗</span>';
+  const pastCard = m => `<div class="card nb-card"><div class="row"><b>${esc(fmtDate(m.date))} · ${sc(m.score_w, m.score_d)}</b>${m.complete ? '' : `<span class="small muted">${L('in attesa dei marcatori', 'waiting for scorers')}</span>`}</div>
+    <div class="nb-bets">${(m.bets || []).map(b => { const o = b.out;
+      const res = !o ? '' : o.void ? `<span class="small muted">${L('ha giocato: scommessa nulla', 'played: bet void')}</span>`
+        : `<span class="small">${L('segno', '1X2')} ${mark(o.segno, P.segno)} · ${L('esatto', 'exact')} ${mark(o.esatto, P.esatto)}${b.scorer ? ` · ${L('marcatore', 'scorer')} ${mark(o.marcatore, P.marcatore)} · ${L('gol', 'goals')} ${mark(o.gol, P.gol)}` : ''}</span>`;
+      return `<div>${plink(b.player_id)}: ${betTxt(b)} ${res}</div>`; }).join('')}</div></div>`;
+  const cols = [
+    { k: 'name', label: L('Scommettitore', 'Bettor'), fmt: (r, i) => `<span class="rank">${i + 1}</span>${plink(r.player_id)}`, sv: r => pname(r.player_id) },
+    { k: 'fig', label: L('Figurine', 'Stickers'), title: L('Figurine vinte', 'Stickers won'), cls: 'strong' },
+    { k: 'segno', label: L('Segno', '1X2'), title: L('Segni giusti (1 X 2)', 'Right 1X2') },
+    { k: 'esatto', label: L('Esatti', 'Exact'), title: L('Risultati esatti', 'Exact scores') },
+    { k: 'marcatore', label: L('Marc.', 'Scorer'), title: L('Marcatore individuato', 'Scorer found') },
+    { k: 'gol', label: L('Gol marc.', 'Goals'), title: L('Gol del marcatore indovinati', 'Scorer goals right') },
+    { k: 'bets', label: L('Giocate', 'Bets'), title: L('Scommesse valutate', 'Bets settled') }];
+  S.ui.nbSort ||= { k: 'fig', d: -1 };
+  $('#nbBody').innerHTML = `<h3>${L('Prossime partite', 'Next matches')}</h3>${D.open.length ? D.open.map(openCard).join('') : `<div class="empty">${L('Nessuna partita in programma.', 'No match scheduled.')}</div>`}
+    <h3>${L('Classifica scommettitori', 'Bettors table')}</h3><div id="nbBoard"></div>
+    ${D.past.length ? `<h3>${L('Ultime partite', 'Recent matches')}</h3>${D.past.map(pastCard).join('')}` : ''}
+    <div class="legend">${L(`Possono scommettere solo i giocatori che non giocano la partita, fino all'inizio. Premi, sommabili tra loro: segno giusto (1 X 2) ${P.segno} figurine, risultato esatto ${P.esatto}, marcatore che segna ${P.marcatore}, gol esatti del marcatore ${P.gol}. Le bustine arrivano nell'album quando la partita è salvata con tutti i marcatori. Chi alla fine gioca la partita non vince niente. Le scommesse degli altri si vedono dopo la chiusura.`,
+      `Only players who do not play the match can bet, until kick-off. Prizes, they add up: right 1X2 ${P.segno} stickers, exact score ${P.esatto}, scorer who scores ${P.marcatore}, scorer's exact goals ${P.gol}. Packs reach the album when the match is saved with all scorers. Anyone who ends up playing wins nothing. Other people's bets are shown after closing.`)}</div>`;
+  const drawBoard = () => { const box = $('#nbBoard'); if (!box) return; box.innerHTML = tableHtml(cols, sortRows(D.board, S.ui.nbSort, cols), S.ui.nbSort, { rowCls: r => r.player_id === mine ? 'me' : '', empty: L('Ancora nessuna scommessa valutata.', 'No bet settled yet.') }); bindSort(box, S.ui.nbSort, drawBoard); };
+  drawBoard();
+  $('#nbBody').onclick = async e => {
+    const sv = e.target.closest('[data-nbsave]'), dl = e.target.closest('[data-nbdel]');
+    if (dl) { if (await act(() => rpc('nb_bet_delete', { p_token: T(), p_match: Number(dl.dataset.nbdel) }), L('Scommessa ritirata', 'Bet withdrawn'))) viewNunnabet(v); return; }
+    if (!sv) return;
+    const card = sv.closest('[data-nbm]'), f = k => card.querySelector(`[data-f="${k}"]`).value.trim();
+    if (f('w') === '' || f('d') === '') return toast(L('Inserisci il risultato.', 'Enter the score.'), true);
+    const scorer = f('s') ? Number(f('s')) : null, goals = scorer ? Number(f('g') || 1) : null;
+    if (await act(() => rpc('nb_bet', { p_token: T(), p_match: Number(sv.dataset.nbsave), p_w: Number(f('w')), p_d: Number(f('d')), p_scorer: scorer, p_goals: goals }), L('Scommessa salvata', 'Bet saved'))) viewNunnabet(v);
+  };
+}
 
 async function viewAlbum(v) {
   if (!S.albumOk) return viewClassifica(v);
