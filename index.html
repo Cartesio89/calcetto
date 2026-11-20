@@ -2987,12 +2987,22 @@ async function viewNunnabet(v) {
   const P = D.prizes || {}, mine = me()?.id;
   const sc = (w, d) => `${esc(TW)} ${w} - ${d} ${esc(TD)}`;
   const betTxt = b => `${sc(b.w, b.d)}${b.scorer ? ` · ${esc(pname(b.scorer))} ${b.goals} ${L(b.goals === 1 ? 'gol' : 'gol', b.goals === 1 ? 'goal' : 'goals')}` : ''}`;
+  const trend = bets => {
+    if (!bets?.length) return '';
+    const n = bets.length, c = { 1: 0, X: 0, 2: 0 };
+    bets.forEach(b => c[b.w > b.d ? 1 : b.w < b.d ? 2 : 'X']++);
+    const mx = Math.max(...Object.values(c)), best = Object.keys(c).filter(k => c[k] === mx).join(' / ');
+    const avg = k => fmtNum(bets.reduce((x, b) => x + b[k], 0) / n);
+    return `<div class="small" style="margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--soft,rgba(0,0,0,.04))">📊 ${L('Segno più giocato', 'Most played 1X2')}: <b>${best}</b> (1 ${c[1]} · X ${c.X} · 2 ${c[2]}) · ${L('media gol scommessi', 'average goals bet')}: ${esc(TW)} <b>${avg('w')}</b> – ${esc(TD)} <b>${avg('d')}</b></div>`;
+  };
+  const betList = bets => `<div class="nb-bets">${bets.map(b => `<div>${plink(b.player_id)}: ${betTxt(b)}</div>`).join('')}</div>`;
   const playersOf = m => { const t = m.teams || {}; return [...m.players].sort((a, b) => (t[a] || 'Z').localeCompare(t[b] || 'Z') || pname(a).localeCompare(pname(b), 'it')); };
   const openCard = m => {
     const my = m.bets.find(b => b.player_id === mine);
     const head = `<div class="row"><b>${esc(fmtDate(m.date))} · ${esc(typeLabel(m.type))}</b><span class="spacer"></span><span class="small muted">${m.closed ? L('Scommesse chiuse', 'Betting closed') : L(`Si scommette fino a ${fmtDateTime(m.close_at)}`, `Betting open until ${fmtDateTime(m.close_at)}`)} · ${m.n} ${L(m.n === 1 ? 'scommessa' : 'scommesse', m.n === 1 ? 'bet' : 'bets')}</span></div>`;
-    if (m.closed) return `<div class="card nb-card">${head}<div class="nb-bets">${m.bets.length ? m.bets.map(b => `<div>${plink(b.player_id)}: ${betTxt(b)}</div>`).join('') : `<span class="muted">${L('Nessuna scommessa.', 'No bets.')}</span>`}</div></div>`;
-    if (m.plays) return `<div class="card nb-card">${head}<div class="small muted" style="margin-top:6px">${L('Giochi questa partita: scommettono solo gli altri.', 'You play this match: only the others can bet.')}</div></div>`;
+    const all = m.bets.length ? trend(m.bets) + betList(m.bets) : `<div class="small muted" style="margin-top:6px">${L('Ancora nessuna scommessa.', 'No bets yet.')}</div>`;
+    if (m.closed) return `<div class="card nb-card">${head}${all}</div>`;
+    if (m.plays) return `<div class="card nb-card">${head}<div class="small muted" style="margin-top:6px">${L('Giochi questa partita: scommettono solo gli altri.', 'You play this match: only the others can bet.')}</div>${all}</div>`;
     if (!m.players.length) return `<div class="card nb-card">${head}<div class="small muted" style="margin-top:6px">${L('Convocati non ancora pubblicati: si scommette appena ci sono.', 'Call-ups not published yet: betting opens as soon as they are.')}</div></div>`;
     const t = m.teams || {};
     const opts = `<option value="">${L('— nessun marcatore —', '— no scorer —')}</option>` + playersOf(m).map(id => `<option value="${id}" ${my?.scorer === id ? 'selected' : ''}>${esc(pname(id))}${t[id] ? ` (${esc(t[id] === 'W' ? TW : TD)})` : ''}</option>`).join('');
@@ -3004,11 +3014,11 @@ async function viewNunnabet(v) {
         <label style="flex:1;min-width:160px">${L('Marcatore', 'Scorer')}<select data-f="s">${opts}</select></label>
         <label>${L('Suoi gol', 'His goals')}<input type="number" min="1" max="20" inputmode="numeric" data-f="g" value="${my?.goals ?? ''}"></label>
         <button class="btn primary" data-nbsave="${m.id}">${my ? L('Aggiorna', 'Update') : L('Scommetti', 'Bet')}</button>${my ? `<button class="btn" data-nbdel="${m.id}">${L('Ritira', 'Withdraw')}</button>` : ''}
-      </div></div>`;
+      </div>${all}</div>`;
   };
   const mark = (ok, n) => ok ? `<span class="nb-ok">✓ +${n}</span>` : '<span class="nb-ko">✗</span>';
   const pastCard = m => `<div class="card nb-card"><div class="row"><b>${esc(fmtDate(m.date))} · ${sc(m.score_w, m.score_d)}</b>${m.complete ? '' : `<span class="small muted">${L('in attesa dei marcatori', 'waiting for scorers')}</span>`}</div>
-    <div class="nb-bets">${(m.bets || []).map(b => { const o = b.out;
+    ${trend(m.bets)}<div class="nb-bets">${(m.bets || []).map(b => { const o = b.out;
       const res = !o ? '' : o.void ? `<span class="small muted">${L('ha giocato: scommessa nulla', 'played: bet void')}</span>`
         : `<span class="small">${L('segno', '1X2')} ${mark(o.segno, P.segno)} · ${L('esatto', 'exact')} ${mark(o.esatto, P.esatto)}${b.scorer ? ` · ${L('marcatore', 'scorer')} ${mark(o.marcatore, P.marcatore)} · ${L('gol', 'goals')} ${mark(o.gol, P.gol)}` : ''}</span>`;
       return `<div>${plink(b.player_id)}: ${betTxt(b)} ${res}</div>`; }).join('')}</div></div>`;
@@ -3024,8 +3034,8 @@ async function viewNunnabet(v) {
   $('#nbBody').innerHTML = `<h3>${L('Prossime partite', 'Next matches')}</h3>${D.open.length ? D.open.map(openCard).join('') : `<div class="empty">${L('Nessuna partita in programma.', 'No match scheduled.')}</div>`}
     <h3>${L('Classifica scommettitori', 'Bettors table')}</h3><div id="nbBoard"></div>
     ${D.past.length ? `<h3>${L('Ultime partite', 'Recent matches')}</h3>${D.past.map(pastCard).join('')}` : ''}
-    <div class="legend">${L(`Possono scommettere solo i giocatori che non giocano la partita, fino all'inizio. Premi, sommabili tra loro: segno giusto (1 X 2) ${P.segno} figurine, risultato esatto ${P.esatto}, marcatore che segna ${P.marcatore} più ${P.gol} se indovini anche i suoi gol (nella stessa bustina): al massimo ${P.segno + P.esatto + P.marcatore + P.gol} figurine in 3 bustine. Le bustine arrivano nell'album quando la partita è salvata con tutti i marcatori. Chi alla fine gioca la partita non vince niente. Le scommesse degli altri si vedono dopo la chiusura.`,
-      `Only players who do not play the match can bet, until kick-off. Prizes, they add up: right 1X2 ${P.segno} stickers, exact score ${P.esatto}, scorer who scores ${P.marcatore} plus ${P.gol} if you also get his goals right (same pack): at most ${P.segno + P.esatto + P.marcatore + P.gol} stickers in 3 packs. Packs reach the album when the match is saved with all scorers. Anyone who ends up playing wins nothing. Other people's bets are shown after closing.`)}</div>`;
+    <div class="legend">${L(`Possono scommettere solo i giocatori che non giocano la partita, fino all'inizio. Premi, sommabili tra loro: segno giusto (1 X 2) ${P.segno} figurine, risultato esatto ${P.esatto}, marcatore che segna ${P.marcatore} più ${P.gol} se indovini anche i suoi gol (nella stessa bustina): al massimo ${P.segno + P.esatto + P.marcatore + P.gol} figurine in 3 bustine. Le bustine arrivano nell'album quando la partita è salvata con tutti i marcatori. Chi alla fine gioca la partita non vince niente. Le scommesse di tutti sono visibili subito.`,
+      `Only players who do not play the match can bet, until kick-off. Prizes, they add up: right 1X2 ${P.segno} stickers, exact score ${P.esatto}, scorer who scores ${P.marcatore} plus ${P.gol} if you also get his goals right (same pack): at most ${P.segno + P.esatto + P.marcatore + P.gol} stickers in 3 packs. Packs reach the album when the match is saved with all scorers. Anyone who ends up playing wins nothing. Everyone's bets are visible straight away.`)}</div>`;
   const drawBoard = () => { const box = $('#nbBoard'); if (!box) return; box.innerHTML = tableHtml(cols, sortRows(D.board, S.ui.nbSort, cols), S.ui.nbSort, { rowCls: r => r.player_id === mine ? 'me' : '', empty: L('Ancora nessuna scommessa valutata.', 'No bet settled yet.') }); bindSort(box, S.ui.nbSort, drawBoard); };
   drawBoard();
   $('#nbBody').onclick = async e => {
