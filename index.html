@@ -1468,8 +1468,8 @@ function openMatch(id) {
       <div class="mx-shirts"><img src="${MAGLIE.W}" alt="${L('Maglia', 'Shirt')} ${esc(TW)}" onerror="this.style.visibility='hidden'">${hasVideo(m) ? `<div class="hl-mid">${ytBtn(m)}${hlBtn(m)}</div>` : ''}<img src="${MAGLIE.D}" alt="${L('Maglia', 'Shirt')} ${esc(TD)}" onerror="this.style.visibility='hidden'"></div>
     </div>`;
   const pres = isPres();
-  // TEST visibile solo a Cicerani: media delle medie voto delle due squadre prima di questa partita
-  const expTest = pres && me()?.id === 13;
+  // media delle medie voto delle due squadre prima di questa partita (non per il calcio a 5, che non ha voti)
+  const expTest = m.type !== 5;
   const actions = [];
   if (pres) {
     actions.push({ label: 'Elimina', cls: 'danger', fn: async () => { if (!await confirmBox('Eliminare definitivamente la partita con statistiche, voti e formazioni fanta?', 'Elimina', true)) return false; const ok = await act(() => rpc('admin_delete_match', { p_token: T(), p_match: m.id }), 'Partita eliminata'); if (ok) await refreshAll(); return ok; } });
@@ -1498,7 +1498,7 @@ function openMatch(id) {
     body: `${header}<div class="row" style="margin-bottom:6px">${matchStatusPills(m)}</div>${m.a7 ? `<p class="small muted" style="margin:4px 0">ℹ️ ${esc(a7Note())}</p>` : ''}${m.lineup_manager ? `<p class="small" style="margin:4px 0">${played ? L('Squadre fatte da', 'Teams picked by') : L('Fa le squadre', 'Picking the teams')}: <b>${esc(pname(m.lineup_manager))}</b>${canMakeTeams(m) ? ` <span class="pill live">${L('tocca a te', 'your turn')}</span>` : ''}</p>` : ''}${m.note ? `<p class="muted small" style="margin:4px 0 8px">${esc(m.note)}</p>` : ''}
       ${canFv ? `<div class="row" style="justify-content:center;margin:4px 0 8px">${segHtml('mxMode', [{ v: 'voto', l: L('Voto', 'Rating') }, { v: 'fv', l: L('Fantavoto', 'Fanta score') }], mode)}</div>` : ''}
       <div class="mx-cols">${col('W')}${col('D')}</div>
-      ${expTest && m.players.length ? '<div id="mxExp" class="small" style="margin:6px 0;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.1)">🧪 …</div>' : ''}
+      ${expTest && m.players.length ? '<div id="mxExp" class="small" style="margin:6px 0;padding:6px 8px;border-radius:8px;background:rgba(127,127,127,.1)">📈 …</div>' : ''}
       ${canFv ? `<p class="tiny muted" id="mxNote" style="margin:4px 0">${mode === 'fv' ? fvNote() : ''}</p>` : ''}
       ${played && m.votes_open ? `<p class="tiny muted">${L('I voti compaiono al centro quando si chiudono le votazioni.', 'Ratings appear in the middle when voting closes.')}</p>` : ''}
       ${iconLegend()}
@@ -1515,7 +1515,7 @@ function openMatch(id) {
       verdict = !fav ? ` · ${L('squadre alla pari', 'teams level')}` : ` · ${L('favoriti', 'favourites')} ${esc(fav === 'W' ? TW : TD)} (+${fmtNum(Math.abs(diff))})`;
       if (played) verdict += res === undefined ? '' : !fav ? '' : res === fav ? ` · <span class="nb-ok">${L('rispettato', 'as expected')}</span>` : res === null ? ` · ${L('pareggio', 'draw')}` : ` · <b style="color:#d9534f">${L('sorpresa', 'upset')}</b>`;
     }
-    box.innerHTML = `🧪 <b>${L('Test', 'Test')}</b> · ${L('media delle medie voto prima di questa partita', 'average of the ratings before this match')} (${x.prev_matches} ${L('partite', 'matches')}): ${esc(TW)} ${v(w)} – ${esc(TD)} ${v(d)}${verdict}`;
+    box.innerHTML = `📈 <span title="${esc(L('Per ogni squadra, media delle medie voto dei suoi giocatori calcolate sulle partite precedenti della stagione (stesso tipo). Chi non ha ancora una media non conta: tra parentesi quanti giocatori ce l\'hanno.', 'For each team, the average of its players\' ratings from the season\'s previous matches (same type). Players without a rating yet are left out: in brackets how many have one.'))}">${L('Media voto delle squadre prima della partita', 'Team ratings before the match')}</span>: ${esc(TW)} ${v(w)} – ${esc(TD)} ${v(d)}${verdict}`;
   }).catch(e => { const box = mo.el.querySelector('#mxExp'); if (box) box.textContent = e.message; });
   if (cuHtml) Promise.all([loadRoles(), loadAvgs(m)]).then(() => { const b = mo.el.querySelector('[data-cu]'); if (b) b.innerHTML = groupedRows(cu, id => { const t = m.players.find(p => p.id === id)?.team; return t ? `<span class="team small"><span class="dot ${t}"></span>${esc(t === 'W' ? TW : TD)}</span>` : `<span class="tiny muted">${L('da assegnare', 'unassigned')}</span>`; }, true); });
   const redraw = () => { const c = mo.el.querySelector('.mx-cols'); if (c) c.innerHTML = col('W') + col('D'); const n = mo.el.querySelector('#mxNote'); if (n) n.innerHTML = mode === 'fv' ? fvNote() : ''; };
