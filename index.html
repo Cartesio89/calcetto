@@ -2991,7 +2991,7 @@ async function viewNunnabet(v) {
     if (!bets?.length) return '';
     const n = bets.length, c = { 1: 0, X: 0, 2: 0 };
     bets.forEach(b => c[b.w > b.d ? 1 : b.w < b.d ? 2 : 'X']++);
-    const mx = Math.max(...Object.values(c)), best = Object.keys(c).filter(k => c[k] === mx).join(' / ');
+    const mx = Math.max(...Object.values(c)), best = ['1', 'X', '2'].filter(k => c[k] === mx).join(' / ');
     const avg = k => fmtNum(bets.reduce((x, b) => x + b[k], 0) / n);
     return `<div class="small" style="margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--soft,rgba(0,0,0,.04))">📊 ${L('Segno più giocato', 'Most played 1X2')}: <b>${best}</b> (1 ${c[1]} · X ${c.X} · 2 ${c[2]}) · ${L('media gol scommessi', 'average goals bet')}: ${esc(TW)} <b>${avg('w')}</b> – ${esc(TD)} <b>${avg('d')}</b></div>`;
   };
