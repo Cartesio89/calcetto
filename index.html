@@ -88,6 +88,11 @@ h1,h2,h3{font-family:'Barlow Condensed',Inter,sans-serif;letter-spacing:.3px;mar
 .nb-card{margin:10px 0;padding:12px}.nb-form{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-end;margin-top:8px}
 .nb-form label{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted)}
 .nb-form input[type=number]{width:64px;text-align:center}.nb-ok{color:#2a9d5c;font-weight:700}.nb-ko{color:var(--muted)}
+.nb-trend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:8px;padding:8px;border-radius:10px;background:rgba(127,127,127,.08)}
+.nb-segs{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.nb-seg{display:flex;flex-direction:column;align-items:center;min-width:52px;padding:4px 8px;border-left:2px solid var(--line);line-height:1.15}
+.nb-seg:first-child{border-left:0}.nb-seg span{font-size:11px;color:var(--muted);font-weight:700}.nb-seg b{font-size:18px}.nb-seg i{font-size:11px;font-style:normal;color:var(--muted)}
+.nb-seg.top{background:rgba(233,30,140,.12)}.nb-seg.top b{color:#d81b78}
 .nb-bets{margin-top:8px;font-size:13px}.nb-bets div{padding:3px 0;border-bottom:1px solid var(--line)}
 main{padding:18px 0 40px}
 @media (max-width:720px){ main{padding-bottom:calc(110px + env(safe-area-inset-bottom))} }
@@ -2993,7 +2998,9 @@ async function viewNunnabet(v) {
     bets.forEach(b => c[b.w > b.d ? 1 : b.w < b.d ? 2 : 'X']++);
     const mx = Math.max(...Object.values(c)), best = ['1', 'X', '2'].filter(k => c[k] === mx).join(' / ');
     const avg = k => fmtNum(bets.reduce((x, b) => x + b[k], 0) / n);
-    return `<div class="small" style="margin-top:6px;padding:6px 8px;border-radius:8px;background:var(--soft,rgba(0,0,0,.04))">📊 ${L('Segno più giocato', 'Most played 1X2')}: <b>${best}</b> (1 ${c[1]} · X ${c.X} · 2 ${c[2]}) · ${L('media gol scommessi', 'average goals bet')}: ${esc(TW)} <b>${avg('w')}</b> – ${esc(TD)} <b>${avg('d')}</b></div>`;
+    const cell = k => `<div class="nb-seg${c[k] === mx ? ' top' : ''}"><span>${k}</span><b>${c[k]}</b><i>${Math.round(c[k] / n * 100)}%</i></div>`;
+    return `<div class="nb-trend"><div class="nb-segs">${['1', 'X', '2'].map(cell).join('')}</div>
+      <div class="small">📊 ${L('Segno più giocato', 'Most played 1X2')}: <b>${best}</b><br>${L('Media gol scommessi', 'Average goals bet')}: ${esc(TW)} <b>${avg('w')}</b> · ${esc(TD)} <b>${avg('d')}</b></div></div>`;
   };
   const betList = bets => `<div class="nb-bets">${bets.map(b => `<div>${plink(b.player_id)}: ${betTxt(b)}</div>`).join('')}</div>`;
   const playersOf = m => { const t = m.teams || {}; return [...m.players].sort((a, b) => (t[a] || 'Z').localeCompare(t[b] || 'Z') || pname(a).localeCompare(pname(b), 'it')); };
