@@ -1533,8 +1533,10 @@ function openMatch(id) {
         if (played && fav) verdict += res === fav ? ' · <span class="nb-ok">rispettato</span>' : res === null ? ' · pareggio' : ' · <b style="color:#d9534f">sorpresa</b>';
       }
       const sw = k => `<button class="btn sm ${scope === k ? 'primary' : ''}" data-strs="${k}" style="padding:2px 8px;min-height:0">${k === 'season' ? 'Stagione' : 'Totale'}</button>`;
-      const det = ['W', 'D'].map(t => `<div style="flex:1;min-width:140px"><b>${esc(t === 'W' ? TW : TD)}</b>${x.players.filter(p => p.team === t).map(p => `<div class="tiny">${esc(pname(p.id))} <b>${fmtNum(Number(p.forza))}</b> <span class="muted">${p.n ? `${p.n} ${p.n === 1 ? 'partita' : 'partite'}${p.mv != null ? ` · voto ${fmtVote(Number(p.mv))}` : ''}` : 'nessuna partita precedente'}</span></div>`).join('')}</div>`).join('');
-      box.innerHTML = `💪 <b>Forza</b> <span class="tiny muted">(test, solo tu · ${x.prev_matches} partite precedenti)</span> ${sw('season')} ${sw('all')}<br>${esc(TW)} ${v(w)} – ${esc(TD)} ${v(d)}${verdict} · <a href="#" data-strdet>dettaglio</a>
+      const det = ['W', 'D'].map(t => `<div style="flex:1;min-width:140px"><b>${esc(t === 'W' ? TW : TD)}</b>${x.players.filter(p => p.team === t).map(p => `<div class="tiny">${esc(pname(p.id))}${p.gk ? ' (P)' : ''} <b>${fmtNum(Number(p.forza))}</b> <span class="muted">${p.n ? `${p.n} ${p.n === 1 ? 'partita' : 'partite'}${p.mv != null ? ` · voto ${fmtVote(Number(p.mv))}` : ''}` : 'nessuna partita precedente'}</span></div>`).join('')}</div>`).join('');
+      const f1 = n => n == null ? '–' : `<b>${fmtNum(Number(n))}</b>`;
+      const split = w && d ? `<br><span class="small">Movimento: ${esc(TW)} ${f1(w.out)} – ${esc(TD)} ${f1(d.out)}${w.out != null && d.out != null ? ` <span class="tiny muted">(${Number(w.out) >= Number(d.out) ? '+' : ''}${fmtNum(Number(w.out) - Number(d.out))})</span>` : ''} · Portiere: ${esc(TW)} ${w.gk_n ? f1(w.gk) : '<span class="muted">nessuno</span>'} – ${esc(TD)} ${d.gk_n ? f1(d.gk) : '<span class="muted">nessuno</span>'}</span>` : '';
+      box.innerHTML = `💪 <b>Forza</b> <span class="tiny muted">(test, solo tu · ${x.prev_matches} partite precedenti)</span> ${sw('season')} ${sw('all')}<br>${esc(TW)} ${v(w)} – ${esc(TD)} ${v(d)}${verdict}${split} · <a href="#" data-strdet>dettaglio</a>
         <div data-strbox class="row" style="display:${S.ui.strDet ? 'flex' : 'none'};align-items:flex-start;gap:10px;margin-top:6px">${det}</div>`;
     }).catch(e => { box.textContent = e.message; });
   };
